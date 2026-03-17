@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#0a0a0a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <text x="400" y="300" text-anchor="middle" dominant-baseline="middle" fill="#AF9460" font-size="72" font-family="system-ui, sans-serif" font-weight="800" letter-spacing="0.2em">SIVSO</text>
+  <text x="400" y="340" text-anchor="middle" fill="#666" font-size="12" font-family="system-ui, sans-serif" letter-spacing="0.3em">Sindicato de Oaxaca</text>
+</svg>
