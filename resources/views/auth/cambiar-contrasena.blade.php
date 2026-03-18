@@ -46,6 +46,15 @@
 
         @media (max-width: 1023px) {
             .mobile-curve-container { height: 180px; }
+            /* Bloquear rebote/overscroll en móvil: layout fijo, sin espacio gris abajo */
+            html, body {
+                overflow: hidden;
+                overscroll-behavior: none;
+                height: 100%;
+                position: fixed;
+                inset: 0;
+                -webkit-overflow-scrolling: touch;
+            }
         }
     </style>
 </head>

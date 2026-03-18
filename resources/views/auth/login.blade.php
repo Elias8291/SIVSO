@@ -46,11 +46,27 @@
 
         @media (max-width: 1023px) {
             .mobile-curve-container { height: 180px; }
+
+            /* Bloquear rebote y espacio blanco al deslizar en móvil */
+            html, body {
+                overflow: hidden;
+                overscroll-behavior: none;
+                height: 100%;
+                position: fixed;
+                width: 100%;
+                -webkit-overflow-scrolling: touch;
+                touch-action: manipulation;
+            }
+            body {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 
-<body class="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-brand-black p-0 lg:p-8 transition-theme">
+<body class="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-brand-black p-0 lg:p-8 transition-theme overflow-hidden lg:overflow-visible">
 
     <main class="w-full max-w-5xl lg:h-[600px] flex flex-col lg:flex-row overflow-hidden lg:rounded-2xl bg-white dark:bg-brand-dark shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-none lg:border border-zinc-200 dark:border-brand-border">
 

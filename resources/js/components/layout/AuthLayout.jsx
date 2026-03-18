@@ -10,7 +10,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
     const { isDarkMode, toggleTheme } = useTheme();
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-[#050505] p-0 lg:p-8 transition-colors duration-300 relative overflow-hidden">
+        <div className="h-screen min-h-[100dvh] flex items-center justify-center bg-zinc-100 dark:bg-[#050505] p-0 lg:p-8 transition-colors duration-300 relative overflow-hidden overscroll-none touch-pan-y">
             {/* SIVSO decorativo en el fondo exterior (detrás de la tarjeta) */}
             <span className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
                 <span className="text-[20rem] lg:text-[28rem] font-black tracking-[0.15em] text-[#AF9460]/10 dark:text-[#AF9460]/15 leading-none italic">SIVSO</span>
