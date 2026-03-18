@@ -31,6 +31,11 @@
         .transition-theme { transition: all 0.4s ease; }
         .img-clear { filter: brightness(0.9) contrast(1.05); }
 
+        /* Evita zoom en móvil al enfocar campos (iOS requiere min 16px) */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+
         .dark input {
             color: #ffffff !important;
             background-color: #050505 !important;

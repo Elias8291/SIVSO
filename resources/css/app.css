@@ -33,3 +33,25 @@
 
 /* Selección de texto */
 ::selection { background: rgb(175 148 96 / 0.18); }
+
+/* Evitar zoom en inputs en móvil (iOS zoom si font-size < 16px) */
+@media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+}
+
+/* Fondo unificado: evitar franja gris al hacer scroll/overscroll en móvil */
+html,
+body {
+    min-height: 100vh;
+    -webkit-overflow-scrolling: touch;
+}
+body {
+    background-color: #F7F7F8;
+}
+html.dark body {
+    background-color: #060607;
+}

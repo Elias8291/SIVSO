@@ -2,14 +2,14 @@
 <html lang="es" class="dark">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SIVSO | Sistema Integral de Vestuario</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/main.jsx'])
 </head>
-<body class="antialiased">
+<body class="antialiased min-h-screen bg-[#F7F7F8] dark:bg-[#060607]">
     <div id="root"></div>
     @php
         $appState = [
