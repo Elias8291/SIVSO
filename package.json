@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && node -e \"const fs=require('fs');const p='public/build';fs.copyFileSync(p+'/.vite/manifest.json',p+'/manifest.json');\"",
         "dev": "vite",
         "postinstall": "node -e \"try{require('fs').chmodSync(require('path').join(process.cwd(),'node_modules','.bin','vite'),0o755);}catch(e){}\""
     },

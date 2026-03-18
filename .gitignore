@@ -13,7 +13,7 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# /public/build  (incluido para deploy en hosting sin Node)
 /public/hot
 /public/storage
 /storage/*.key
