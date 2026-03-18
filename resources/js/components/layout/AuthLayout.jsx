@@ -43,8 +43,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
                         <h1 className="text-6xl font-extrabold tracking-[0.2em] text-white mb-6">SIVSO</h1>
                         <div className="h-[2px] w-10 bg-[#AF9460] mb-4" />
                         <h2 className="text-xl font-light leading-snug text-white drop-shadow-md">
-                            Plataforma Digital de <br />
-                            <span className="font-bold text-[#AF9460] italic">Control de Suministros.</span>
+                            SISTEMA INTEGRAL VESTUARIO SINDICATO OAXACA
                         </h2>
                         <p className="mt-2 text-[9px] text-zinc-400 uppercase tracking-[0.4em]">
                             Sindicato de Trabajadores de Oaxaca
@@ -61,7 +60,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
                 <button
                     type="button"
                     onClick={toggleTheme}
-                    className="fixed bottom-6 right-6 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-[#1f1f1f] bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md shadow-lg hover:bg-zinc-50 dark:hover:bg-[#050505] transition-colors z-[100]"
+                    className="fixed top-4 right-4 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-[#1f1f1f] bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md shadow-lg hover:bg-zinc-50 dark:hover:bg-[#050505] transition-colors z-[100]"
                 >
                     {isDarkMode ? <Sun className="w-5 h-5 text-zinc-400" /> : <Moon className="w-5 h-5 text-zinc-500" />}
                 </button>

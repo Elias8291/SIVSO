@@ -145,23 +145,25 @@ export default function UsuariosPage() {
             <PageHeader
                 title="Usuarios"
                 description="Gestión de cuentas de acceso al sistema."
-                actions={
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre, RFC o correo..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="px-3.5 py-2 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all min-w-[240px]"
-                        />
-                        <button onClick={openCreate}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold tracking-wide hover:opacity-90 active:scale-95 transition-all shrink-0">
-                            <Plus size={13} strokeWidth={2.5} />
-                            Nuevo Usuario
-                        </button>
-                    </div>
-                }
             />
+            <div className="flex flex-col gap-3 mb-8">
+                <input
+                    type="text"
+                    placeholder="Buscar por nombre, RFC o correo..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all"
+                />
+                <div className="flex justify-end">
+                    <button
+                        onClick={openCreate}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold tracking-wide hover:opacity-90 active:scale-95 transition-all"
+                    >
+                        <Plus size={13} strokeWidth={2.5} />
+                        Nuevo Usuario
+                    </button>
+                </div>
+            </div>
 
             <Card title={`Usuarios${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable

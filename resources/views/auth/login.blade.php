@@ -67,8 +67,7 @@
                 <h1 class="text-6xl font-extrabold tracking-[0.2em] text-white mb-6">SIVSO</h1>
                 <div class="h-[2px] w-10 bg-brand-gold mb-4"></div>
                 <h2 class="text-xl font-light leading-snug text-white drop-shadow-md">
-                    Plataforma Digital de <br>
-                    <span class="font-bold text-brand-gold italic">Control de Suministros.</span>
+                    SISTEMA INTEGRAL VESTUARIO SINDICATO OAXACA
                 </h2>
                 <p class="mt-2 text-[9px] text-zinc-400 uppercase tracking-[0.4em]">Sindicato de Trabajadores de Oaxaca</p>
             </div>
@@ -124,7 +123,7 @@
             </div>
         </section>
 
-        <button id="theme-toggle" class="fixed bottom-6 right-6 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-brand-border bg-white/80 dark:bg-brand-dark/80 backdrop-blur-md shadow-lg lg:shadow-none hover:bg-zinc-50 dark:hover:bg-brand-black transition-theme z-[100]">
+        <button id="theme-toggle" class="fixed top-4 right-4 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-brand-border bg-white/80 dark:bg-brand-dark/80 backdrop-blur-md shadow-lg lg:shadow-none hover:bg-zinc-50 dark:hover:bg-brand-black transition-theme z-[100]">
             <svg id="sun-icon" class="hidden dark:block w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" stroke-width="2" stroke-linecap="round"/></svg>
             <svg id="moon-icon" class="block dark:hidden w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" stroke-width="2" stroke-linecap="round"/></svg>
         </button>

@@ -71,40 +71,41 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
 
             <div className="mx-6 h-px bg-zinc-100 dark:bg-zinc-800/80" />
 
-            {/* Navegación por secciones */}
-            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5" onClick={onClose}>
-                {SIDEBAR_SECTIONS.map((section) => (
-                    <div key={section.label}>
-                        <p className="px-4 mb-1.5 text-[8px] font-bold text-zinc-400 uppercase tracking-[0.25em]">
-                            {section.label}
-                        </p>
-                        <div className="space-y-0.5">
-                            {section.links.map(({ path, label, iconKey }) => {
-                                const IconComponent = ICON_MAP[iconKey];
-                                return (
-                                    <NavLink
-                                        key={path}
-                                        to={path}
-                                        end={path === '/dashboard'}
-                                        className="block [&.active]:cursor-default"
-                                    >
-                                        {({ isActive }) => (
-                                            <NavItem
-                                                icon={IconComponent ? <IconComponent size={16} strokeWidth={1.8} /> : null}
-                                                label={label}
-                                                active={isActive}
-                                            />
-                                        )}
-                                    </NavLink>
-                                );
-                            })}
+            {/* Contenedor con scroll (nav + footer) para que en móvil se vea el logout */}
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                <nav className="px-3 py-4 space-y-5 shrink-0" onClick={onClose}>
+                    {SIDEBAR_SECTIONS.map((section) => (
+                        <div key={section.label}>
+                            <p className="px-4 mb-1.5 text-[8px] font-bold text-zinc-400 uppercase tracking-[0.25em]">
+                                {section.label}
+                            </p>
+                            <div className="space-y-0.5">
+                                {section.links.map(({ path, label, iconKey }) => {
+                                    const IconComponent = ICON_MAP[iconKey];
+                                    return (
+                                        <NavLink
+                                            key={path}
+                                            to={path}
+                                            end={path === '/dashboard'}
+                                            className="block [&.active]:cursor-default"
+                                        >
+                                            {({ isActive }) => (
+                                                <NavItem
+                                                    icon={IconComponent ? <IconComponent size={16} strokeWidth={1.8} /> : null}
+                                                    label={label}
+                                                    active={isActive}
+                                                />
+                                            )}
+                                        </NavLink>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </nav>
+                    ))}
+                </nav>
 
-            {/* Usuario + Logout */}
-            <div className="px-3 pb-5">
+                {/* Usuario + Logout - siempre accesible al hacer scroll en móvil */}
+                <div className="shrink-0 px-3 pb-5 pt-2">
                 <div className="h-px bg-zinc-100 dark:bg-zinc-800/80 mb-3" />
 
                 {/* Info usuario */}
@@ -129,6 +130,7 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
                     <LogOut size={14} strokeWidth={1.8} />
                     Cerrar Sesión
                 </button>
+            </div>
             </div>
         </aside>
         </>
