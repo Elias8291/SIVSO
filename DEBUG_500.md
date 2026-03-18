@@ -1,24 +1,38 @@
 # Cómo depurar 500 en Hostinger (SSH)
 
-Ejecuta estos comandos en la carpeta del proyecto:
+## Solución rápida: Session y Cache por archivo
+
+Si no has corrido migraciones, session/cache en "database" falla. En `.env` del servidor pon:
+
+```
+SESSION_DRIVER=file
+CACHE_STORE=file
+```
+
+Luego:
+```bash
+php artisan config:clear
+```
+
+## Comandos de depuración
 
 ```bash
-# 1. Ver el error real en el log
-tail -50 storage/logs/laravel.log
+# 1. Ver el error real (primeras líneas del último error)
+grep -A 5 "local.ERROR" storage/logs/laravel.log | tail -20
 
-# 2. Limpiar caché (importante después de subir cambios)
+# 2. Limpiar caché
 php artisan config:clear
 php artisan cache:clear
 php artisan view:clear
 
-# 3. Permisos de carpetas
+# 3. Permisos
 chmod -R 775 storage bootstrap/cache
 
-# 4. Si falta .env, copiarlo
-cp .env.example .env
-php artisan key:generate
+# 4. Si usas database para session/cache, corre migraciones
+php artisan migrate
 
-# 5. Revisar que .env tenga las variables correctas
+# 5. Variables .env necesarias
+# APP_KEY=base64:... (php artisan key:generate si falta)
 # DB_CONNECTION=mysql
 # DB_DATABASE=u555747547_sivso2026
 # DB_HOST=...
@@ -26,4 +40,4 @@ php artisan key:generate
 # DB_PASSWORD=...
 ```
 
-Para ver el error en pantalla (solo desarrollo): en `.env` pon `APP_DEBUG=true`
+Para ver el error en pantalla: en `.env` pon `APP_DEBUG=true` (quita después)
