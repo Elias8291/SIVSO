@@ -36,15 +36,30 @@ class ProfileController extends Controller
             }
         }
 
+        $delegado = null;
+        if ($user->delegado_id) {
+            $d = DB::table('delegado')->where('id', $user->delegado_id)->first(['id', 'nombre', 'delegacion', 'ur']);
+            if ($d) {
+                $delegado = [
+                    'id'     => $d->id,
+                    'clave'  => $d->delegacion,
+                    'nombre' => $d->nombre,
+                    'ur'     => $d->ur,
+                ];
+            }
+        }
+
         return response()->json([
             'user' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'rfc'   => $user->rfc,
-                'nue'   => $user->nue,
-                'email' => $user->email,
+                'id'          => $user->id,
+                'name'        => $user->name,
+                'rfc'         => $user->rfc,
+                'nue'         => $user->nue,
+                'email'       => $user->email,
+                'delegado_id' => $user->delegado_id,
             ],
-            'empleado' => $trabajador,
+            'empleado'   => $trabajador,
+            'delegado'   => $delegado,
         ]);
     }
 
@@ -115,5 +130,22 @@ class ProfileController extends Controller
         $user->save();
 
         return response()->json(['message' => 'NUE actualizado correctamente.']);
+    }
+
+    /**
+     * PUT /api/perfil/delegado — asignar o cambiar delegado de la cuenta.
+     */
+    public function updateDelegado(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'delegado_id' => 'nullable|integer|exists:delegado,id',
+        ]);
+
+        $user->delegado_id = $request->delegado_id ?: null;
+        $user->save();
+
+        return response()->json(['message' => 'Delegado actualizado correctamente.']);
     }
 }

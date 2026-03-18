@@ -6,9 +6,11 @@
 export const ROUTES = {
     DASHBOARD:     '/dashboard',
     MI_VESTUARIO:  '/dashboard/mi-vestuario',
+    MI_DELEGACION: '/dashboard/mi-delegacion',
     MI_CUENTA:     '/dashboard/mi-cuenta',
     MI_CUENTA_CAMBIAR_PASSWORD: '/dashboard/mi-cuenta/cambiar-contrasena',
     ORGANIZACION:  '/dashboard/organizacion',
+    DELEGADOS:     '/dashboard/delegados',
     PARTIDAS:      '/dashboard/partidas',
     EMPLEADOS:     '/dashboard/empleados',
     PRODUCTOS:     '/dashboard/productos',
@@ -27,6 +29,7 @@ export const SIDEBAR_SECTIONS = [
         links: [
             { path: ROUTES.DASHBOARD,    label: 'Dashboard',      iconKey: 'LayoutDashboard' },
             { path: ROUTES.MI_VESTUARIO, label: 'Mi Vestuario',   iconKey: 'Shirt' },
+            { path: ROUTES.MI_DELEGACION, label: 'Mi Delegación', iconKey: 'Building2' },
             { path: ROUTES.MI_CUENTA,    label: 'Mi Cuenta',      iconKey: 'User' },
         ],
     },
@@ -42,6 +45,7 @@ export const SIDEBAR_SECTIONS = [
         label: 'Estructura',
         links: [
             { path: ROUTES.ORGANIZACION, label: 'Organización', iconKey: 'Network' },
+            { path: ROUTES.DELEGADOS,    label: 'Delegados',    iconKey: 'UserCheck' },
         ],
     },
     {
@@ -61,11 +65,13 @@ export const SIDEBAR_LINKS = SIDEBAR_SECTIONS.flatMap((s) => s.links);
 export const ROUTE_LABELS = {
     '/dashboard':               'Dashboard',
     '/dashboard/mi-vestuario':  'Mi Vestuario',
+    '/dashboard/mi-delegacion': 'Mi Delegación',
     '/dashboard/mi-cuenta':     'Mi Cuenta',
     '/dashboard/mi-cuenta/cambiar-contrasena': 'Cambiar contraseña',
     '/dashboard/empleados':     'Empleados',
     '/dashboard/productos':     'Productos',
     '/dashboard/organizacion':  'Organización',
+    '/dashboard/delegados':     'Delegados',
     '/dashboard/partidas':      'Partidas',
     '/dashboard/usuarios':      'Usuarios',
     '/dashboard/roles':         'Roles',

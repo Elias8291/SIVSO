@@ -59,6 +59,75 @@ class DelegadoController extends Controller
         return response()->json(['data' => $data]);
     }
 
+    /**
+     * GET /api/delegados/resumen
+     * Delegados agrupados por nombre con cuántas delegaciones representa cada uno.
+     */
+    public function resumen(Request $request): JsonResponse
+    {
+        $conn   = 'bas_vestuario';
+        $search = trim((string) $request->get('search', ''));
+
+        $trabCounts = DB::connection($conn)->table('delegacion')
+            ->selectRaw("ur, REPLACE(delegacion, '-', '') AS del_code, COUNT(*) AS cnt")
+            ->groupByRaw("ur, REPLACE(delegacion, '-', '')")
+            ->get()
+            ->keyBy(fn ($r) => "{$r->ur}_{$r->del_code}");
+
+        $delegadoRows = DB::connection($conn)->table('delegado')
+            ->orderBy('nombre')
+            ->orderBy('ur')
+            ->get(['id', 'nombre', 'delegacion', 'ur']);
+
+        $byNombre = [];
+        foreach ($delegadoRows as $d) {
+            $key     = trim($d->nombre);
+            $delCode = str_replace('-', '', (string) $d->delegacion);
+            $delKey  = $d->ur . '_' . $delCode; // delegación distinta = UR + clave única
+
+            if (! isset($byNombre[$key])) {
+                $byNombre[$key] = [
+                    'nombre'             => $d->nombre,
+                    'delegaciones_count' => 0,
+                    'delegaciones'       => [],
+                    'trabajadores_total' => 0,
+                    '_seen'              => [], // claves ya agregadas (delegaciones distintas)
+                ];
+            }
+
+            if (isset($byNombre[$key]['_seen'][$delKey])) {
+                continue; // ya contamos esta delegación (clave + UR)
+            }
+            $byNombre[$key]['_seen'][$delKey] = true;
+
+            $cnt = (int) ($trabCounts->get($delKey)?->cnt ?? 0);
+            $byNombre[$key]['delegaciones_count']++;
+            $byNombre[$key]['delegaciones'][] = [
+                'id'                 => $d->id,
+                'clave'              => $d->delegacion,
+                'ur'                 => $d->ur,
+                'trabajadores_count' => $cnt,
+            ];
+            $byNombre[$key]['trabajadores_total'] += $cnt;
+        }
+
+        if ($search) {
+            $byNombre = array_filter($byNombre, fn ($v) =>
+                stripos($v['nombre'], $search) !== false ||
+                collect($v['delegaciones'])->some(fn ($del) => stripos($del['clave'], $search) !== false)
+            );
+        }
+
+        $data = array_values(array_map(fn ($v) => [
+            'nombre'             => $v['nombre'],
+            'delegaciones_count' => $v['delegaciones_count'],
+            'delegaciones'       => $v['delegaciones'],
+            'trabajadores_total' => $v['trabajadores_total'],
+        ], $byNombre));
+
+        return response()->json(['data' => $data]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

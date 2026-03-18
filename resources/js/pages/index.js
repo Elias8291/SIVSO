@@ -1,5 +1,6 @@
 export { default as DashboardPage }    from './DashboardPage';
 export { default as MiVestuarioPage }  from './MiVestuarioPage';
+export { default as MiDelegacionPage } from './MiDelegacionPage';
 export { default as MiCuentaPage }     from './MiCuentaPage';
 export { default as MiCuentaCambiarContrasenaPage } from './MiCuentaCambiarContrasenaPage';
 export { default as EmpleadosPage }    from './EmpleadosPage';
@@ -8,4 +9,5 @@ export { default as UsuariosPage }     from './UsuariosPage';
 export { default as RolesPage }        from './RolesPage';
 export { default as PermisosPage }     from './PermisosPage';
 export { default as OrganizacionPage } from './OrganizacionPage';
+export { default as DelegadosPage } from './DelegadosPage';
 export { default as PartidasPage }     from './PartidasPage';

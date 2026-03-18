@@ -8,6 +8,7 @@ import CambiarContrasenaPage from './pages/CambiarContrasenaPage';
 import {
     DashboardPage,
     MiVestuarioPage,
+    MiDelegacionPage,
     MiCuentaPage,
     MiCuentaCambiarContrasenaPage,
     EmpleadosPage,
@@ -16,6 +17,7 @@ import {
     RolesPage,
     PermisosPage,
     OrganizacionPage,
+    DelegadosPage,
     PartidasPage,
 } from './pages';
 
@@ -41,11 +43,13 @@ export default function App({ initialState }) {
                         <Route path="/dashboard" element={<AppLayout />}>
                             <Route index                  element={<DashboardPage />} />
                             <Route path="mi-vestuario"    element={<MiVestuarioPage />} />
+                            <Route path="mi-delegacion"    element={<MiDelegacionPage />} />
                             <Route path="mi-cuenta"       element={<MiCuentaPage />} />
                             <Route path="mi-cuenta/cambiar-contrasena" element={<MiCuentaCambiarContrasenaPage />} />
                             <Route path="empleados"       element={<EmpleadosPage />} />
                             <Route path="productos"       element={<ProductosPage />} />
                             <Route path="organizacion"    element={<OrganizacionPage />} />
+                            <Route path="delegados"      element={<DelegadosPage />} />
                             <Route path="partidas"        element={<PartidasPage />} />
                             <Route path="usuarios"        element={<UsuariosPage />} />
                             <Route path="roles"           element={<RolesPage />} />

@@ -198,4 +198,179 @@ class VestuarioController extends Controller
 
         return response()->json(['message' => 'Artículo actualizado correctamente.']);
     }
+
+    /**
+     * Verificar si el usuario (delegado) tiene acceso al empleado.
+     * Retorna el trabajador de delegacion o null.
+     */
+    private function empleadoAccesiblePorDelegado($user, int $empleadoId): ?object
+    {
+        $conn = 'bas_vestuario';
+
+        $trabajador = DB::connection($conn)->table('delegacion')
+            ->where('id', $empleadoId)
+            ->first(['id', 'nue', 'nombre_trab', 'apellp_trab', 'apellm_trab', 'delegacion', 'ur']);
+
+        if (! $trabajador) {
+            return null;
+        }
+
+        $delCode = str_replace('-', '', (string) $trabajador->delegacion);
+        $key     = $trabajador->ur . '_' . $delCode;
+
+        if ($user->delegado_id) {
+            $d = DB::connection($conn)->table('delegado')->where('id', (int) $user->delegado_id)->first();
+            if ($d) {
+                $nombre = trim($d->nombre);
+                $match  = DB::connection($conn)->table('delegado')
+                    ->whereRaw('TRIM(nombre) = ?', [$nombre])
+                    ->where('ur', $trabajador->ur)
+                    ->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delCode])
+                    ->exists();
+                return $match ? $trabajador : null;
+            }
+        }
+
+        if ($user->nue) {
+            $miTrab = DB::connection($conn)->table('delegacion')
+                ->where('nue', $user->nue)
+                ->first(['delegacion', 'ur']);
+            if ($miTrab && $miTrab->ur == $trabajador->ur && str_replace('-', '', $miTrab->delegacion) === $delCode) {
+                return $trabajador;
+            }
+        }
+
+        return null;
+    }
+
+    /** GET /api/empleados/{empleado}/vestuario — vestuario de un empleado (solo si el delegado tiene acceso) */
+    public function empleadoVestuario(Request $request, int $empleado): JsonResponse
+    {
+        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
+        if (! $trabajador) {
+            return response()->json(['message' => 'Empleado no accesible.'], 403);
+        }
+
+        $conn = 'bas_vestuario';
+        $dep = DB::connection($conn)->table('dependences')->where('key', $trabajador->ur)->first();
+
+        $empleadoData = [
+            'nue'                => $trabajador->nue,
+            'nombre'             => trim("{$trabajador->nombre_trab} {$trabajador->apellp_trab} {$trabajador->apellm_trab}"),
+            'delegacion_clave'   => $trabajador->delegacion,
+            'dependencia_clave'  => (string) $trabajador->ur,
+            'dependencia_nombre' => $dep?->name ?? '',
+        ];
+
+        $concentrados = DB::connection($conn)->table('concentrado AS c')
+            ->where('c.nue', $trabajador->nue)
+            ->leftJoin(
+                DB::raw('(SELECT partida, MIN(id) as pid FROM propuesta GROUP BY partida) AS pp_min'),
+                'pp_min.partida', '=', 'c.no_partida'
+            )
+            ->leftJoin('propuesta AS pp', 'pp.id', '=', 'pp_min.pid')
+            ->select([
+                'c.id', 'c.nue', 'c.ur', 'c.no_partida', 'c.clave2025', 'c.descripcion', 'c.clave_descripcion',
+                'c.cantidad', 'c.talla', 'c.precio_unitario', 'c.importe', 'c.iva', 'c.total',
+                'pp.id AS propuesta_id', 'pp.marca', 'pp.unidad', 'pp.medida', 'pp.codigo AS codigo_propuesta',
+            ])
+            ->orderBy('c.no_partida')
+            ->orderBy('c.descripcion')
+            ->get();
+
+        $anio = $concentrados->isNotEmpty() ? 2025 : (int) date('Y');
+
+        $asignaciones = $concentrados->map(fn ($c) => [
+            'id'              => $c->id,
+            'producto_id'     => $c->propuesta_id ?? $c->id,
+            'cantidad'        => (int) ($c->cantidad ?? 1),
+            'talla'           => $c->talla,
+            'clave_variante'  => $c->clave2025,
+            'precio_unitario' => $c->precio_unitario,
+            'importe'         => $c->importe,
+            'descripcion'     => $c->descripcion ?? $c->clave_descripcion ?? "Partida {$c->no_partida}",
+            'clave_vestuario' => $c->clave2025 ?? $c->codigo_propuesta,
+            'codigo'          => $c->clave2025,
+            'marca'           => $c->marca,
+            'unidad'          => $c->unidad,
+            'medida'          => $c->medida,
+            'partida'         => $c->no_partida,
+        ]);
+
+        return response()->json([
+            'empleado'     => $empleadoData,
+            'asignaciones' => $asignaciones,
+            'anio'         => $anio,
+        ]);
+    }
+
+    /** PUT /api/empleados/{empleado}/vestuario/{id}/talla */
+    public function empleadoUpdateTalla(Request $request, int $empleado, int $id): JsonResponse
+    {
+        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
+        if (! $trabajador) {
+            return response()->json(['message' => 'Empleado no accesible.'], 403);
+        }
+
+        $registro = DB::connection('bas_vestuario')->table('concentrado')
+            ->where('id', $id)
+            ->where('nue', $trabajador->nue)
+            ->first();
+
+        if (! $registro) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        $request->validate(['talla' => 'required|string|max:10']);
+
+        DB::connection('bas_vestuario')->table('concentrado')
+            ->where('id', $id)
+            ->update(['talla' => strtoupper(trim($request->talla))]);
+
+        return response()->json(['message' => 'Talla actualizada correctamente.']);
+    }
+
+    /** PUT /api/empleados/{empleado}/vestuario/{id}/producto */
+    public function empleadoUpdateProducto(Request $request, int $empleado, int $id): JsonResponse
+    {
+        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
+        if (! $trabajador) {
+            return response()->json(['message' => 'Empleado no accesible.'], 403);
+        }
+
+        $registro = DB::connection('bas_vestuario')->table('concentrado')
+            ->where('id', $id)
+            ->where('nue', $trabajador->nue)
+            ->first();
+
+        if (! $registro) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        $request->validate([
+            'producto_id' => 'required|integer',
+            'talla'       => 'nullable|string|max:10',
+        ]);
+
+        $propuesta = DB::connection('bas_vestuario')->table('propuesta')->where('id', $request->producto_id)->first();
+        if (! $propuesta) {
+            return response()->json(['message' => 'Producto no encontrado.'], 404);
+        }
+
+        $cantidad = (int) ($registro->cantidad ?? 1);
+        $precio   = $propuesta->precio_unitario ?? $registro->precio_unitario;
+        $importe  = $precio ? round($cantidad * $precio, 2) : $registro->importe;
+
+        DB::connection('bas_vestuario')->table('concentrado')->where('id', $id)->update([
+            'descripcion'     => $propuesta->descripcion,
+            'clave2025'       => $propuesta->codigo,
+            'precio_unitario' => $precio,
+            'importe'         => $importe,
+            'total'           => $importe,
+            'no_partida'      => $propuesta->partida,
+            'talla'           => $request->talla ? strtoupper(trim($request->talla)) : $registro->talla,
+        ]);
+
+        return response()->json(['message' => 'Artículo actualizado correctamente.']);
+    }
 }

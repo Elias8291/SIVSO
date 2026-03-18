@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\VestuarioController;
 use App\Http\Controllers\Api\PresupuestoController;
 use App\Http\Controllers\Api\ProgramasController;
+use App\Http\Controllers\Api\MiDelegacionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,10 +38,14 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::put('perfil',              [ProfileController::class, 'update']);
     Route::put('perfil/password',     [ProfileController::class, 'updatePassword']);
     Route::put('perfil/nue',          [ProfileController::class, 'updateNue']);
+    Route::put('perfil/delegado',     [ProfileController::class, 'updateDelegado']);
 
     // Empleados (tabla: delegacion)
     Route::get('empleados',                          [EmpleadoController::class, 'index']);
     Route::post('empleados',                         [EmpleadoController::class, 'store']);
+    Route::get('empleados/{empleado}/vestuario',     [VestuarioController::class, 'empleadoVestuario']);
+    Route::put('empleados/{empleado}/vestuario/{id}/talla',    [VestuarioController::class, 'empleadoUpdateTalla']);
+    Route::put('empleados/{empleado}/vestuario/{id}/producto', [VestuarioController::class, 'empleadoUpdateProducto']);
     Route::get('empleados/{empleado}',               [EmpleadoController::class, 'show']);
     Route::put('empleados/{empleado}',               [EmpleadoController::class, 'update']);
     Route::delete('empleados/{empleado}',            [EmpleadoController::class, 'destroy']);
@@ -59,6 +64,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::put ('mi-vestuario/{id}/talla',             [VestuarioController::class, 'updateTalla']);
     Route::put ('mi-vestuario/{id}/producto',          [VestuarioController::class, 'updateProducto']);
 
+    // Mi delegación (delegaciones del usuario por NUE)
+    Route::get('mi-delegacion',                         [MiDelegacionController::class, 'index']);
+
     Route::apiResource('usuarios', UserController::class);
     Route::patch('usuarios/{user}/toggle-activo', [UserController::class, 'toggleActivo']);
 
@@ -73,6 +81,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::delete('dependencias/{dependencia}',   [DependenciaController::class, 'destroy']);
 
     // Panel 2: Delegados de una UR (tabla: delegado — nombre, delegacion, ur)
+    Route::get('delegados/resumen',               [DelegadoController::class, 'resumen']);
     Route::get('delegados',                       [DelegadoController::class, 'index']);
     Route::post('delegados',                      [DelegadoController::class, 'store']);
     Route::put('delegados/{id}',                  [DelegadoController::class, 'update']);

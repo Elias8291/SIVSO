@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, Users, UsersRound, Shield, Lock, Network, Shirt, Package, BarChart2, X, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Users, UsersRound, Shield, Lock, Network, Shirt, Package, BarChart2, Building2, UserCheck, X, PanelLeft, PanelLeftClose } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SIDEBAR_SECTIONS } from '../../config/routes';
 import NavItem from '../ui/NavItem';
@@ -16,6 +16,8 @@ const ICON_MAP = {
     Shirt,
     Package,
     BarChart2,
+    Building2,
+    UserCheck,
 };
 
 const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onToggleCollapse = () => {} }) => {

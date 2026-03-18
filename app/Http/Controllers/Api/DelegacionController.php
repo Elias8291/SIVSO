@@ -21,13 +21,15 @@ class DelegacionController extends Controller
     {
         $delegadoId = $request->get('delegado_id');
         $search     = trim((string) $request->get('search', ''));
+        $conn       = 'bas_vestuario';
 
-        $query = DB::table('delegacion');
+        $query = DB::connection($conn)->table('delegacion');
 
         if ($delegadoId) {
-            $delegado = DB::table('delegado')->where('id', (int) $delegadoId)->first();
+            $delegado = DB::connection($conn)->table('delegado')->where('id', (int) $delegadoId)->first();
             if ($delegado) {
-                $query->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delegado->delegacion])
+                $delCode = str_replace('-', '', (string) $delegado->delegacion);
+                $query->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delCode])
                       ->where('ur', $delegado->ur);
             }
         }
@@ -71,7 +73,7 @@ class DelegacionController extends Controller
             return response()->json(['data' => []]);
         }
 
-        $rows = DB::table('delegacion')
+        $rows = DB::connection('bas_vestuario')->table('delegacion')
             ->where('ur', (int) $ur)
             ->selectRaw('delegacion AS clave, COUNT(*) AS trabajadores_count')
             ->groupBy('delegacion')

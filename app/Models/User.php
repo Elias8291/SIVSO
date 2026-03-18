@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,6 +19,7 @@ class User extends Authenticatable
         'email',
         'password',
         'activo',
+        'delegado_id',
     ];
 
     protected $hidden = [
@@ -39,8 +41,8 @@ class User extends Authenticatable
         return $this->hasOne(Empleado::class);
     }
 
-    public function delegado(): HasOne
+    public function delegado(): BelongsTo
     {
-        return $this->hasOne(Delegado::class);
+        return $this->belongsTo(Delegado::class);
     }
 }

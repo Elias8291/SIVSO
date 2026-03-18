@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, KeyRound, Hash, CheckCircle, ChevronRight } from 'lucide-react';
+import { User, KeyRound, Hash, CheckCircle, ChevronRight, UserCheck } from 'lucide-react';
 import { PageHeader } from '../components/ui';
 import { api } from '../lib/api';
 
@@ -16,12 +16,23 @@ function Field({ label, error, children }) {
     );
 }
 
-function Inp({ ...props }) {
+function Inp({ className = '', ...props }) {
     return (
         <input
-            className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
+            className={`w-full min-w-0 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all ${className}`}
             {...props}
         />
+    );
+}
+
+function Sel({ className = '', ...props }) {
+    return (
+        <select
+            className={`w-full min-w-0 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all ${className}`}
+            {...props}
+        >
+            {props.children}
+        </select>
     );
 }
 
@@ -73,6 +84,12 @@ export default function MiCuentaPage() {
     const [errNue, setErrNue]       = useState({});
     const [savingNue, setSavingNue] = useState(false);
 
+    // Delegado asignado
+    const [delegados, setDelegados]     = useState([]);
+    const [delegadoId, setDelegadoId]   = useState('');
+    const [savingDel, setSavingDel]     = useState(false);
+    const [errDel, setErrDel]           = useState({});
+
     useEffect(() => {
         api.get('/api/perfil')
             .then((res) => {
@@ -83,10 +100,21 @@ export default function MiCuentaPage() {
                     email: res.user?.email ?? '',
                 });
                 setFormNue({ nue: res.empleado?.nue ?? res.user?.nue ?? '' });
+                setDelegadoId(res.user?.delegado_id ? String(res.user.delegado_id) : '');
             })
             .catch(() => {})
             .finally(() => setLoading(false));
     }, []);
+
+    // Cargar delegados para el selector (filtrados por UR si tiene empleado)
+    useEffect(() => {
+        if (!profile) return;
+        const ur = profile?.empleado?.ur ?? profile?.empleado?.dependencia_clave ?? '';
+        const url = ur ? `/api/delegados?ur=${ur}` : '/api/delegados';
+        api.get(url)
+            .then((r) => setDelegados(r.data ?? []))
+            .catch(() => setDelegados([]));
+    }, [profile]);
 
     const showToast = (msg) => setToast(msg);
 
@@ -108,11 +136,21 @@ export default function MiCuentaPage() {
         finally { setSavingNue(false); }
     };
 
+    const saveDelegado = async (e) => {
+        e.preventDefault(); setSavingDel(true); setErrDel({});
+        try {
+            await api.put('/api/perfil/delegado', { delegado_id: delegadoId ? parseInt(delegadoId, 10) : null });
+            setProfile((p) => p ? { ...p, user: { ...p.user, delegado_id: delegadoId ? parseInt(delegadoId, 10) : null }, delegado: delegados.find((d) => String(d.id) === delegadoId) || null } : p);
+            showToast('Delegado actualizado correctamente.');
+        } catch (err) { setErrDel(err.errors ?? { general: err.message }); }
+        finally { setSavingDel(false); }
+    };
+
     const initials = profile?.user?.name
         ?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
     return (
-        <div className="mx-auto w-full max-w-2xl px-4 sm:px-0 text-center sm:text-left">
+        <div className="mx-auto w-full max-w-3xl px-4 sm:px-0 text-center sm:text-left">
             <PageHeader
                 title="Mi Cuenta"
                 description="Gestiona tu información personal y credenciales de acceso."
@@ -155,14 +193,12 @@ export default function MiCuentaPage() {
                                 <Field label="Nombre completo" error={errInfo.name}>
                                     <Inp value={formInfo.name} onChange={(e) => setFormInfo({ ...formInfo, name: e.target.value })} placeholder="Nombre completo" />
                                 </Field>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <Field label="RFC" error={errInfo.rfc}>
-                                        <Inp value={formInfo.rfc} onChange={(e) => setFormInfo({ ...formInfo, rfc: e.target.value.toUpperCase() })} placeholder="RFC" maxLength={20} />
-                                    </Field>
-                                    <Field label="Correo electrónico" error={errInfo.email}>
-                                        <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" />
-                                    </Field>
-                                </div>
+                                <Field label="RFC" error={errInfo.rfc}>
+                                    <Inp value={formInfo.rfc} onChange={(e) => setFormInfo({ ...formInfo, rfc: e.target.value.toUpperCase() })} placeholder="RFC" maxLength={20} />
+                                </Field>
+                                <Field label="Correo electrónico" error={errInfo.email}>
+                                    <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" inputMode="email" autoComplete="email" />
+                                </Field>
                                 <div className="flex justify-center sm:justify-end pt-0.5">
                                     <button type="submit" disabled={savingInfo}
                                         className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
@@ -200,6 +236,38 @@ export default function MiCuentaPage() {
                             </SectionCard>
                         )}
                     </div>
+
+                    {/* Delegado asignado — selector para asignar o cambiar */}
+                    <SectionCard
+                        icon={UserCheck}
+                        title="Mi Delegado"
+                        description={profile?.delegado ? `${profile.delegado.nombre} · ${profile.delegado.clave}` : 'Asigna un delegado a tu cuenta para ver Mi Delegación.'}
+                    >
+                        <form onSubmit={saveDelegado} className="space-y-3">
+                            {errDel.general && (
+                                <p className="text-[14px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errDel.general}</p>
+                            )}
+                            <Field label="Delegado" error={errDel.delegado_id?.[0]}>
+                                <Sel
+                                    value={delegadoId}
+                                    onChange={(e) => setDelegadoId(e.target.value)}
+                                >
+                                    <option value="">— Sin delegado asignado —</option>
+                                    {delegados.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.nombre} · {d.clave}{d.trabajadores_count != null ? ` (${d.trabajadores_count} empleados)` : ''}
+                                        </option>
+                                    ))}
+                                </Sel>
+                            </Field>
+                            <div className="flex justify-center sm:justify-end pt-0.5">
+                                <button type="submit" disabled={savingDel}
+                                    className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                    {savingDel ? 'Guardando…' : 'Guardar delegado'}
+                                </button>
+                            </div>
+                        </form>
+                    </SectionCard>
 
                     {/* Cambiar contraseña — compacto */}
                     <Link
