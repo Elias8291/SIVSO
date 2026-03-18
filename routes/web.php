@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\EmpleadoController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\VestuarioController;
 use App\Http\Controllers\Api\PresupuestoController;
+use App\Http\Controllers\Api\ProgramasController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -79,6 +80,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
 
     // Panel 3: Trabajadores de un delegado (tabla: delegacion — por REPLACE(delegacion,'-','') = delegado.delegacion)
     Route::get('trabajadores',                    [DelegacionController::class, 'index']);
+
+    // Panel 4: Programas/partidas del trabajador (tabla: concentrado)
+    Route::get('programas',                       [ProgramasController::class, 'index']);
 
     // Catálogo de códigos de delegación por UR (para filtros y modales en EmpleadosPage)
     Route::get('delegaciones',                    [DelegacionController::class, 'codigos']);

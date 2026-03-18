@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
  * @param {object} meta     - { current_page, last_page, total, from, to }
  * @param {function} onPage - (pageNumber) => void
  */
-export default function Pagination({ meta, onPage }) {
+export default function Pagination({ meta, onPage, onPageChange }) {
+    const handlePage = onPage ?? onPageChange;
     if (!meta || meta.last_page <= 1) return null;
 
     const { current_page: current, last_page: last, total, from, to } = meta;
@@ -18,7 +19,7 @@ export default function Pagination({ meta, onPage }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-3.5 border-t border-zinc-50 dark:border-zinc-800/60">
 
             {/* Info */}
-            <p className="text-[10px] text-zinc-400 whitespace-nowrap">
+            <p className="text-[13px] text-zinc-400 whitespace-nowrap">
                 Mostrando{' '}
                 <span className="font-bold text-zinc-600 dark:text-zinc-300">{from}–{to}</span>
                 {' '}de{' '}
@@ -30,7 +31,7 @@ export default function Pagination({ meta, onPage }) {
             <div className="flex items-center gap-1">
                 {/* Anterior */}
                 <PageBtn
-                    onClick={() => onPage(current - 1)}
+                    onClick={() => handlePage(current - 1)}
                     disabled={current === 1}
                     aria-label="Página anterior"
                 >
@@ -40,13 +41,13 @@ export default function Pagination({ meta, onPage }) {
                 {/* Números */}
                 {range.map((item, i) =>
                     item === '…' ? (
-                        <span key={`ellipsis-${i}`} className="px-1 text-[11px] text-zinc-400 select-none">
+                        <span key={`ellipsis-${i}`} className="px-1 text-[14px] text-zinc-400 select-none">
                             …
                         </span>
                     ) : (
                         <PageBtn
                             key={item}
-                            onClick={() => onPage(item)}
+                            onClick={() => handlePage(item)}
                             active={item === current}
                         >
                             {item}
@@ -56,7 +57,7 @@ export default function Pagination({ meta, onPage }) {
 
                 {/* Siguiente */}
                 <PageBtn
-                    onClick={() => onPage(current + 1)}
+                    onClick={() => handlePage(current + 1)}
                     disabled={current === last}
                     aria-label="Página siguiente"
                 >
@@ -74,7 +75,7 @@ function PageBtn({ onClick, disabled, active, children, ...props }) {
             onClick={onClick}
             disabled={disabled}
             {...props}
-            className={`min-w-[30px] h-[30px] px-2 rounded-lg text-[11px] font-semibold transition-all flex items-center justify-center
+            className={`min-w-[30px] h-[30px] px-2 rounded-lg text-[14px] font-semibold transition-all flex items-center justify-center
                 ${active
                     ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
                     : disabled

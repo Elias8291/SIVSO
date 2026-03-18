@@ -12,9 +12,9 @@ const EMPTY_FORM = {
 function Field({ label, error, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
+            <label className="block text-[13px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[13px] text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -86,8 +86,8 @@ export default function ProductosPage() {
             label: 'Clave',
             render: (v, row) => (
                 <div>
-                    <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">{v || row.codigo || '—'}</p>
-                    {row.marca && <p className="text-[9px] text-zinc-400 mt-0.5">{row.marca}</p>}
+                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wider">{v || row.codigo || '—'}</p>
+                    {row.marca && <p className="text-[14px] text-zinc-400 mt-0.5">{row.marca}</p>}
                 </div>
             ),
         },
@@ -95,21 +95,21 @@ export default function ProductosPage() {
             key: 'descripcion',
             label: 'Descripción',
             render: (v) => (
-                <p className="text-[11px] text-zinc-700 dark:text-zinc-300 max-w-xs leading-snug line-clamp-2">{v}</p>
+                <p className="text-[13px] text-zinc-700 dark:text-zinc-300 max-w-xs leading-snug line-clamp-2">{v}</p>
             ),
         },
         {
             key: 'partida',
             label: 'Partida',
             render: (v, row) => (
-                <span className="text-[11px] text-zinc-500">{v}-{row.partida_especifica}-{row.lote || '?'}</span>
+                <span className="text-[13px] text-zinc-500">{v}-{row.partida_especifica}-{row.lote || '?'}</span>
             ),
         },
         {
             key: 'unidad',
             label: 'Unidad / Medida',
             render: (v, row) => (
-                <span className="text-[11px] text-zinc-500">{v || '—'}{row.medida ? ` / ${row.medida}` : ''}</span>
+                <span className="text-[13px] text-zinc-500">{v || '—'}{row.medida ? ` / ${row.medida}` : ''}</span>
             ),
         },
         {
@@ -126,7 +126,7 @@ export default function ProductosPage() {
                 description="Catálogo de artículos de vestuario y calzado."
                 actions={
                     <button onClick={openCreate}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
                         <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
                     </button>
                 }
@@ -186,7 +186,7 @@ export default function ProductosPage() {
             >
                 <form id="form-producto" onSubmit={handleSubmit} className="space-y-4">
                     {errors.general && (
-                        <p className="text-[11px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errors.general}</p>
+                        <p className="text-[14px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errors.general}</p>
                     )}
 
                     <Field label="Descripción" error={errors.descripcion}>
@@ -234,7 +234,7 @@ export default function ProductosPage() {
                             onChange={(e) => setForm(p => ({ ...p, activo: e.target.checked }))}
                             className="rounded accent-[#AF9460]"
                         />
-                        <label htmlFor="activo-prod" className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                        <label htmlFor="activo-prod" className="text-[14px] text-zinc-600 dark:text-zinc-400">
                             Producto activo en el catálogo
                         </label>
                     </div>

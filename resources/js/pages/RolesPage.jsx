@@ -9,9 +9,9 @@ const EMPTY_FORM = { name: '', guard_name: 'web', permissions: [] };
 function Field({ label, error, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
+            <label className="block text-[13px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[13px] text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -112,7 +112,7 @@ export default function RolesPage() {
                     <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
                         <Shield size={13} className="text-[#AF9460]" strokeWidth={2} />
                     </div>
-                    <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide">{val}</span>
+                    <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-wide">{val}</span>
                 </div>
             ),
         },
@@ -120,18 +120,18 @@ export default function RolesPage() {
             key: 'guard_name',
             label: 'Guard',
             render: (val) => (
-                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[10px] font-mono border border-zinc-100 dark:border-zinc-700">{val}</span>
+                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[12px] font-mono border border-zinc-100 dark:border-zinc-700">{val}</span>
             ),
         },
         {
             key: 'permisos_count',
             label: 'Permisos',
-            render: (val) => <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">{val}</span>,
+            render: (val) => <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-300">{val}</span>,
         },
         {
             key: 'users_count',
             label: 'Usuarios',
-            render: (val) => <span className="text-[11px] text-zinc-500">{val}</span>,
+            render: (val) => <span className="text-[13px] text-zinc-500">{val}</span>,
         },
     ];
 
@@ -142,7 +142,7 @@ export default function RolesPage() {
                 description="Grupos de permisos asignables a usuarios del sistema."
                 actions={
                     <button onClick={openCreate}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
                         <Plus size={13} strokeWidth={2.5} /> Nuevo Rol
                     </button>
                 }
@@ -169,11 +169,11 @@ export default function RolesPage() {
                 footer={
                     <>
                         <button type="button" onClick={closeModal} disabled={saving}
-                            className="px-4 py-2 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
+                            className="px-4 py-2 rounded-xl text-[14px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
                             Cancelar
                         </button>
                         <button type="submit" form="role-form" disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
                             {saving && <span className="size-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                             {modal === 'create' ? 'Crear Rol' : 'Guardar Cambios'}
                         </button>
@@ -204,7 +204,7 @@ export default function RolesPage() {
                                     <div key={module} className="rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden">
                                         <button type="button" onClick={() => toggleModulo(modPermisos)}
                                             className="w-full flex items-center justify-between px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 capitalize">{module}</span>
+                                            <span className="text-[13px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 capitalize">{module}</span>
                                             <span className={`size-4 rounded border-2 flex items-center justify-center transition-all ${
                                                 allSelected ? 'bg-[#AF9460] border-[#AF9460]'
                                                 : someSelected ? 'border-[#AF9460]' : 'border-zinc-300 dark:border-zinc-600'
@@ -215,7 +215,7 @@ export default function RolesPage() {
                                         </button>
                                         <div className="grid grid-cols-2 gap-1 p-2">
                                             {modPermisos.map((p) => (
-                                                <label key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-[10px] font-medium ${
+                                                <label key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all text-[13px] font-medium ${
                                                     form.permissions.includes(p.id)
                                                         ? 'bg-[#AF9460]/8 text-[#AF9460] border border-[#AF9460]/20'
                                                         : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 border border-transparent'

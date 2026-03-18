@@ -43,7 +43,7 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
                     <div className="flex items-center gap-2.5">
                         <span className="size-1.5 bg-[#AF9460] rounded-full" />
-                        <h3 className="text-[12px] font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+                        <h3 className="text-[14px] font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
                             {title}
                         </h3>
                     </div>

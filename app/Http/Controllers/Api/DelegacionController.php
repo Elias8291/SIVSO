@@ -22,28 +22,25 @@ class DelegacionController extends Controller
         $delegadoId = $request->get('delegado_id');
         $search     = trim((string) $request->get('search', ''));
 
-        if (!$delegadoId) {
-            return response()->json(['data' => []]);
+        $query = DB::table('delegacion');
+
+        if ($delegadoId) {
+            $delegado = DB::table('delegado')->where('id', (int) $delegadoId)->first();
+            if ($delegado) {
+                $query->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delegado->delegacion])
+                      ->where('ur', $delegado->ur);
+            }
         }
 
-        $delegado = DB::table('delegado')->where('id', (int) $delegadoId)->first();
-        if (!$delegado) {
-            return response()->json(['data' => []]);
-        }
+        $query->when($search, fn ($q) => $q->where(fn ($q2) =>
+            $q2->where('nombre_trab',  'like', "%{$search}%")
+               ->orWhere('apellp_trab', 'like', "%{$search}%")
+               ->orWhere('apellm_trab', 'like', "%{$search}%")
+               ->orWhere('nue',         'like', "%{$search}%")
+        ));
 
-        // Trabajadores cuyo código de delegación (sin guión) coincide con el del delegado
-        $rows = DB::table('delegacion')
-            ->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delegado->delegacion])
-            ->where('ur', $delegado->ur)
-            ->when($search, fn ($q) =>
-                $q->where(fn ($q2) =>
-                    $q2->where('nombre_trab',  'like', "%{$search}%")
-                       ->orWhere('apellp_trab', 'like', "%{$search}%")
-                       ->orWhere('apellm_trab', 'like', "%{$search}%")
-                       ->orWhere('nue',         'like', "%{$search}%")
-                )
-            )
-            ->orderByRaw('apellp_trab, apellm_trab, nombre_trab')
+        $rows = $query->orderByRaw('apellp_trab, apellm_trab, nombre_trab')
+            ->limit(200)
             ->get(['id', 'nue', 'nombre_trab', 'apellp_trab', 'apellm_trab', 'delegacion', 'ur']);
 
         $data = $rows->map(fn ($t) => [

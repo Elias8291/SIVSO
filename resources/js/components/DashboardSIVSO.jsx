@@ -28,7 +28,7 @@ const DashboardSIVSO = () => {
                     <h1 className="text-2xl font-extrabold tracking-[0.2em] dark:text-white">
                         SIVSO<span className="text-[#AF9460]">.</span>
                     </h1>
-                    <p className="text-[8px] text-zinc-400 uppercase tracking-[0.3em] mt-1 font-bold">Oaxaca Institucional</p>
+                    <p className="text-[11px] text-zinc-400 uppercase tracking-[0.3em] mt-1 font-bold">Oaxaca Institucional</p>
                 </div>
 
                 <nav className="flex-1 px-6 space-y-2">
@@ -59,7 +59,7 @@ const DashboardSIVSO = () => {
                     <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all duration-200"
+                        className="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[13px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all duration-200"
                     >
                         <LogOut size={14} /> Cerrar Sesión
                     </button>
@@ -70,7 +70,7 @@ const DashboardSIVSO = () => {
             <main className="flex-1 lg:ml-64 flex flex-col">
                 <header className="h-20 bg-white/70 dark:bg-[#080808]/70 backdrop-blur-xl border-b border-zinc-100 dark:border-zinc-900 sticky top-0 z-40 flex items-center justify-between px-10">
                     <div className="flex items-center gap-4">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Global / {activeTab}</span>
+                        <span className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">Global / {activeTab}</span>
                     </div>
 
                     <div className="flex items-center gap-6">
@@ -83,7 +83,7 @@ const DashboardSIVSO = () => {
                         <div className="h-8 w-px bg-zinc-100 dark:bg-zinc-800" />
                         <div className="flex items-center gap-4 group cursor-pointer">
                             <div className="text-right hidden sm:block">
-                                <p className="text-[10px] font-bold dark:text-white uppercase tracking-tighter group-hover:text-[#AF9460] transition-colors">{user.name}</p>
+                                <p className="text-[13px] font-bold dark:text-white uppercase tracking-tighter group-hover:text-[#AF9460] transition-colors">{user.name}</p>
                                 <p className="text-[9px] text-zinc-400 font-medium">{user.email}</p>
                             </div>
                             <div className="size-10 rounded-full border-2 border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-zinc-50 dark:bg-[#111111] group-hover:border-[#AF9460] transition-all overflow-hidden">
@@ -120,7 +120,7 @@ const DashboardSIVSO = () => {
                                 <span className="size-2 bg-[#AF9460] rounded-full" />
                                 Actividad Reciente
                             </h3>
-                            <button className="text-[10px] font-black text-[#AF9460] uppercase tracking-widest hover:tracking-[0.2em] transition-all">Reporte Global</button>
+                            <button className="text-[13px] font-black text-[#AF9460] uppercase tracking-widest hover:tracking-[0.2em] transition-all">Reporte Global</button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -182,13 +182,13 @@ const TableRow = ({ rfc, name, type, status }) => (
     <tr className="group hover:bg-zinc-50/50 dark:hover:bg-[#111111]/40 transition-colors">
         <td className="px-8 py-6">
             <p className="font-bold dark:text-white uppercase tracking-wider text-[11px]">{rfc}</p>
-            <p className="text-[10px] text-zinc-500 mt-1 font-medium">{name}</p>
+            <p className="text-[13px] text-zinc-500 mt-1 font-medium">{name}</p>
         </td>
         <td className="px-8 py-6">
-            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">{type}</span>
+            <span className="text-[13px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">{type}</span>
         </td>
         <td className="px-8 py-6">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border ${
                 status === 'entregado'
                     ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20'
                     : 'bg-[#AF9460]/10 text-[#AF9460] border-[#AF9460]/20'

@@ -20,7 +20,7 @@ export default function StatusBadge({ status }) {
     const dot    = DOTS[key]    ?? 'bg-zinc-400';
 
     return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider border ${variant}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider border ${variant}`}>
             <span className={`size-1.5 rounded-full shrink-0 ${dot}`} />
             {status}
         </span>

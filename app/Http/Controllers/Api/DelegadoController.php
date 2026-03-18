@@ -22,33 +22,38 @@ class DelegadoController extends Controller
         $ur     = $request->get('ur');
         $search = trim((string) $request->get('search', ''));
 
-        if (!$ur) {
-            return response()->json(['data' => []]);
+        $query = DB::table('delegado');
+
+        if ($ur) {
+            $query->where('ur', (int) $ur);
         }
 
-        $rows = DB::table('delegado')
-            ->where('ur', (int) $ur)
-            ->when($search, fn ($q) => $q->where('nombre', 'like', "%{$search}%"))
-            ->orderBy('nombre')
+        $query->when($search, fn ($q) => $q->where(fn ($q2) =>
+            $q2->where('nombre', 'like', "%{$search}%")
+               ->orWhere('delegacion', 'like', "%{$search}%")
+        ));
+
+        $rows = $query->orderBy('ur')->orderBy('nombre')
+            ->limit(200)
             ->get(['id', 'nombre', 'delegacion', 'ur']);
 
         if ($rows->isEmpty()) {
             return response()->json(['data' => []]);
         }
 
-        // Contar trabajadores por código de delegación (quitando guión de delegacion.delegacion)
+        // Contar trabajadores por (ur, delegacion sin guión)
         $trabCounts = DB::table('delegacion')
-            ->where('ur', (int) $ur)
-            ->selectRaw("REPLACE(delegacion, '-', '') AS del_code, COUNT(*) AS cnt")
-            ->groupByRaw("REPLACE(delegacion, '-', '')")
-            ->pluck('cnt', 'del_code');
+            ->selectRaw("ur, REPLACE(delegacion, '-', '') AS del_code, COUNT(*) AS cnt")
+            ->groupByRaw("ur, REPLACE(delegacion, '-', '')")
+            ->get()
+            ->keyBy(fn ($r) => "{$r->ur}_{$r->del_code}");
 
         $data = $rows->map(fn ($d) => [
             'id'                 => $d->id,
             'clave'              => $d->delegacion,   // código ej: "3B101"
             'nombre'             => $d->nombre,
             'ur'                 => $d->ur,
-            'trabajadores_count' => (int) $trabCounts->get($d->delegacion, 0),
+            'trabajadores_count' => (int) ($trabCounts->get("{$d->ur}_{$d->delegacion}")?->cnt ?? 0),
         ]);
 
         return response()->json(['data' => $data]);

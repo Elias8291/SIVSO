@@ -15,9 +15,9 @@ const SUGGESTED_ACTIONS = ['ver', 'crear', 'editar', 'eliminar', 'exportar'];
 function Field({ label, error, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
+            <label className="block text-[13px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">{label}</label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[13px] text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -105,11 +105,11 @@ export default function PermisosPage() {
                             <Lock size={12} className="text-zinc-400" strokeWidth={2} />
                         </div>
                         <div>
-                            <span className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
+                            <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
                             {mod && act && (
                                 <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="px-1.5 py-px rounded bg-[#AF9460]/10 text-[#AF9460] text-[8px] font-bold uppercase">{mod}</span>
-                                    <span className="text-[8px] text-zinc-400">{act}</span>
+                                    <span className="px-1.5 py-px rounded bg-[#AF9460]/10 text-[#AF9460] text-[13px] font-bold uppercase">{mod}</span>
+                                    <span className="text-[13px] text-zinc-400">{act}</span>
                                 </div>
                             )}
                         </div>
@@ -121,7 +121,7 @@ export default function PermisosPage() {
             key: 'guard_name',
             label: 'Guard',
             render: (val) => (
-                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[10px] font-mono border border-zinc-100 dark:border-zinc-700">{val}</span>
+                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[12px] font-mono border border-zinc-100 dark:border-zinc-700">{val}</span>
             ),
         },
     ];
@@ -133,7 +133,7 @@ export default function PermisosPage() {
                 description="Control granular de acciones disponibles en el sistema."
                 actions={
                     <button onClick={openCreate}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
                         <Plus size={13} strokeWidth={2.5} /> Nuevo Permiso
                     </button>
                 }
@@ -151,20 +151,20 @@ export default function PermisosPage() {
                 <div className="flex flex-wrap gap-2 mb-6">
                     {Object.entries(allModules).map(([mod, count]) => (
                         <button key={mod} onClick={() => setSearch(mod)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[9px] font-bold uppercase tracking-wider transition-all ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold uppercase tracking-wider transition-all ${
                                 search === mod
                                     ? 'bg-[#AF9460] border-[#AF9460] text-white'
                                     : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-[#AF9460]/40'
                             }`}>
                             {mod}
-                            <span className={`size-4 rounded-md text-[9px] font-black flex items-center justify-center ${
+                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${
                                 search === mod ? 'bg-white/20 text-white' : 'bg-[#AF9460]/10 text-[#AF9460]'
                             }`}>{count}</span>
                         </button>
                     ))}
                     {search && (
                         <button onClick={() => setSearch('')}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[9px] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all">
+                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[12px] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all">
                             × Limpiar
                         </button>
                     )}
@@ -185,11 +185,11 @@ export default function PermisosPage() {
                 footer={
                     <>
                         <button type="button" onClick={closeModal} disabled={saving}
-                            className="px-4 py-2 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
+                            className="px-4 py-2 rounded-xl text-[14px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
                             Cancelar
                         </button>
                         <button type="submit" form="permiso-form" disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
                             {saving && <span className="size-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                             {modal === 'create' ? 'Crear Permiso' : 'Guardar'}
                         </button>
@@ -203,25 +203,25 @@ export default function PermisosPage() {
 
                     {modal === 'create' && (
                         <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800 space-y-3">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Generador Rápido</p>
+                            <p className="text-[13px] font-bold uppercase tracking-widest text-zinc-400">Generador Rápido</p>
                             <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                    <p className="text-[9px] text-zinc-400 mb-1 uppercase tracking-wider font-medium">Módulo</p>
+                                    <p className="text-[12px] text-zinc-400 mb-1 uppercase tracking-wider font-medium">Módulo</p>
                                     <div className="flex flex-wrap gap-1">
                                         {SUGGESTED_MODULES.map((m) => (
                                             <button key={m} type="button" onClick={() => setModule(m)}
-                                                className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${
+                                                className={`px-2 py-1 rounded-lg text-[12px] font-bold uppercase border transition-all ${
                                                     module === m ? 'bg-[#AF9460] border-[#AF9460] text-white' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-[#AF9460]/40'
                                                 }`}>{m}</button>
                                         ))}
                                     </div>
                                 </div>
                                 <div>
-                                    <p className="text-[9px] text-zinc-400 mb-1 uppercase tracking-wider font-medium">Acción</p>
+                                    <p className="text-[12px] text-zinc-400 mb-1 uppercase tracking-wider font-medium">Acción</p>
                                     <div className="flex flex-wrap gap-1">
                                         {SUGGESTED_ACTIONS.map((a) => (
                                             <button key={a} type="button" onClick={() => setAction(a)}
-                                                className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase border transition-all ${
+                                                className={`px-2 py-1 rounded-lg text-[12px] font-bold uppercase border transition-all ${
                                                     action === a ? 'bg-[#AF9460] border-[#AF9460] text-white' : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-[#AF9460]/40'
                                                 }`}>{a}</button>
                                         ))}
@@ -233,7 +233,7 @@ export default function PermisosPage() {
 
                     <Field label="Nombre (módulo.acción)" error={errors.name?.[0]}>
                         <Inp value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej. usuarios.crear" required />
-                        <p className="text-[9px] text-zinc-400 mt-1">
+                        <p className="text-[12px] text-zinc-400 mt-1">
                             Formato: <code className="font-mono bg-zinc-100 dark:bg-zinc-800 px-1 rounded">modulo.accion</code>
                         </p>
                     </Field>

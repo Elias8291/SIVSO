@@ -9,11 +9,11 @@ const EMPTY_FORM = { name: '', rfc: '', email: '', password: '', activo: true, r
 function Field({ label, error, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">
+            <label className="block text-[13px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">
                 {label}
             </label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[13px] text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -109,15 +109,15 @@ export default function UsuariosPage() {
             label: 'Usuario',
             render: (val, row) => (
                 <div>
-                    <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 tracking-wide leading-none">{val ?? '—'}</p>
-                    <p className="text-[10px] text-zinc-400 mt-1 font-mono leading-none">{row.rfc}</p>
+                    <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200 tracking-wide leading-none">{val ?? '—'}</p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5 font-mono leading-none">{row.rfc}</p>
                 </div>
             ),
         },
         {
             key: 'email',
             label: 'Correo',
-            render: (val) => <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{val ?? '—'}</span>,
+            render: (val) => <span className="text-[12px] text-zinc-500 dark:text-zinc-400">{val ?? '—'}</span>,
         },
         {
             key: 'roles_names',
@@ -126,9 +126,9 @@ export default function UsuariosPage() {
                 <div className="flex flex-wrap gap-1">
                     {val?.length
                         ? val.map((r) => (
-                            <span key={r} className="px-2 py-0.5 rounded-lg bg-[#AF9460]/10 text-[#AF9460] text-[9px] font-bold uppercase tracking-wider border border-[#AF9460]/20">{r}</span>
+                            <span key={r} className="px-2 py-0.5 rounded-lg bg-[#AF9460]/10 text-[#AF9460] text-[11px] font-bold uppercase tracking-wider border border-[#AF9460]/20">{r}</span>
                         ))
-                        : <span className="text-[10px] text-zinc-400">—</span>
+                        : <span className="text-[11px] text-zinc-400">—</span>
                     }
                 </div>
             ),
@@ -146,23 +146,21 @@ export default function UsuariosPage() {
                 title="Usuarios"
                 description="Gestión de cuentas de acceso al sistema."
             />
-            <div className="flex flex-col gap-3 mb-8">
+            <div className="flex flex-row flex-wrap sm:flex-nowrap items-stretch gap-3 mb-8">
                 <input
                     type="text"
                     placeholder="Buscar por nombre, RFC o correo..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all"
                 />
-                <div className="flex justify-end">
-                    <button
-                        onClick={openCreate}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold tracking-wide hover:opacity-90 active:scale-95 transition-all"
-                    >
-                        <Plus size={13} strokeWidth={2.5} />
-                        Nuevo Usuario
-                    </button>
-                </div>
+                <button
+                    onClick={openCreate}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold tracking-wide hover:opacity-90 active:scale-95 transition-all shrink-0"
+                >
+                    <Plus size={13} strokeWidth={2.5} />
+                    Nuevo Usuario
+                </button>
             </div>
 
             <Card title={`Usuarios${meta.total ? ` (${meta.total})` : ''}`}>
@@ -189,11 +187,11 @@ export default function UsuariosPage() {
                 footer={
                     <>
                         <button type="button" onClick={closeModal} disabled={saving}
-                            className="px-4 py-2 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
+                            className="px-4 py-2 rounded-xl text-[14px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
                             Cancelar
                         </button>
                         <button type="submit" form="user-form" disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
                             {saving && <span className="size-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                             {modal === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
                         </button>
@@ -239,14 +237,14 @@ export default function UsuariosPage() {
                                             <svg width="9" height="9" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                         )}
                                     </span>
-                                    <span className="text-[11px] font-semibold">{role.name}</span>
+                                    <span className="text-[14px] font-semibold">{role.name}</span>
                                 </label>
                             ))}
                         </div>
                     </Field>
 
                     <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all">
-                        <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Usuario activo</span>
+                        <span className="text-[14px] font-semibold text-zinc-600 dark:text-zinc-400">Usuario activo</span>
                         <div onClick={() => setForm((p) => ({ ...p, activo: !p.activo }))}
                             className={`relative w-9 h-5 rounded-full transition-colors ${form.activo ? 'bg-[#AF9460]' : 'bg-zinc-200 dark:bg-zinc-700'}`}>
                             <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.activo ? 'left-4' : 'left-0.5'}`} />

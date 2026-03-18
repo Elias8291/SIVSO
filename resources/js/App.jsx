@@ -9,6 +9,7 @@ import {
     DashboardPage,
     MiVestuarioPage,
     MiCuentaPage,
+    MiCuentaCambiarContrasenaPage,
     EmpleadosPage,
     ProductosPage,
     UsuariosPage,
@@ -41,6 +42,7 @@ export default function App({ initialState }) {
                             <Route index                  element={<DashboardPage />} />
                             <Route path="mi-vestuario"    element={<MiVestuarioPage />} />
                             <Route path="mi-cuenta"       element={<MiCuentaPage />} />
+                            <Route path="mi-cuenta/cambiar-contrasena" element={<MiCuentaCambiarContrasenaPage />} />
                             <Route path="empleados"       element={<EmpleadosPage />} />
                             <Route path="productos"       element={<ProductosPage />} />
                             <Route path="organizacion"    element={<OrganizacionPage />} />

@@ -1,6 +1,7 @@
 export { default as DashboardPage }    from './DashboardPage';
 export { default as MiVestuarioPage }  from './MiVestuarioPage';
 export { default as MiCuentaPage }     from './MiCuentaPage';
+export { default as MiCuentaCambiarContrasenaPage } from './MiCuentaCambiarContrasenaPage';
 export { default as EmpleadosPage }    from './EmpleadosPage';
 export { default as ProductosPage }    from './ProductosPage';
 export { default as UsuariosPage }     from './UsuariosPage';

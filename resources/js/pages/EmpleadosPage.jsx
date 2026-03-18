@@ -15,11 +15,11 @@ const EMPTY_FORM = {
 function Field({ label, error, children }) {
     return (
         <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">
+            <label className="block text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-1.5">
                 {label}
             </label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[12px] text-red-500 mt-1">{error}</p>}
         </div>
     );
 }
@@ -47,7 +47,7 @@ function Sel({ children, ...props }) {
 /* ── Chip de filtro ────────────────────────────────────────────────────────── */
 function FilterChip({ label, onClear }) {
     return (
-        <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-[#AF9460]/10 border border-[#AF9460]/25 text-[10px] font-bold text-[#AF9460]">
+        <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-[#AF9460]/10 border border-[#AF9460]/25 text-[12px] font-bold text-[#AF9460]">
             {label}
             <button onClick={onClear} className="size-4 rounded-full hover:bg-[#AF9460]/20 flex items-center justify-center transition-all">
                 ×
@@ -186,7 +186,7 @@ export default function EmpleadosPage() {
             key: 'nue',
             label: 'NUE',
             render: (v) => (
-                <span className="text-[11px] font-mono font-bold text-zinc-700 dark:text-zinc-300 tracking-wider">{v}</span>
+                <span className="text-[12px] font-mono font-bold text-zinc-700 dark:text-zinc-300 tracking-wider">{v}</span>
             ),
         },
         {
@@ -194,9 +194,9 @@ export default function EmpleadosPage() {
             label: 'Nombre',
             render: (v, row) => (
                 <div>
-                    <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
+                    <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
                     {row.user_id && (
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-[9px] text-[#AF9460] font-semibold">
+                        <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] text-[#AF9460] font-semibold">
                             <UserCheck size={9} strokeWidth={2.5} /> Vinculado
                         </span>
                     )}
@@ -208,9 +208,9 @@ export default function EmpleadosPage() {
             label: 'Dependencia',
             render: (v, row) => (
                 <div>
-                    <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
+                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
                     {row.dependencia_nombre && (
-                        <p className="text-[9px] text-zinc-400 mt-0.5 max-w-[160px] truncate">{row.dependencia_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[160px] truncate">{row.dependencia_nombre}</p>
                     )}
                 </div>
             ),
@@ -221,9 +221,9 @@ export default function EmpleadosPage() {
             label: 'Delegación',
             render: (v, row) => (
                 <div>
-                    <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
+                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
                     {row.delegacion_nombre && (
-                        <p className="text-[9px] text-zinc-400 mt-0.5 max-w-[140px] truncate">{row.delegacion_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[140px] truncate">{row.delegacion_nombre}</p>
                     )}
                 </div>
             ),
@@ -246,7 +246,7 @@ export default function EmpleadosPage() {
                 description="Registro de empleados vinculados al sistema de vestuario."
                 actions={
                     <button onClick={openCreate}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
                         <Plus size={13} strokeWidth={2.5} /> Nuevo Empleado
                     </button>
                 }
@@ -323,11 +323,11 @@ export default function EmpleadosPage() {
                 footer={
                     <>
                         <button type="button" onClick={() => setModal(null)} disabled={saving}
-                            className="px-4 py-2 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
+                            className="px-4 py-2 rounded-xl text-[13px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50">
                             Cancelar
                         </button>
                         <button type="submit" form="emp-form" disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold disabled:opacity-60 hover:opacity-90 transition-all">
                             {saving && <span className="size-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                             {modal === 'create' ? 'Crear Empleado' : 'Guardar Cambios'}
                         </button>
@@ -387,8 +387,8 @@ export default function EmpleadosPage() {
                         {userLinked ? (
                             <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-[#AF9460]/40 bg-[#AF9460]/5">
                                 <div>
-                                    <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200">{userLinked.name}</p>
-                                    <p className="text-[9px] text-zinc-400 font-mono">{userLinked.rfc}</p>
+                                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{userLinked.name}</p>
+                                    <p className="text-[11px] text-zinc-400 font-mono">{userLinked.rfc}</p>
                                 </div>
                                 <button type="button"
                                     onClick={() => { setUserLinked(null); setForm(p => ({ ...p, user_id: '' })); resetUserSearch(); }}
@@ -414,15 +414,15 @@ export default function EmpleadosPage() {
                                                 onClick={() => { setUserLinked(u); setForm(p => ({ ...p, user_id: u.id })); resetUserSearch(); }}
                                                 className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-[#AF9460]/5 transition-all">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{u.name}</p>
-                                                    <p className="text-[9px] text-zinc-400 font-mono">{u.rfc}</p>
+                                                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{u.name}</p>
+                                                    <p className="text-[11px] text-zinc-400 font-mono">{u.rfc}</p>
                                                 </div>
                                             </button>
                                         ))}
                                     </div>
                                 )}
                                 {!userResults.length && userSearch && (
-                                    <p className="text-[10px] text-zinc-400 px-1">Sin resultados.</p>
+                                    <p className="text-[12px] text-zinc-400 px-1">Sin resultados.</p>
                                 )}
                             </div>
                         )}
@@ -430,7 +430,7 @@ export default function EmpleadosPage() {
 
                     {/* Activo */}
                     <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all">
-                        <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">Empleado activo</span>
+                        <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Empleado activo</span>
                         <div onClick={() => setForm(p => ({ ...p, activo: !p.activo }))}
                             className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-[#AF9460]' : 'bg-zinc-200 dark:bg-zinc-700'}`}>
                             <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.activo ? 'left-4' : 'left-0.5'}`} />

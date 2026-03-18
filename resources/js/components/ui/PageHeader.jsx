@@ -11,9 +11,9 @@
  *   actions     node    (solo botones, sin buscador)
  *   search      node    (el <SearchInput> o similar)
  */
-export default function PageHeader({ title, description, actions, search }) {
+export default function PageHeader({ title, description, actions, search, compact }) {
     return (
-        <header className="mb-8 space-y-3">
+        <header className={`${compact ? 'mb-4' : 'mb-8'} space-y-2`}>
             {/* Fila 1: título + acciones */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div>

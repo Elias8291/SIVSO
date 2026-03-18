@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { User, KeyRound, Hash, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { User, KeyRound, Hash, CheckCircle, ChevronRight } from 'lucide-react';
 import { PageHeader } from '../components/ui';
 import { api } from '../lib/api';
 
 function Field({ label, error, children }) {
     return (
-        <div className="space-y-1.5">
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+        <div className="space-y-1">
+            <label className="block text-[13px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                 {label}
             </label>
             {children}
-            {error && <p className="text-[10px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[13px] text-red-500 mt-0.5">{error}</p>}
         </div>
     );
 }
@@ -18,47 +19,25 @@ function Field({ label, error, children }) {
 function Inp({ ...props }) {
     return (
         <input
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
+            className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
             {...props}
         />
     );
 }
 
-function PwdInp({ value, onChange, placeholder }) {
-    const [show, setShow] = useState(false);
-    return (
-        <div className="relative">
-            <input
-                type={show ? 'text' : 'password'}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                className="w-full px-3.5 py-2.5 pr-10 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
-            />
-            <button
-                type="button"
-                onClick={() => setShow(s => !s)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-            >
-                {show ? <EyeOff size={15} strokeWidth={1.8} /> : <Eye size={15} strokeWidth={1.8} />}
-            </button>
-        </div>
-    );
-}
-
 function SectionCard({ icon: Icon, title, description, children }) {
     return (
-        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden">
-            <div className="px-4 sm:px-6 py-5 border-b border-zinc-50 dark:border-zinc-800/60 flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-                <div className="size-8 rounded-xl bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                    <Icon size={15} className="text-[#AF9460]" strokeWidth={1.8} />
+        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden">
+            <div className="px-3 sm:px-4 py-3 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-2.5 text-left">
+                <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
+                    <Icon size={14} className="text-[#AF9460]" strokeWidth={1.8} />
                 </div>
-                <div>
-                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">{title}</p>
-                    {description && <p className="text-[11px] text-zinc-400 mt-0.5">{description}</p>}
+                <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{title}</p>
+                    {description && <p className="text-[13px] text-zinc-400 mt-0.5 line-clamp-1">{description}</p>}
                 </div>
             </div>
-            <div className="px-4 sm:px-6 py-5 text-left">
+            <div className="px-3 sm:px-4 py-3 text-left">
                 {children}
             </div>
         </div>
@@ -88,11 +67,6 @@ export default function MiCuentaPage() {
     const [formInfo, setFormInfo]   = useState({ name: '', rfc: '', email: '' });
     const [errInfo, setErrInfo]     = useState({});
     const [savingInfo, setSavingInfo] = useState(false);
-
-    // Formulario contraseña
-    const [formPwd, setFormPwd]     = useState({ current_password: '', password: '', password_confirmation: '' });
-    const [errPwd, setErrPwd]       = useState({});
-    const [savingPwd, setSavingPwd] = useState(false);
 
     // Formulario NUE (solo si tiene empleado)
     const [formNue, setFormNue]     = useState({ nue: '' });
@@ -125,16 +99,6 @@ export default function MiCuentaPage() {
         finally { setSavingInfo(false); }
     };
 
-    const savePwd = async (e) => {
-        e.preventDefault(); setSavingPwd(true); setErrPwd({});
-        try {
-            await api.put('/api/perfil/password', formPwd);
-            setFormPwd({ current_password: '', password: '', password_confirmation: '' });
-            showToast('Contraseña actualizada correctamente.');
-        } catch (err) { setErrPwd(err.errors ?? { general: err.message }); }
-        finally { setSavingPwd(false); }
-    };
-
     const saveNue = async (e) => {
         e.preventDefault(); setSavingNue(true); setErrNue({});
         try {
@@ -152,27 +116,27 @@ export default function MiCuentaPage() {
             <PageHeader
                 title="Mi Cuenta"
                 description="Gestiona tu información personal y credenciales de acceso."
+                compact
             />
 
             {loading ? (
-                <div className="flex items-center justify-center py-24">
+                <div className="flex items-center justify-center py-16">
                     <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
                 </div>
             ) : (
-                <div className="space-y-5">
-
-                    {/* Avatar + resumen */}
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 px-4 sm:px-6 py-5 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl text-center sm:text-left">
-                        <div className="size-14 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                            <span className="text-xl font-black text-[#AF9460]">{initials}</span>
+                <div className="space-y-3 lg:space-y-4">
+                    {/* Avatar + resumen compacto */}
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-3 sm:px-4 py-3 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl text-center sm:text-left">
+                        <div className="size-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                            <span className="text-base font-black text-[#AF9460]">{initials}</span>
                         </div>
-                        <div>
-                            <p className="text-base font-extrabold text-zinc-900 dark:text-white leading-tight">
+                        <div className="min-w-0">
+                            <p className="text-sm font-extrabold text-zinc-900 dark:text-white leading-tight truncate">
                                 {profile?.user?.name ?? 'Usuario'}
                             </p>
-                            <p className="text-[11px] text-zinc-400 mt-0.5">{profile?.user?.email ?? '—'}</p>
+                            <p className="text-[13px] text-zinc-400 mt-0.5 truncate">{profile?.user?.email ?? '—'}</p>
                             {(profile?.user?.nue || profile?.empleado) && (
-                                <span className="inline-flex items-center justify-center sm:justify-start gap-1.5 mt-1.5 text-[10px] font-semibold text-[#AF9460] bg-[#AF9460]/10 px-2.5 py-0.5 rounded-full">
+                                <span className="inline-flex items-center justify-center sm:justify-start gap-1 mt-1 text-[12px] font-semibold text-[#AF9460] bg-[#AF9460]/10 px-2 py-0.5 rounded-full">
                                     <Hash size={10} strokeWidth={2.5} />
                                     NUE {profile?.empleado?.nue ?? profile?.user?.nue}
                                     {profile?.empleado?.delegacion_clave && ` · ${profile.empleado.delegacion_clave}`}
@@ -181,86 +145,80 @@ export default function MiCuentaPage() {
                         </div>
                     </div>
 
-                    {/* Datos personales */}
-                    <SectionCard icon={User} title="Datos personales" description="Nombre, RFC y correo electrónico.">
-                        <form onSubmit={saveInfo} className="space-y-4">
-                            {errInfo.general && (
-                                <p className="text-[11px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errInfo.general}</p>
-                            )}
-                            <Field label="Nombre completo" error={errInfo.name}>
-                                <Inp value={formInfo.name} onChange={(e) => setFormInfo({ ...formInfo, name: e.target.value })} placeholder="Nombre completo" />
-                            </Field>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Field label="RFC" error={errInfo.rfc}>
-                                    <Inp value={formInfo.rfc} onChange={(e) => setFormInfo({ ...formInfo, rfc: e.target.value.toUpperCase() })} placeholder="RFC" maxLength={20} />
-                                </Field>
-                                <Field label="Correo electrónico" error={errInfo.email}>
-                                    <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" />
-                                </Field>
-                            </div>
-                            <div className="flex justify-center sm:justify-end pt-1">
-                                <button type="submit" disabled={savingInfo}
-                                    className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-                                    {savingInfo ? 'Guardando…' : 'Guardar cambios'}
-                                </button>
-                            </div>
-                        </form>
-                    </SectionCard>
-
-                    {/* NUE — siempre visible para vincularse al padrón */}
-                    {(profile?.empleado || profile !== null) && (
-                        <SectionCard icon={Hash} title="Número Único de Empleado"
-                            description={profile?.empleado ? `Vinculado · ${profile.empleado.delegacion_clave ?? ''} · ${profile.empleado.dependencia_nombre ?? ''}` : 'Ingresa tu NUE para vincular tu cuenta al padrón de trabajadores.'}>
-                            <form onSubmit={saveNue} className="space-y-4">
-                                {errNue.general && (
-                                    <p className="text-[11px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errNue.general}</p>
+                    {/* Datos + NUE en grid 2 cols en escritorio */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+                        <SectionCard icon={User} title="Datos personales" description="Nombre, RFC y correo electrónico.">
+                            <form onSubmit={saveInfo} className="space-y-3">
+                                {errInfo.general && (
+                                    <p className="text-[14px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errInfo.general}</p>
                                 )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {profile?.empleado && (
-                                        <Field label="NUE actual">
-                                            <Inp value={profile.empleado.nue ?? '—'} disabled className="opacity-60 cursor-not-allowed" />
-                                        </Field>
-                                    )}
-                                    <Field label={profile?.empleado ? 'Nuevo NUE' : 'Tu NUE'} error={errNue.nue?.[0] ?? errNue.nue}>
-                                        <Inp value={formNue.nue} onChange={(e) => setFormNue({ nue: e.target.value })} placeholder="Ej. 00012345" maxLength={15} />
+                                <Field label="Nombre completo" error={errInfo.name}>
+                                    <Inp value={formInfo.name} onChange={(e) => setFormInfo({ ...formInfo, name: e.target.value })} placeholder="Nombre completo" />
+                                </Field>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <Field label="RFC" error={errInfo.rfc}>
+                                        <Inp value={formInfo.rfc} onChange={(e) => setFormInfo({ ...formInfo, rfc: e.target.value.toUpperCase() })} placeholder="RFC" maxLength={20} />
+                                    </Field>
+                                    <Field label="Correo electrónico" error={errInfo.email}>
+                                        <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" />
                                     </Field>
                                 </div>
-                                <div className="flex justify-center sm:justify-end pt-1">
-                                    <button type="submit" disabled={savingNue}
-                                        className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-                                        {savingNue ? 'Guardando…' : 'Actualizar NUE'}
+                                <div className="flex justify-center sm:justify-end pt-0.5">
+                                    <button type="submit" disabled={savingInfo}
+                                        className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                        {savingInfo ? 'Guardando…' : 'Guardar'}
                                     </button>
                                 </div>
                             </form>
                         </SectionCard>
-                    )}
 
-                    {/* Contraseña */}
-                    <SectionCard icon={KeyRound} title="Cambiar contraseña" description="Usa una contraseña segura de al menos 8 caracteres.">
-                        <form onSubmit={savePwd} className="space-y-4">
-                            {errPwd.general && (
-                                <p className="text-[11px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errPwd.general}</p>
-                            )}
-                            <Field label="Contraseña actual" error={errPwd.current_password}>
-                                <PwdInp value={formPwd.current_password} onChange={(e) => setFormPwd({ ...formPwd, current_password: e.target.value })} placeholder="••••••••" />
-                            </Field>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Field label="Nueva contraseña" error={errPwd.password}>
-                                    <PwdInp value={formPwd.password} onChange={(e) => setFormPwd({ ...formPwd, password: e.target.value })} placeholder="••••••••" />
-                                </Field>
-                                <Field label="Confirmar contraseña" error={errPwd.password_confirmation}>
-                                    <PwdInp value={formPwd.password_confirmation} onChange={(e) => setFormPwd({ ...formPwd, password_confirmation: e.target.value })} placeholder="••••••••" />
-                                </Field>
-                            </div>
-                            <div className="flex justify-center sm:justify-end pt-1">
-                                <button type="submit" disabled={savingPwd}
-                                    className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-                                    {savingPwd ? 'Cambiando…' : 'Cambiar contraseña'}
-                                </button>
-                            </div>
-                        </form>
-                    </SectionCard>
+                        {/* NUE — siempre visible para vincularse al padrón */}
+                        {(profile?.empleado || profile !== null) && (
+                            <SectionCard icon={Hash} title="Número Único de Empleado"
+                                description={profile?.empleado ? `Vinculado · ${profile.empleado.delegacion_clave ?? ''} · ${profile.empleado.dependencia_nombre ?? ''}` : 'Vincula tu cuenta al padrón de trabajadores.'}>
+                                <form onSubmit={saveNue} className="space-y-3">
+                                    {errNue.general && (
+                                        <p className="text-[14px] text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-xl">{errNue.general}</p>
+                                    )}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {profile?.empleado && (
+                                            <Field label="NUE actual">
+                                                <Inp value={profile.empleado.nue ?? '—'} disabled className="opacity-60 cursor-not-allowed" />
+                                            </Field>
+                                        )}
+                                        <Field label={profile?.empleado ? 'Nuevo NUE' : 'Tu NUE'} error={errNue.nue?.[0] ?? errNue.nue}>
+                                            <Inp value={formNue.nue} onChange={(e) => setFormNue({ nue: e.target.value })} placeholder="Ej. 00012345" maxLength={15} />
+                                        </Field>
+                                    </div>
+                                    <div className="flex justify-center sm:justify-end pt-0.5">
+                                        <button type="submit" disabled={savingNue}
+                                            className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                            {savingNue ? 'Guardando…' : 'Actualizar NUE'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </SectionCard>
+                        )}
+                    </div>
 
+                    {/* Cambiar contraseña — compacto */}
+                    <Link
+                        to="/dashboard/mi-cuenta/cambiar-contrasena"
+                        className="block bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden hover:border-[#AF9460]/30 dark:hover:border-[#AF9460]/30 transition-colors group"
+                    >
+                        <div className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
+                                    <KeyRound size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                                </div>
+                                <div>
+                                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-[#AF9460] transition-colors">Cambiar contraseña</p>
+                                    <p className="text-[13px] text-zinc-400">Actualiza tu contraseña de acceso</p>
+                                </div>
+                            </div>
+                            <ChevronRight size={16} className="text-zinc-300 dark:text-zinc-600 group-hover:text-[#AF9460] shrink-0" />
+                        </div>
+                    </Link>
                 </div>
             )}
 

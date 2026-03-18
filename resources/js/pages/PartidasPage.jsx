@@ -30,10 +30,10 @@ function ProgressBar({ pct, alerta }) {
 }
 
 function AlertaBadge({ pct }) {
-    if (pct === null) return <span className="text-[9px] text-zinc-400">sin límite</span>;
-    if (pct >= 100)   return <span className="text-[9px] font-bold text-red-600 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded-full">EXCEDIDO</span>;
-    if (pct >= 85)    return <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full">{pct}%</span>;
-    return <span className="text-[9px] text-zinc-400">{pct}%</span>;
+    if (pct === null) return <span className="text-[12px] text-zinc-400">sin límite</span>;
+    if (pct >= 100)   return <span className="text-[12px] font-bold text-red-600 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded-full">EXCEDIDO</span>;
+    if (pct >= 85)    return <span className="text-[12px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full">{pct}%</span>;
+    return <span className="text-[12px] text-zinc-400">{pct}%</span>;
 }
 
 function nivelAlerta(pct) {
@@ -51,11 +51,11 @@ function StatSummary({ label, gastado, limite, pct, icon }) {
                 {icon}
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-1">{label}</p>
+                <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-1">{label}</p>
                 <p className="text-[18px] font-extrabold text-zinc-800 dark:text-zinc-100 leading-none">{fmtCompact(gastado)}</p>
                 {limite > 0 && (
                     <>
-                        <p className="text-[9px] text-zinc-400 mt-1">Límite: {fmtCompact(limite)}</p>
+                        <p className="text-[12px] text-zinc-400 mt-1">Límite: {fmtCompact(limite)}</p>
                         <ProgressBar pct={pct} alerta={nivel} />
                     </>
                 )}
@@ -76,7 +76,7 @@ function CeldaPartida({ col }) {
     return (
         <td className="px-4 py-3 align-top">
             <div className="min-w-[130px]">
-                <p className={`text-[11px] font-bold leading-none ${
+                <p className={`text-[14px] font-bold leading-none ${
                     nivel === 'critico' ? 'text-red-600 dark:text-red-400'
                     : nivel === 'alto'  ? 'text-amber-600 dark:text-amber-400'
                     : 'text-zinc-700 dark:text-zinc-300'
@@ -84,7 +84,7 @@ function CeldaPartida({ col }) {
 
                 {col.limite > 0 ? (
                     <>
-                        <p className="text-[9px] text-zinc-400 mt-0.5">
+                        <p className="text-[12px] text-zinc-400 mt-0.5">
                             / {fmt(col.limite)}
                         </p>
                         <ProgressBar pct={col.porcentaje} alerta={nivel} />
@@ -93,7 +93,7 @@ function CeldaPartida({ col }) {
                         </div>
                     </>
                 ) : (
-                    <p className="text-[9px] text-zinc-400 mt-0.5">sin límite</p>
+                    <p className="text-[12px] text-zinc-400 mt-0.5">sin límite</p>
                 )}
             </div>
         </td>
@@ -185,7 +185,7 @@ export default function PartidasPage() {
                         <select
                             value={anio}
                             onChange={(e) => setAnio(Number(e.target.value))}
-                            className="text-[11px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-none"
+                            className="text-[14px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-none"
                         >
                             {anosOpts.map((y) => (
                                 <option key={y} value={y}>{y}</option>
@@ -195,7 +195,7 @@ export default function PartidasPage() {
                             type="button"
                             onClick={load}
                             disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all disabled:opacity-50"
                         >
                             <RefreshCw size={13} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
                             Actualizar
@@ -241,9 +241,9 @@ export default function PartidasPage() {
                     placeholder="Buscar dependencia o clave UR…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full sm:max-w-xs text-[11px] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 focus:outline-none focus:border-[#AF9460] transition-all"
+                    className="w-full sm:max-w-xs text-[14px] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 focus:outline-none focus:border-[#AF9460] transition-all"
                 />
-                <span className="text-[10px] text-zinc-400 shrink-0">
+                <span className="text-[13px] text-zinc-400 shrink-0">
                     {rows.length} dependencia{rows.length !== 1 ? 's' : ''}
                 </span>
             </div>
@@ -254,37 +254,37 @@ export default function PartidasPage() {
                     <div className="flex items-center justify-center py-20">
                         <div className="flex items-center gap-3 text-zinc-400">
                             <RefreshCw size={16} strokeWidth={1.8} className="animate-spin" />
-                            <span className="text-[11px] font-medium">Cargando datos…</span>
+                            <span className="text-[14px] font-medium">Cargando datos…</span>
                         </div>
                     </div>
                 ) : rows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
                         <DollarSign size={28} strokeWidth={1.2} className="mb-3 opacity-30" />
-                        <p className="text-[11px] font-semibold">Sin datos de partidas</p>
-                        <p className="text-[10px] mt-1">Asegúrate de que concentrado y propuesta tengan registros.</p>
+                        <p className="text-[14px] font-semibold">Sin datos de partidas</p>
+                        <p className="text-[13px] mt-1">Asegúrate de que concentrado y propuesta tengan registros.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[600px]">
                             <thead>
                                 <tr className="border-b border-zinc-50 dark:border-zinc-800/60">
-                                    <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                         Dependencia / UR
                                     </th>
                                     {partidas.map((pe) => (
-                                        <th key={pe} className="px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                        <th key={pe} className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                             Partida Esp. {pe}
                                         </th>
                                     ))}
                                     {partidas.length === 0 && (
-                                        <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                             Importe
                                         </th>
                                     )}
-                                    <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                         Total
                                     </th>
-                                    <th className="px-4 py-3 text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
+                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
                                         Límites
                                     </th>
                                 </tr>
@@ -299,14 +299,14 @@ export default function PartidasPage() {
                                         >
                                             {/* UR info */}
                                             <td className="px-4 py-3 align-top">
-                                                <p className="text-[11px] font-extrabold text-[#AF9460] uppercase tracking-wide leading-none">
+                                                <p className="text-[14px] font-extrabold text-[#AF9460] uppercase tracking-wide leading-none">
                                                     UR {row.ur}
                                                 </p>
-                                                <p className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
+                                                <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
                                                     {row.nombre}
                                                 </p>
                                                 {row.trabajadores > 0 && (
-                                                    <p className="text-[9px] text-zinc-400 mt-0.5">
+                                                    <p className="text-[12px] text-zinc-400 mt-0.5">
                                                         {row.trabajadores} trabajador{row.trabajadores !== 1 ? 'es' : ''}
                                                     </p>
                                                 )}
@@ -319,17 +319,17 @@ export default function PartidasPage() {
 
                                             {/* Fallback si no hay partidas */}
                                             {row.columnas.length === 0 && (
-                                                <td className="px-4 py-3 text-[11px] text-zinc-400">—</td>
+                                                <td className="px-4 py-3 text-[14px] text-zinc-400">—</td>
                                             )}
 
                                             {/* Total UR */}
                                             <td className="px-4 py-3 align-top">
-                                                <p className="text-[11px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
+                                                <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
                                                     {fmt(row.total_gastado)}
                                                 </p>
                                                 {row.total_limite > 0 && (
                                                     <>
-                                                        <p className="text-[9px] text-zinc-400 mt-0.5">
+                                                        <p className="text-[12px] text-zinc-400 mt-0.5">
                                                             / {fmt(row.total_limite)}
                                                         </p>
                                                         <ProgressBar
@@ -348,7 +348,7 @@ export default function PartidasPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => openEdit(row)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all"
                                                 >
                                                     <Edit2 size={11} strokeWidth={2} />
                                                     Límites
@@ -364,23 +364,23 @@ export default function PartidasPage() {
                                 <tfoot>
                                     <tr className="border-t-2 border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/20">
                                         <td className="px-4 py-3">
-                                            <p className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                                            <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                                 Total general
                                             </p>
                                         </td>
                                         {totalesGlobales.map((t) => (
                                             <td key={t.partida_especifica} className="px-4 py-3">
-                                                <p className="text-[11px] font-bold text-zinc-700 dark:text-zinc-200">
+                                                <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200">
                                                     {fmt(t.gastado)}
                                                 </p>
                                                 {t.limite > 0 && (
-                                                    <p className="text-[9px] text-zinc-400">/ {fmt(t.limite)}</p>
+                                                    <p className="text-[12px] text-zinc-400">/ {fmt(t.limite)}</p>
                                                 )}
                                             </td>
                                         ))}
                                         {totalesGlobales.length === 0 && <td />}
                                         <td className="px-4 py-3">
-                                            <p className="text-[11px] font-bold text-[#AF9460]">{fmt(totalGastado)}</p>
+                                            <p className="text-[14px] font-bold text-[#AF9460]">{fmt(totalGastado)}</p>
                                         </td>
                                         <td />
                                     </tr>
@@ -402,7 +402,7 @@ export default function PartidasPage() {
                         <button
                             type="button"
                             onClick={() => setEditRow(null)}
-                            className="px-4 py-2 text-[11px] font-semibold text-zinc-500 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                            className="px-4 py-2 text-[14px] font-semibold text-zinc-500 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                         >
                             Cancelar
                         </button>
@@ -410,7 +410,7 @@ export default function PartidasPage() {
                             type="button"
                             onClick={saveLimite}
                             disabled={saving}
-                            className="px-5 py-2 text-[11px] font-bold bg-[#AF9460] hover:bg-[#9a7f50] text-white rounded-lg transition-all disabled:opacity-60 flex items-center gap-1.5"
+                            className="px-5 py-2 text-[14px] font-bold bg-[#AF9460] hover:bg-[#9a7f50] text-white rounded-lg transition-all disabled:opacity-60 flex items-center gap-1.5"
                         >
                             {saving && <RefreshCw size={11} className="animate-spin" />}
                             Guardar
@@ -420,17 +420,17 @@ export default function PartidasPage() {
             >
                 {editRow && (
                     <div className="space-y-5">
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                             Establece el límite de gasto para cada partida específica en <strong className="text-[#AF9460]">{editRow.nombre}</strong> para el año <strong>{anio}</strong>.
                         </p>
 
                         {(editRow.columnas ?? []).map((col) => (
                             <div key={col.partida_especifica}>
-                                <label className="block text-[10px] font-bold uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400 mb-1.5">
+                                <label className="block text-[13px] font-bold uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400 mb-1.5">
                                     Partida Específica {col.partida_especifica}
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400 font-semibold">$</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-zinc-400 font-semibold">$</span>
                                     <input
                                         type="number"
                                         min="0"
@@ -446,7 +446,7 @@ export default function PartidasPage() {
                                         className="w-full pl-7 pr-4 py-2.5 text-[12px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#AF9460] transition-all"
                                     />
                                 </div>
-                                <p className="text-[9px] text-zinc-400 mt-1">
+                                <p className="text-[12px] text-zinc-400 mt-1">
                                     Gasto actual: <strong>{fmt(col.gastado)}</strong>
                                     {col.limite > 0 && <> &nbsp;·&nbsp; Límite anterior: {fmt(col.limite)}</>}
                                 </p>
@@ -454,7 +454,7 @@ export default function PartidasPage() {
                         ))}
 
                         {(editRow.columnas ?? []).length === 0 && (
-                            <p className="text-[11px] text-zinc-400 text-center py-4">
+                            <p className="text-[14px] text-zinc-400 text-center py-4">
                                 Esta UR no tiene partidas con gasto registrado aún.
                             </p>
                         )}

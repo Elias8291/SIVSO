@@ -23,11 +23,11 @@ const Header = ({ onMenuClick }) => {
                 >
                     <Menu size={20} strokeWidth={1.8} />
                 </button>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium tracking-wider uppercase">
+                <span className="text-[12px] text-zinc-400 dark:text-zinc-600 font-medium tracking-wider uppercase">
                     SIVSO
                 </span>
                 <span className="text-zinc-300 dark:text-zinc-700 text-xs">/</span>
-                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide uppercase">
+                <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide uppercase">
                     {pageLabel}
                 </span>
             </div>

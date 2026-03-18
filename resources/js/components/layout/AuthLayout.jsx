@@ -45,7 +45,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
                         <h2 className="text-xl font-light leading-snug text-white drop-shadow-md">
                             SISTEMA INTEGRAL VESTUARIO SINDICATO OAXACA
                         </h2>
-                        <p className="mt-2 text-[9px] text-zinc-400 uppercase tracking-[0.4em]">
+                        <p className="mt-2 text-[12px] text-zinc-400 uppercase tracking-[0.4em]">
                             Sindicato de Trabajadores de Oaxaca
                         </p>
                     </div>

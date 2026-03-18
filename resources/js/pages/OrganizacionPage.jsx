@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-    Building2, Users, UserCheck, Plus, ChevronRight, IdCard,
+    Building2, Users, UserCheck, Plus, ChevronRight, IdCard, ArrowRight, ChevronLeft, ClipboardList,
 } from 'lucide-react';
 import { Modal, ConfirmDialog } from '../components/ui';
 import { api } from '../lib/api';
@@ -105,7 +105,7 @@ function ModalFooter({ onCancel, form, saving, label }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Panel genérico                                                             */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function Panel({ title, icon: Icon, count, search, onSearch, onAdd, addLabel, locked, children }) {
+function Panel({ title, icon: Icon, count, search, onSearch, onSearchFocus, onAdd, addLabel, locked, stepHint, children }) {
     return (
         <div className={`flex flex-col h-full rounded-2xl border bg-white dark:bg-[#0F0F10] overflow-hidden transition-all duration-300 ${
             locked
@@ -113,6 +113,11 @@ function Panel({ title, icon: Icon, count, search, onSearch, onAdd, addLabel, lo
                 : 'border-zinc-100 dark:border-zinc-800/80'
         }`}>
             <div className="shrink-0 px-5 pt-5 pb-4 border-b border-zinc-50 dark:border-zinc-800/60 space-y-3">
+                {stepHint && (
+                    <span className="inline-block text-[9px] font-bold text-[#AF9460] uppercase tracking-wider">
+                        {stepHint}
+                    </span>
+                )}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center">
@@ -134,7 +139,7 @@ function Panel({ title, icon: Icon, count, search, onSearch, onAdd, addLabel, lo
                         </button>
                     )}
                 </div>
-                <Inp placeholder={`Buscar ${title.toLowerCase()}...`} value={search} onChange={(e) => onSearch(e.target.value)} />
+                <Inp placeholder={`Buscar ${title.toLowerCase()}...`} value={search} onChange={(e) => onSearch(e.target.value)} onFocus={onSearchFocus} />
             </div>
             <div className="flex-1 overflow-y-auto">
                 {children}
@@ -204,11 +209,112 @@ function ItemCard({ item, selected, onClick, onEdit, onDelete, stats }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-/*  Tarjeta de trabajador (Panel 3)                                            */
+/*  Móvil: Stepper pill, nivel y tarjeta                                       */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function TrabajadorCard({ trab }) {
+function StepPill({ active, done, label }) {
     return (
-        <div className="mx-3 my-1.5 rounded-xl px-4 py-3 border border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-all">
+        <span className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
+            active ? 'bg-[#AF9460] text-white shadow-md' : done ? 'bg-[#AF9460]/20 text-[#AF9460]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+        }`}>
+            {done && <span className="size-1.5 rounded-full bg-[#AF9460]" />}
+            {label}
+        </span>
+    );
+}
+
+function MobileLevel({ title, subtitle, icon: Icon, search, onSearch, onSearchFocus, onAdd, addLabel, loading, empty, emptyText, emptySub, onBack, backLabel, children }) {
+    return (
+        <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-[#0F0F10] overflow-hidden">
+            <div className="shrink-0 px-4 pt-4 pb-3 border-b border-zinc-50 dark:border-zinc-800/60 space-y-3">
+                {onBack && (
+                    <button onClick={onBack} className="flex items-center gap-2 text-[11px] font-semibold text-[#AF9460] hover:underline">
+                        <ChevronLeft size={14} strokeWidth={2.5} /> Volver a {backLabel}
+                    </button>
+                )}
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="size-9 rounded-xl bg-[#AF9460]/10 flex items-center justify-center shrink-0">
+                            <Icon size={18} className="text-[#AF9460]" strokeWidth={2} />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 truncate">{title}</h3>
+                            {subtitle && <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">{subtitle}</p>}
+                        </div>
+                    </div>
+                    {onAdd && (
+                        <button onClick={onAdd} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[10px] font-bold shrink-0">
+                            <Plus size={12} strokeWidth={2.5} /> {addLabel}
+                        </button>
+                    )}
+                </div>
+                <Inp placeholder="Buscar..." value={search} onChange={(e) => onSearch(e.target.value)} onFocus={onSearchFocus} onClick={onSearchFocus} />
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain py-2">
+                {loading ? <Spinner /> : empty
+                    ? <EmptyPanel icon={Icon} text={emptyText} sub={emptySub} />
+                    : <div className="px-3 space-y-2">{children}</div>
+                }
+            </div>
+        </div>
+    );
+}
+
+function MobileCard({ badge, title, stats, onClick, onEdit, onDelete }) {
+    return (
+        <div
+            onClick={onClick}
+            className="group relative rounded-2xl px-4 py-4 cursor-pointer transition-all border border-zinc-100 dark:border-zinc-800/60 hover:border-[#AF9460]/30 hover:bg-[#AF9460]/5 active:scale-[0.99]"
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                    <span className="inline-block px-2 py-0.5 rounded-lg bg-[#AF9460]/15 text-[#AF9460] text-[10px] font-black font-mono tracking-wider mb-2">
+                        {badge}
+                    </span>
+                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 leading-snug">
+                        {title}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2">
+                        {stats.map(({ icon: StatIcon, value, label }) => (
+                            <span key={label} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                                <StatIcon size={12} strokeWidth={2} className="text-zinc-400" />
+                                <span className="font-bold">{value}</span> {label}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+                <ChevronRight size={18} className="text-zinc-300 group-hover:text-[#AF9460] shrink-0 mt-1" strokeWidth={2.5} />
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 right-10">
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(); }} title="Editar"
+                        className="size-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-[#AF9460] hover:bg-[#AF9460]/10">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); onDelete(); }} title="Eliminar"
+                        className="size-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Tarjeta de trabajador (Panel 3) — seleccionable para ver Programas         */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function TrabajadorCard({ trab, selected, onClick }) {
+    return (
+        <div
+            onClick={onClick}
+            className={`mx-3 my-1.5 rounded-xl px-4 py-3 border cursor-pointer transition-all ${
+                selected
+                    ? 'bg-[#AF9460]/8 border-[#AF9460]/30 shadow-sm'
+                    : 'border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/30'
+            }`}
+        >
             <div className="flex items-center gap-3">
                 <div className="size-8 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
                     <IdCard size={14} className="text-[#AF9460]" strokeWidth={1.8} />
@@ -220,6 +326,36 @@ function TrabajadorCard({ trab }) {
                     <div className="flex items-center gap-3 mt-0.5">
                         <span className="text-[9px] font-mono font-bold text-zinc-400">NUE: {trab.nue}</span>
                         <span className="text-[9px] text-zinc-400">{trab.delegacion}</span>
+                    </div>
+                </div>
+                {selected && <ChevronRight size={14} className="text-[#AF9460] shrink-0" strokeWidth={2.5} />}
+            </div>
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Tarjeta de programa (Panel 4) — vestuario/partidas del trabajador           */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function ProgramaCard({ prog }) {
+    return (
+        <div className="mx-3 my-1.5 rounded-xl px-4 py-3 border border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-all">
+            <div className="flex items-start gap-3">
+                <div className="size-8 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
+                    <ClipboardList size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-mono font-bold text-zinc-500 dark:text-zinc-400">{prog.clave}</span>
+                    <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight mt-0.5">
+                        {prog.descripcion || prog.partida || 'Sin descripción'}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1.5">
+                        {prog.cantidad > 0 && (
+                            <span className="text-[9px] font-bold text-zinc-500">Cant: {prog.cantidad}</span>
+                        )}
+                        {prog.talla && (
+                            <span className="text-[9px] text-zinc-400">Talla: {prog.talla}</span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -235,32 +371,49 @@ export default function OrganizacionPage() {
     /* ── Selección en cascada ─────────────────────────────────────────── */
     const [selDep, setSelDep] = useState(null);  // dependencia seleccionada
     const [selDel, setSelDel] = useState(null);  // delegado seleccionado
+    const [selTrab, setSelTrab] = useState(null);  // trabajador seleccionado (para ver Programas)
+
+    /* ── Activación por foco en búsqueda (evita cargar todos los paneles a la vez) ── */
+    const [panel2Activated, setPanel2Activated] = useState(false);
+    const [panel3Activated, setPanel3Activated] = useState(false);
+    const [panel4Activated, setPanel4Activated] = useState(false);
 
     /* ── Panel 1: Dependencias (tabla: dependences) ───────────────────── */
     const depCtx = useSearch('/api/dependencias');
 
-    /* ── Panel 2: Delegados de la UR (tabla: delegado) ───────────────── */
+    /* ── Panel 2: solo carga si hay selDep O si el usuario tocó el buscador ── */
     const delCtx = useSearch(
         '/api/delegados',
         selDep ? { ur: selDep.clave } : {},
-        !!selDep
+        !!selDep || panel2Activated
     );
 
-    /* ── Panel 3: Trabajadores del delegado (tabla: delegacion) ──────── */
+    /* ── Panel 3: solo carga si hay selDel O si el usuario tocó el buscador ── */
     const trabCtx = useSearch(
         '/api/trabajadores',
         selDel ? { delegado_id: selDel.id } : {},
-        !!selDel
+        !!selDel || panel3Activated
+    );
+
+    /* ── Panel 4: solo carga si hay selTrab O si el usuario tocó el buscador ── */
+    const progCtx = useSearch(
+        '/api/programas',
+        selTrab ? { nue: selTrab.nue } : {},
+        !!selTrab || panel4Activated
     );
 
     /* ── Reset en cascada ─────────────────────────────────────────────── */
     const selectDep = (dep) => {
-        if (selDep?.id === dep.id) { setSelDep(null); setSelDel(null); }
-        else { setSelDep(dep); setSelDel(null); }
+        if (selDep?.id === dep.id) { setSelDep(null); setSelDel(null); setSelTrab(null); }
+        else { setSelDep(dep); setSelDel(null); setSelTrab(null); }
     };
     const selectDel = (del) => {
-        if (selDel?.id === del.id) setSelDel(null);
-        else setSelDel(del);
+        if (selDel?.id === del.id) { setSelDel(null); setSelTrab(null); }
+        else { setSelDel(del); setSelTrab(null); }
+    };
+    const selectTrab = (trab) => {
+        if (selTrab?.id === trab.id) setSelTrab(null);
+        else setSelTrab(trab);
     };
 
     /* ── Estado de modales ────────────────────────────────────────────── */
@@ -300,7 +453,7 @@ export default function OrganizacionPage() {
         setSaving(true);
         try {
             await api.delete(`/api/dependencias/${confirm.item.id}`);
-            setConfirm(null); depCtx.reload(); setSelDep(null); setSelDel(null);
+            setConfirm(null); depCtx.reload(); setSelDep(null); setSelDel(null); setSelTrab(null);
         } catch (err) { alert(err.message); }
         finally { setSaving(false); }
     };
@@ -351,36 +504,158 @@ export default function OrganizacionPage() {
                     Explorador Organizacional
                 </h2>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                    Navega la estructura: Dependencia → Delegado → Trabajadores
+                    Busca, navega o haz clic para filtrar. Puedes buscar sin seleccionar.
                 </p>
             </div>
 
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 mb-5 min-h-[32px]">
-                <button onClick={() => { setSelDep(null); setSelDel(null); }}
-                    className="text-[10px] font-bold text-zinc-400 hover:text-[#AF9460] uppercase tracking-wider transition-colors">
-                    Estructura
-                </button>
-                {selDep && (<>
-                    <ChevronRight size={12} className="text-zinc-300" />
-                    <button onClick={() => setSelDel(null)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#AF9460]/10 text-[#AF9460] text-[10px] font-bold uppercase tracking-wider">
-                        <Building2 size={10} /> UR {selDep.clave}
-                    </button>
-                </>)}
-                {selDel && (<>
-                    <ChevronRight size={12} className="text-zinc-300" />
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[10px] font-bold uppercase tracking-wider">
-                        <UserCheck size={10} /> {selDel.clave}
-                    </span>
-                </>)}
+            {/* ── MÓVIL: Flujo drill-down (pasos) ───────────────────────── */}
+            <div className="lg:hidden flex flex-col flex-1 min-h-0">
+                {/* Stepper visual: indica en qué nivel estás */}
+                <div className="flex items-center justify-center gap-1 sm:gap-2 mb-4 py-3 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50">
+                    <StepPill active={!selDep} done={!!selDep} label="Dependencia" />
+                    <ArrowRight size={12} className="text-zinc-300 dark:text-zinc-600 shrink-0" />
+                    <StepPill active={!!selDep && !selDel} done={!!selDel} label="Delegación" />
+                    <ArrowRight size={12} className="text-zinc-300 dark:text-zinc-600 shrink-0" />
+                    <StepPill active={!!selDel && !selTrab} done={!!selTrab} label="Trabajador" />
+                    <ArrowRight size={12} className="text-zinc-300 dark:text-zinc-600 shrink-0" />
+                    <StepPill active={!!selTrab} done={false} label="Programas" />
+                </div>
+
+                {/* Nivel 1: Dependencias */}
+                {!selDep && (
+                    <MobileLevel
+                        title="Elige una Dependencia (UR)"
+                        subtitle="Unidades de respuesta disponibles"
+                        icon={Building2}
+                        search={depCtx.search}
+                        onSearch={depCtx.setSearch}
+                        onAdd={openCreateDep}
+                        addLabel="Nueva dependencia"
+                        loading={depCtx.loading}
+                        empty={depCtx.data.length === 0}
+                        emptyText="Sin dependencias"
+                        emptySub="Crea la primera UR">
+                        {depCtx.data.map((dep) => (
+                            <MobileCard
+                                key={dep.id}
+                                badge={dep.clave}
+                                title={dep.nombre}
+                                stats={[
+                                    { icon: UserCheck, value: dep.delegados_count, label: 'delegaciones' },
+                                    { icon: Users, value: dep.trabajadores_count, label: 'trabajadores' },
+                                ]}
+                                onClick={() => selectDep(dep)}
+                                onEdit={() => openEditDep(dep)}
+                                onDelete={() => setConfirm({ type: 'dep', item: dep })}
+                            />
+                        ))}
+                    </MobileLevel>
+                )}
+
+                {/* Nivel 2: Delegaciones */}
+                {selDep && !selDel && (
+                    <MobileLevel
+                        title={`Delegaciones — UR ${selDep.clave}`}
+                        subtitle={selDep.nombre}
+                        icon={UserCheck}
+                        search={delCtx.search}
+                        onSearch={delCtx.setSearch}
+                        onSearchFocus={() => setPanel2Activated(true)}
+                        onAdd={openCreateDel}
+                        addLabel="Nueva delegación"
+                        loading={delCtx.loading}
+                        empty={delCtx.data.length === 0}
+                        emptyText="Sin delegaciones"
+                        emptySub={`en UR ${selDep.clave}`}
+                        onBack={() => { setSelDep(null); setSelDel(null); }}
+                        backLabel={selDep.clave}>
+                        {delCtx.data.map((del) => (
+                            <MobileCard
+                                key={del.id}
+                                badge={del.clave}
+                                title={del.nombre}
+                                stats={[
+                                    { icon: Users, value: del.trabajadores_count, label: 'trabajadores' },
+                                ]}
+                                onClick={() => selectDel(del)}
+                                onEdit={() => openEditDel(del)}
+                                onDelete={() => setConfirm({ type: 'del', item: del })}
+                            />
+                        ))}
+                    </MobileLevel>
+                )}
+
+                {/* Nivel 3: Trabajadores */}
+                {selDep && selDel && !selTrab && (
+                    <MobileLevel
+                        title={`Trabajadores — ${selDel.clave}`}
+                        subtitle={selDel.nombre}
+                        icon={Users}
+                        search={trabCtx.search}
+                        onSearch={trabCtx.setSearch}
+                        onSearchFocus={() => setPanel3Activated(true)}
+                        loading={trabCtx.loading}
+                        empty={trabCtx.data.length === 0}
+                        emptyText="Sin trabajadores"
+                        emptySub={`en delegación ${selDel.clave}`}
+                        onBack={() => setSelDel(null)}
+                        backLabel={selDel.clave}>
+                        {trabCtx.data.map((trab) => (
+                            <TrabajadorCard key={trab.id} trab={trab} selected={selTrab?.id === trab.id}
+                                onClick={() => selectTrab(trab)} />
+                        ))}
+                    </MobileLevel>
+                )}
+
+                {/* Nivel 4: Programas del trabajador */}
+                {selDep && selDel && selTrab && (
+                    <MobileLevel
+                        title={`Programas — ${selTrab.nombre_completo}`}
+                        subtitle={`NUE: ${selTrab.nue}`}
+                        icon={ClipboardList}
+                        search={progCtx.search}
+                        onSearch={progCtx.setSearch}
+                        onSearchFocus={() => setPanel4Activated(true)}
+                        loading={progCtx.loading}
+                        empty={progCtx.data.length === 0}
+                        emptyText="Sin programas"
+                        emptySub={`para ${selTrab.nombre_completo}`}
+                        onBack={() => setSelTrab(null)}
+                        backLabel="Trabajadores">
+                        {progCtx.data.map((prog) => (
+                            <ProgramaCard key={prog.id} prog={prog} />
+                        ))}
+                    </MobileLevel>
+                )}
             </div>
 
-            {/* Tres paneles */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0" style={{ height: 'calc(100vh - 280px)' }}>
+            {/* ── ESCRITORIO: Tres paneles con flujo visual ───────────────── */}
+            <div className="hidden lg:flex flex-col flex-1 min-h-0" style={{ height: 'calc(100vh - 280px)' }}>
+                {/* Breadcrumb */}
+                <div className="flex items-center gap-2 mb-4 min-h-[32px]">
+                    <button onClick={() => { setSelDep(null); setSelDel(null); setSelTrab(null); }}
+                        className="text-[10px] font-bold text-zinc-400 hover:text-[#AF9460] uppercase tracking-wider transition-colors">
+                        Estructura
+                    </button>
+                    {selDep && (<>
+                        <ChevronRight size={12} className="text-zinc-300" />
+                        <button onClick={() => setSelDel(null)}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#AF9460]/10 text-[#AF9460] text-[10px] font-bold uppercase tracking-wider">
+                            <Building2 size={10} /> UR {selDep.clave}
+                        </button>
+                    </>)}
+                    {selDel && (<>
+                        <ChevronRight size={12} className="text-zinc-300" />
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[10px] font-bold uppercase tracking-wider">
+                            <UserCheck size={10} /> {selDel.clave}
+                        </span>
+                    </>)}
+                </div>
 
-                {/* ── Panel 1: Dependencias (tabla: dependences) ────── */}
-                <Panel title="Dependencias" icon={Building2} count={depCtx.data.length}
+                {/* Tres paneles con conectores visuales */}
+                <div className="grid grid-cols-4 gap-3 flex-1 min-h-0">
+                    {/* Panel 1: Dependencias */}
+                    <Panel title="Dependencias" icon={Building2} count={depCtx.data.length} stepHint="1. Selecciona UR"
                     search={depCtx.search} onSearch={depCtx.setSearch}
                     onAdd={openCreateDep} addLabel="Nueva">
                     {depCtx.loading ? <Spinner /> : depCtx.data.length === 0
@@ -391,7 +666,7 @@ export default function OrganizacionPage() {
                                 onEdit={openEditDep}
                                 onDelete={(item) => setConfirm({ type: 'dep', item })}
                                 stats={[
-                                    { icon: UserCheck, value: dep.delegados_count,    label: 'delegados' },
+                                    { icon: UserCheck, value: dep.delegados_count,    label: 'delegaciones' },
                                     { icon: Users,     value: dep.trabajadores_count,  label: 'trabajadores' },
                                 ]}
                             />
@@ -399,17 +674,18 @@ export default function OrganizacionPage() {
                     }
                 </Panel>
 
-                {/* ── Panel 2: Delegados de la UR (tabla: delegado) ─── */}
-                <Panel title="Delegados" icon={UserCheck}
+                {/* ── Panel 2: Delegaciones ─── */}
+                <Panel title="Delegaciones" icon={UserCheck} stepHint="2. Busca o elige delegación"
                     count={delCtx.data.length}
                     search={delCtx.search} onSearch={delCtx.setSearch}
-                    locked={!selDep}
-                    onAdd={selDep ? openCreateDel : null} addLabel="Nuevo">
-                    {!selDep
-                        ? <EmptyPanel icon={UserCheck} text="Selecciona una dependencia" sub="para ver sus delegados" />
+                    onSearchFocus={() => setPanel2Activated(true)}
+                    locked={false}
+                    onAdd={selDep ? openCreateDel : null} addLabel="Nueva">
+                    {!selDep && !panel2Activated && delCtx.data.length === 0
+                        ? <EmptyPanel icon={UserCheck} text="Toca el buscador para cargar" sub="o selecciona una dependencia" />
                         : delCtx.loading ? <Spinner />
                         : delCtx.data.length === 0
-                        ? <EmptyPanel icon={UserCheck} text="Sin delegados" sub={`en UR ${selDep.clave}`} />
+                        ? <EmptyPanel icon={UserCheck} text="Sin delegaciones" sub={selDep ? `en UR ${selDep.clave}` : 'Prueba otra búsqueda'} />
                         : delCtx.data.map((del) => (
                             <ItemCard key={del.id} item={del} selected={selDel?.id === del.id}
                                 onClick={() => selectDel(del)}
@@ -423,21 +699,42 @@ export default function OrganizacionPage() {
                     }
                 </Panel>
 
-                {/* ── Panel 3: Trabajadores del delegado (tabla: delegacion) */}
-                <Panel title="Trabajadores" icon={Users}
+                {/* ── Panel 3: Trabajadores ─── */}
+                <Panel title="Trabajadores" icon={Users} stepHint="3. Busca o elige trabajador"
                     count={trabCtx.data.length}
                     search={trabCtx.search} onSearch={trabCtx.setSearch}
-                    locked={!selDel}>
-                    {!selDel
-                        ? <EmptyPanel icon={Users} text="Selecciona un delegado" sub="para ver sus trabajadores" />
+                    onSearchFocus={() => setPanel3Activated(true)}
+                    locked={false}
+                    onAdd={null} addLabel="">
+                    {!selDel && !panel3Activated && trabCtx.data.length === 0
+                        ? <EmptyPanel icon={Users} text="Toca el buscador para cargar" sub="o selecciona una delegación" />
                         : trabCtx.loading ? <Spinner />
                         : trabCtx.data.length === 0
-                        ? <EmptyPanel icon={Users} text="Sin trabajadores" sub={`para delegación ${selDel.clave}`} />
+                        ? <EmptyPanel icon={Users} text="Sin trabajadores" sub={selDel ? `en delegación ${selDel.clave}` : 'Prueba otra búsqueda'} />
                         : trabCtx.data.map((trab) => (
-                            <TrabajadorCard key={trab.id} trab={trab} />
+                            <TrabajadorCard key={trab.id} trab={trab} selected={selTrab?.id === trab.id}
+                                onClick={() => selectTrab(trab)} />
                         ))
                     }
                 </Panel>
+
+                {/* ── Panel 4: Programas (vestuario/partidas) ─── */}
+                <Panel title="Programas" icon={ClipboardList} stepHint="4. Busca o elige vestuario"
+                    count={progCtx.data.length}
+                    search={progCtx.search} onSearch={progCtx.setSearch}
+                    onSearchFocus={() => setPanel4Activated(true)}
+                    locked={false}>
+                    {!selTrab && !panel4Activated && progCtx.data.length === 0
+                        ? <EmptyPanel icon={ClipboardList} text="Toca el buscador para cargar" sub="o selecciona un trabajador" />
+                        : progCtx.loading ? <Spinner />
+                        : progCtx.data.length === 0
+                        ? <EmptyPanel icon={ClipboardList} text="Sin programas" sub={`para ${selTrab.nombre_completo}`} />
+                        : progCtx.data.map((prog) => (
+                            <ProgramaCard key={prog.id} prog={prog} />
+                        ))
+                    }
+                </Panel>
+            </div>
             </div>
 
             {/* ── Modal: Nueva / Editar Dependencia ──────────────────── */}
