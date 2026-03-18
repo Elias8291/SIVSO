@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             SuperAdminSeeder::class,
             RolesPermissionsSeeder::class,
+            BasVestuarioJsonSeeder::class,
         ]);
     }
 }

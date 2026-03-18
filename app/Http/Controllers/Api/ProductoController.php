@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Producto;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Tabla: propuesta
+ * Tabla: propuesta (en bas_vestuario)
  * Catálogo de artículos de vestuario.
  * propuesta.codigo ↔ clave_vestuario en el frontend
  * No existe campo "activo" → siempre se devuelve activo: true
@@ -17,6 +16,21 @@ use Illuminate\Support\Facades\DB;
 class ProductoController extends Controller
 {
     public function index(Request $request): JsonResponse
+    {
+        try {
+            return $this->indexLogic($request);
+        } catch (\Throwable $e) {
+            if (config('app.debug')) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'file'    => $e->getFile() . ':' . $e->getLine(),
+                ], 500);
+            }
+            return response()->json(['message' => 'Error al obtener productos.'], 500);
+        }
+    }
+
+    private function indexLogic(Request $request): JsonResponse
     {
         $search  = trim((string) $request->get('search', ''));
         $partida = $request->get('partida');
@@ -28,7 +42,7 @@ class ProductoController extends Controller
                 ->when($search, fn ($q) =>
                     $q->where(fn ($q2) =>
                         $q2->where('descripcion', 'like', "%{$search}%")
-                           ->orWhere('codigo',     'like', "%{$search}%")
+                           ->orWhere('codigo', 'like', "%{$search}%")
                     )
                 )
                 ->orderBy('descripcion')
@@ -51,19 +65,17 @@ class ProductoController extends Controller
         $perPage = min((int) $request->get('per_page', 20), 100);
 
         $query = DB::table('propuesta AS p')
-            ->leftJoin('proveedor AS pv', 'pv.abreviacion', '=', 'p.proveedor')
             ->select([
                 'p.id', 'p.lote', 'p.partida_especifica', 'p.partida',
                 'p.descripcion', 'p.cantidad', 'p.unidad', 'p.marca',
                 'p.precio_unitario', 'p.medida', 'p.codigo', 'p.proveedor',
-                'pv.proveedor AS proveedor_nombre',
             ])
             ->when($search, fn ($q) =>
                 $q->where(fn ($q2) =>
                     $q2->where('p.descripcion', 'like', "%{$search}%")
-                       ->orWhere('p.codigo',     'like', "%{$search}%")
-                       ->orWhere('p.marca',      'like', "%{$search}%")
-                       ->orWhere('p.proveedor',  'like', "%{$search}%")
+                       ->orWhere('p.codigo', 'like', "%{$search}%")
+                       ->orWhere('p.marca', 'like', "%{$search}%")
+                       ->orWhere('p.proveedor', 'like', "%{$search}%")
                 )
             )
             ->when($partida, fn ($q) => $q->where('p.partida', $partida))
@@ -73,18 +85,18 @@ class ProductoController extends Controller
 
         $data = collect($paginated->items())->map(fn ($r) => [
             'id'                => $r->id,
-            'clave_vestuario'   => $r->codigo,
-            'codigo'            => $r->codigo,
-            'descripcion'       => $r->descripcion,
-            'marca'             => $r->marca,
-            'unidad'            => $r->unidad,
-            'medida'            => $r->medida,
-            'partida'           => $r->partida,
-            'partida_especifica'=> $r->partida_especifica,
-            'lote'              => $r->lote,
-            'precio_unitario'   => $r->precio_unitario,
-            'proveedor'         => $r->proveedor,
-            'proveedor_nombre'  => $r->proveedor_nombre,
+            'clave_vestuario'   => $r->codigo ?? null,
+            'codigo'            => $r->codigo ?? null,
+            'descripcion'       => $r->descripcion ?? '',
+            'marca'             => $r->marca ?? null,
+            'unidad'            => $r->unidad ?? null,
+            'medida'            => $r->medida ?? null,
+            'partida'           => $r->partida ?? null,
+            'partida_especifica'=> $r->partida_especifica ?? null,
+            'lote'              => $r->lote ?? null,
+            'precio_unitario'   => $r->precio_unitario ?? null,
+            'proveedor'         => $r->proveedor ?? null,
+            'proveedor_nombre'  => null,
             'activo'            => true,
         ]);
 
@@ -137,14 +149,18 @@ class ProductoController extends Controller
     public function show(int $id): JsonResponse
     {
         $p = DB::table('propuesta')->where('id', $id)->first();
-        if (! $p) return response()->json(['message' => 'No encontrado.'], 404);
+        if (! $p) {
+            return response()->json(['message' => 'No encontrado.'], 404);
+        }
         return response()->json($p);
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
         $p = DB::table('propuesta')->where('id', $id)->first();
-        if (! $p) return response()->json(['message' => 'No encontrado.'], 404);
+        if (! $p) {
+            return response()->json(['message' => 'No encontrado.'], 404);
+        }
 
         $data = $request->validate([
             'partida'           => 'required|integer',

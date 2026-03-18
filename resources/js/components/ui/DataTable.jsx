@@ -115,7 +115,7 @@ export default function DataTable({
                     <tbody>
                         {data.map((row, i) => (
                             <tr
-                                key={row[rowKey] ?? i}
+                                key={`${row[rowKey] ?? 'row'}-${i}`}
                                 className={`group transition-colors hover:bg-zinc-50/70 dark:hover:bg-zinc-800/20 ${
                                     i < data.length - 1 ? 'border-b border-zinc-50 dark:border-zinc-800/40' : ''
                                 }`}
@@ -144,7 +144,7 @@ export default function DataTable({
             {/* ── MÓVIL: tarjetas (< md) ──────────────────────────────────── */}
             <div className="md:hidden divide-y divide-zinc-100 dark:divide-zinc-800/60">
                 {data.map((row, i) => (
-                    <div key={row[rowKey] ?? i} className="px-4 py-4 space-y-3">
+                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-4 py-4 space-y-3">
                         {/* Campos como pares etiqueta / valor */}
                         <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                             {columns.filter(c => !c.hideOnMobile).map((col) => (

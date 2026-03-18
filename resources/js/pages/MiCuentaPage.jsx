@@ -49,7 +49,7 @@ function PwdInp({ value, onChange, placeholder }) {
 function SectionCard({ icon: Icon, title, description, children }) {
     return (
         <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-3">
+            <div className="px-4 sm:px-6 py-5 border-b border-zinc-50 dark:border-zinc-800/60 flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
                 <div className="size-8 rounded-xl bg-[#AF9460]/10 flex items-center justify-center shrink-0">
                     <Icon size={15} className="text-[#AF9460]" strokeWidth={1.8} />
                 </div>
@@ -58,7 +58,7 @@ function SectionCard({ icon: Icon, title, description, children }) {
                     {description && <p className="text-[11px] text-zinc-400 mt-0.5">{description}</p>}
                 </div>
             </div>
-            <div className="px-6 py-5">
+            <div className="px-4 sm:px-6 py-5 text-left">
                 {children}
             </div>
         </div>
@@ -148,7 +148,7 @@ export default function MiCuentaPage() {
         ?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
     return (
-        <div>
+        <div className="mx-auto w-full max-w-2xl px-4 sm:px-0 text-center sm:text-left">
             <PageHeader
                 title="Mi Cuenta"
                 description="Gestiona tu información personal y credenciales de acceso."
@@ -159,10 +159,10 @@ export default function MiCuentaPage() {
                     <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
                 </div>
             ) : (
-                <div className="max-w-2xl space-y-5">
+                <div className="space-y-5">
 
                     {/* Avatar + resumen */}
-                    <div className="flex items-center gap-5 px-6 py-5 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 px-4 sm:px-6 py-5 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl text-center sm:text-left">
                         <div className="size-14 rounded-2xl border-2 border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
                             <span className="text-xl font-black text-[#AF9460]">{initials}</span>
                         </div>
@@ -172,7 +172,7 @@ export default function MiCuentaPage() {
                             </p>
                             <p className="text-[11px] text-zinc-400 mt-0.5">{profile?.user?.email ?? '—'}</p>
                             {(profile?.user?.nue || profile?.empleado) && (
-                                <span className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-semibold text-[#AF9460] bg-[#AF9460]/10 px-2.5 py-0.5 rounded-full">
+                                <span className="inline-flex items-center justify-center sm:justify-start gap-1.5 mt-1.5 text-[10px] font-semibold text-[#AF9460] bg-[#AF9460]/10 px-2.5 py-0.5 rounded-full">
                                     <Hash size={10} strokeWidth={2.5} />
                                     NUE {profile?.empleado?.nue ?? profile?.user?.nue}
                                     {profile?.empleado?.delegacion_clave && ` · ${profile.empleado.delegacion_clave}`}
@@ -198,7 +198,7 @@ export default function MiCuentaPage() {
                                     <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" />
                                 </Field>
                             </div>
-                            <div className="flex justify-end pt-1">
+                            <div className="flex justify-center sm:justify-end pt-1">
                                 <button type="submit" disabled={savingInfo}
                                     className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                     {savingInfo ? 'Guardando…' : 'Guardar cambios'}
@@ -225,7 +225,7 @@ export default function MiCuentaPage() {
                                         <Inp value={formNue.nue} onChange={(e) => setFormNue({ nue: e.target.value })} placeholder="Ej. 00012345" maxLength={15} />
                                     </Field>
                                 </div>
-                                <div className="flex justify-end pt-1">
+                                <div className="flex justify-center sm:justify-end pt-1">
                                     <button type="submit" disabled={savingNue}
                                         className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                         {savingNue ? 'Guardando…' : 'Actualizar NUE'}
@@ -252,7 +252,7 @@ export default function MiCuentaPage() {
                                     <PwdInp value={formPwd.password_confirmation} onChange={(e) => setFormPwd({ ...formPwd, password_confirmation: e.target.value })} placeholder="••••••••" />
                                 </Field>
                             </div>
-                            <div className="flex justify-end pt-1">
+                            <div className="flex justify-center sm:justify-end pt-1">
                                 <button type="submit" disabled={savingPwd}
                                     className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
                                     {savingPwd ? 'Cambiando…' : 'Cambiar contraseña'}
