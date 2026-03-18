@@ -55,3 +55,23 @@ body {
 html.dark body {
     background-color: #060607;
 }
+
+/* Móvil: layout fijo para evitar que el contenido "se baje" al hacer scroll
+   (cuando la barra del navegador se oculta, 100vh cambia y todo se desplaza) */
+@media screen and (max-width: 1024px) {
+    html, body {
+        overflow: hidden;
+        height: 100%;
+        min-height: 100%;
+        position: fixed;
+        inset: 0;
+    }
+    #root {
+        position: fixed;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: none;
+    }
+}
