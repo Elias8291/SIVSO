@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const AppLayout = () => {
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     return (
         <div className="flex min-h-screen bg-[#F7F7F8] dark:bg-[#060607] text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-300">
-            <Sidebar />
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <main className="flex-1 lg:ml-72 flex flex-col min-w-0">
-                <Header />
+                <Header onMenuClick={() => setSidebarOpen(true)} />
                 <div className="flex-1 px-8 py-10 xl:px-14 xl:py-12 w-full">
                     <Outlet />
                 </div>

@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, Users, UsersRound, Shield, Lock, Network, Shirt, Package, BarChart2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Users, UsersRound, Shield, Lock, Network, Shirt, Package, BarChart2, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SIDEBAR_SECTIONS } from '../../config/routes';
 import NavItem from '../ui/NavItem';
@@ -17,8 +18,17 @@ const ICON_MAP = {
     BarChart2,
 };
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     const { logout, logoutUrl, csrfToken, user } = useAuth();
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [isOpen]);
 
     const initials = user?.name
         ?.split(' ')
@@ -28,17 +38,41 @@ const Sidebar = () => {
         .toUpperCase() || 'AD';
 
     return (
-        <aside className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0A0A0B] border-r border-zinc-100 dark:border-zinc-800/80 hidden lg:flex flex-col z-50">
+        <>
+            {/* Overlay móvil */}
+            <div
+                role="button"
+                tabIndex={0}
+                onClick={onClose}
+                onKeyDown={(e) => e.key === 'Escape' && onClose()}
+                className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
+                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+                aria-hidden={!isOpen}
+                aria-label="Cerrar menú"
+            />
 
-            {/* Marca */}
-            <div className="px-6 pt-6 pb-5">
-                <h1 className="text-sm font-extrabold tracking-[0.15em] dark:text-white leading-none">SIVSO</h1>
-            </div>
+            <aside
+                className={`fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#0A0A0B] border-r border-zinc-100 dark:border-zinc-800/80 flex flex-col z-50 transition-transform duration-300 ease-out
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:flex`}
+            >
+                {/* Marca + botón cerrar móvil */}
+                <div className="px-6 pt-6 pb-5 flex items-center justify-between">
+                    <h1 className="text-sm font-extrabold tracking-[0.15em] dark:text-white leading-none">SIVSO</h1>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="lg:hidden p-2 rounded-xl text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
+                        aria-label="Cerrar menú"
+                    >
+                        <X size={18} strokeWidth={1.8} />
+                    </button>
+                </div>
 
             <div className="mx-6 h-px bg-zinc-100 dark:bg-zinc-800/80" />
 
             {/* Navegación por secciones */}
-            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5" onClick={onClose}>
                 {SIDEBAR_SECTIONS.map((section) => (
                     <div key={section.label}>
                         <p className="px-4 mb-1.5 text-[8px] font-bold text-zinc-400 uppercase tracking-[0.25em]">
@@ -97,6 +131,7 @@ const Sidebar = () => {
                 </button>
             </div>
         </aside>
+        </>
     );
 };
 
