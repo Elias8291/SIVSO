@@ -86,7 +86,7 @@ export default function MiDelegacionPage() {
                             placeholder="Buscar empleados..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40"
+                            className="w-full pl-9 pr-3 py-3 text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 touch-manipulation"
                         />
                     </div>
 
@@ -101,7 +101,7 @@ export default function MiDelegacionPage() {
                                     <button
                                         type="button"
                                         onClick={() => toggleExpand(del.id)}
-                                        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                                        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 min-h-[52px] text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/30 active:bg-zinc-100 dark:active:bg-zinc-800/50 transition-colors touch-manipulation"
                                     >
                                         <div className="min-w-0 flex-1">
                                             <p className="text-[15px] font-bold text-zinc-800 dark:text-zinc-200 truncate">{del.clave}</p>
@@ -131,7 +131,7 @@ export default function MiDelegacionPage() {
                                                             key={trab.id}
                                                             type="button"
                                                             onClick={() => setEmpleadoVestuario(trab)}
-                                                            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/30 active:bg-zinc-100 dark:active:bg-zinc-800/50 transition-colors"
+                                                            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 min-h-[52px] text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/30 active:bg-zinc-100 dark:active:bg-zinc-800/50 transition-colors touch-manipulation"
                                                         >
                                                             <div className="min-w-0 flex-1">
                                                                 <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{trab.nombre_completo}</p>

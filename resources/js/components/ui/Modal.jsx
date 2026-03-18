@@ -9,7 +9,7 @@ const SIZES = {
 };
 
 /**
- * Modal reutilizable con overlay, cierre por Escape y trap de scroll.
+ * Modal reutilizable. Móvil: full width, poco margen, botones táctiles.
  */
 export default function Modal({ open, onClose, title, size = 'md', children, footer }) {
     const overlayRef = useRef(null);
@@ -30,40 +30,35 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
         >
-            {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-            {/* Panel */}
-            <div className={`relative bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-2xl w-full ${SIZES[size]} flex flex-col max-h-[90vh]`}>
-
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
-                    <div className="flex items-center gap-2.5">
-                        <span className="size-1.5 bg-[#AF9460] rounded-full" />
-                        <h3 className="text-[14px] font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
+            <div className={`relative bg-white dark:bg-[#0F0F10] border-t sm:border border-zinc-100 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-[calc(100vw-2rem)] ${SIZES[size]} flex flex-col max-h-[92vh] sm:max-h-[90vh]`}>
+                <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="size-1.5 bg-[#AF9460] rounded-full shrink-0" />
+                        <h3 className="text-[13px] sm:text-[14px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
                             {title}
                         </h3>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="size-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                        className="size-9 shrink-0 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation"
+                        aria-label="Cerrar"
                     >
-                        <X size={14} strokeWidth={2} />
+                        <X size={18} strokeWidth={2} />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 min-h-0">
                     {children}
                 </div>
 
-                {/* Footer */}
                 {footer && (
-                    <div className="px-6 py-4 border-t border-zinc-50 dark:border-zinc-800/60 flex items-center justify-end gap-2.5 shrink-0">
+                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-zinc-50 dark:border-zinc-800/60 shrink-0 ">
                         {footer}
                     </div>
                 )}

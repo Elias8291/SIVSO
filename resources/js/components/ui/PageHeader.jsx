@@ -17,7 +17,7 @@ export default function PageHeader({ title, description, actions, search, compac
             {/* Fila 1: título + acciones */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div>
-                    <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                    <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
                         {title}
                     </h2>
                     {description && (

@@ -26,7 +26,7 @@ export default function DelegadosPage() {
     const handleSearch = (e) => { e.preventDefault(); fetchDelegados(); };
 
     return (
-        <div className="mx-auto w-full max-w-2xl px-3 sm:px-4">
+        <div className="mx-auto w-full max-w-2xl px-0">
             <PageHeader title="Delegados" description="Delegados y delegaciones que representa cada uno." compact />
 
             <form onSubmit={handleSearch} className="mb-4">

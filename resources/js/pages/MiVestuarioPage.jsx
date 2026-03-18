@@ -22,7 +22,7 @@ const TALLAS_COMUNES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
 function Toast({ message, onDone }) {
     useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold">
             <CheckCircle size={15} strokeWidth={2} className="text-emerald-400 dark:text-emerald-600 shrink-0" />
             {message}
         </div>
@@ -88,13 +88,13 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
             <div className="px-4 pb-4 flex gap-2">
                 <button
                     onClick={() => onEditTalla(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] transition-all touch-manipulation"
                 >
                     <Ruler size={11} strokeWidth={2} /> Cambiar talla
                 </button>
                 <button
                     onClick={() => onCambiarProducto(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] transition-all"
+                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] transition-all touch-manipulation"
                 >
                     <RefreshCw size={11} strokeWidth={2} /> Cambiar artículo
                 </button>
@@ -111,13 +111,13 @@ function ModalTalla({ item, onClose, onSave, saving }) {
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="sm"
             footer={
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
-                        className="px-4 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                        className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">
                         Cancelar
                     </button>
                     <button onClick={() => onSave(talla)} disabled={saving || !talla}
-                        className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
+                        className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] touch-manipulation">
                         {saving ? 'Guardando…' : 'Guardar talla'}
                     </button>
                 </div>
@@ -186,13 +186,13 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="md"
             footer={
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
-                        className="px-4 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">
+                        className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">
                         Cancelar
                     </button>
                     <button onClick={() => onSave(selected.id, talla)} disabled={saving || !selected}
-                        className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50">
+                        className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] touch-manipulation">
                         {saving ? 'Guardando…' : 'Confirmar cambio'}
                     </button>
                 </div>
@@ -395,10 +395,10 @@ export default function MiVestuarioPage() {
     return (
         <div>
             {/* Encabezado */}
-            <div className="mb-8">
+            <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+                        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
                             Mi Vestuario
                         </h2>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -427,12 +427,12 @@ export default function MiVestuarioPage() {
 
                 {/* Buscador filtro local */}
                 <div className="mt-4 relative">
-                    <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
                     <input
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Filtrar artículos…"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
+                        className="w-full pl-9 pr-4 py-3 text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation"
                     />
                 </div>
             </div>

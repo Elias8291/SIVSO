@@ -49,10 +49,10 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                 </div>
             </div>
             <div className="px-3 pb-3 flex gap-2">
-                <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460]">
+                <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] touch-manipulation">
                     <Ruler size={10} /> Talla
                 </button>
-                <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460]">
+                <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] touch-manipulation">
                     <RefreshCw size={10} /> Artículo
                 </button>
             </div>
@@ -66,9 +66,9 @@ function ModalTalla({ item, onClose, onSave, saving }) {
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="sm"
             footer={
-                <div className="flex justify-end gap-2">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancelar</button>
-                    <button onClick={() => onSave(talla)} disabled={saving || !talla} className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50">
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
+                    <button onClick={() => onSave(talla)} disabled={saving || !talla} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
                         {saving ? 'Guardando…' : 'Guardar'}
                     </button>
                 </div>
@@ -113,9 +113,9 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="md"
             footer={
-                <div className="flex justify-end gap-2">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-sm text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800">Cancelar</button>
-                    <button onClick={() => onSave(selected?.id, talla)} disabled={saving || !selected} className="px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50">
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
+                    <button onClick={() => onSave(selected?.id, talla)} disabled={saving || !selected} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
                         {saving ? 'Guardando…' : 'Confirmar'}
                     </button>
                 </div>

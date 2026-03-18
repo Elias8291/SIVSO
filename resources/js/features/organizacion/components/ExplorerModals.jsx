@@ -23,12 +23,12 @@ function ErrMsg({ msg }) {
 
 function ModalFooter({ onCancel, form, saving, label }) {
     return (
-        <>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end w-full">
             <button
                 type="button"
                 onClick={onCancel}
                 disabled={saving}
-                className="px-4 py-2 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all disabled:opacity-50"
+                className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all disabled:opacity-50 touch-manipulation"
             >
                 Cancelar
             </button>
@@ -36,14 +36,14 @@ function ModalFooter({ onCancel, form, saving, label }) {
                 type="submit"
                 form={form}
                 disabled={saving}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 transition-all"
+                className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold disabled:opacity-60 hover:opacity-90 active:scale-[0.98] transition-all touch-manipulation"
             >
                 {saving && (
                     <span className="size-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 )}
                 {label}
             </button>
-        </>
+        </div>
     );
 }
 

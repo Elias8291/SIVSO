@@ -25,7 +25,7 @@ function PwdInp({ value, onChange, placeholder }) {
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full px-3.5 py-2.5 pr-10 rounded-2xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all"
+                className="w-full px-3.5 py-3 pr-10 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation"
             />
             <button
                 type="button"
@@ -45,7 +45,7 @@ function Toast({ message, onDone }) {
     }, [onDone]);
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold">
             <CheckCircle size={15} strokeWidth={2} className="text-emerald-400 dark:text-emerald-600 shrink-0" />
             {message}
         </div>
@@ -74,7 +74,7 @@ export default function MiCuentaCambiarContrasenaPage() {
     };
 
     return (
-        <div className="mx-auto w-full max-w-xl px-4 sm:px-0">
+        <div className="mx-auto w-full max-w-xl px-0">
             <Link
                 to="/dashboard/mi-cuenta"
                 className="inline-flex items-center gap-2 text-[14px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] dark:hover:text-[#AF9460] mb-4 transition-colors"
@@ -126,17 +126,17 @@ export default function MiCuentaCambiarContrasenaPage() {
                                 placeholder="••••••••"
                             />
                         </Field>
-                        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                        <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                             <Link
                                 to="/dashboard/mi-cuenta"
-                                className="order-2 sm:order-1 px-5 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-[14px] font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all text-center"
+                                className="w-full sm:w-auto min-h-[44px] flex items-center justify-center px-5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-[14px] font-bold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all touch-manipulation"
                             >
                                 Cancelar
                             </Link>
                             <button
                                 type="submit"
                                 disabled={savingPwd}
-                                className="order-1 sm:order-2 px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+                                className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all touch-manipulation"
                             >
                                 {savingPwd ? 'Cambiando…' : 'Cambiar contraseña'}
                             </button>

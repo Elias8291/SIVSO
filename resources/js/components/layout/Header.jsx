@@ -11,7 +11,7 @@ const Header = ({ onMenuClick }) => {
     const pageLabel = ROUTE_LABELS[currentPath] || 'Dashboard';
 
     return (
-        <header className="h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-8 xl:px-14">
+        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-3 sm:px-8 xl:px-14">
 
             {/* Breadcrumb + menú móvil */}
             <div className="flex items-center gap-2.5">

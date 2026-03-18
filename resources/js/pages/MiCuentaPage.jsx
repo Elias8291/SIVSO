@@ -19,7 +19,7 @@ function Field({ label, error, children }) {
 function Inp({ className = '', ...props }) {
     return (
         <input
-            className={`w-full min-w-0 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all ${className}`}
+            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation ${className}`}
             {...props}
         />
     );
@@ -28,7 +28,7 @@ function Inp({ className = '', ...props }) {
 function Sel({ className = '', ...props }) {
     return (
         <select
-            className={`w-full min-w-0 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all ${className}`}
+            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation ${className}`}
             {...props}
         >
             {props.children}
@@ -39,7 +39,7 @@ function Sel({ className = '', ...props }) {
 function SectionCard({ icon: Icon, title, description, children }) {
     return (
         <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden">
-            <div className="px-3 sm:px-4 py-3 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-2.5 text-left">
+            <div className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-2.5 text-left">
                 <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
                     <Icon size={14} className="text-[#AF9460]" strokeWidth={1.8} />
                 </div>
@@ -48,7 +48,7 @@ function SectionCard({ icon: Icon, title, description, children }) {
                     {description && <p className="text-[13px] text-zinc-400 mt-0.5 line-clamp-1">{description}</p>}
                 </div>
             </div>
-            <div className="px-3 sm:px-4 py-3 text-left">
+            <div className="px-4 py-3 text-left">
                 {children}
             </div>
         </div>
@@ -62,7 +62,7 @@ function Toast({ message, onDone }) {
     }, [onDone]);
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl text-[12px] font-semibold">
             <CheckCircle size={15} strokeWidth={2} className="text-emerald-400 dark:text-emerald-600 shrink-0" />
             {message}
         </div>
@@ -150,7 +150,7 @@ export default function MiCuentaPage() {
         ?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
     return (
-        <div className="mx-auto w-full max-w-3xl px-4 sm:px-0 text-center sm:text-left">
+        <div className="mx-auto w-full max-w-3xl px-0 text-center sm:text-left">
             <PageHeader
                 title="Mi Cuenta"
                 description="Gestiona tu información personal y credenciales de acceso."
@@ -164,7 +164,7 @@ export default function MiCuentaPage() {
             ) : (
                 <div className="space-y-3 lg:space-y-4">
                     {/* Avatar + resumen compacto */}
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-3 sm:px-4 py-3 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl text-center sm:text-left">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-4 py-3 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl text-center sm:text-left">
                         <div className="size-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
                             <span className="text-base font-black text-[#AF9460]">{initials}</span>
                         </div>
@@ -199,9 +199,9 @@ export default function MiCuentaPage() {
                                 <Field label="Correo electrónico" error={errInfo.email}>
                                     <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" inputMode="email" autoComplete="email" />
                                 </Field>
-                                <div className="flex justify-center sm:justify-end pt-0.5">
+                                <div className="pt-0.5">
                                     <button type="submit" disabled={savingInfo}
-                                        className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                        className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 touch-manipulation">
                                         {savingInfo ? 'Guardando…' : 'Guardar'}
                                     </button>
                                 </div>
@@ -226,9 +226,9 @@ export default function MiCuentaPage() {
                                             <Inp value={formNue.nue} onChange={(e) => setFormNue({ nue: e.target.value })} placeholder="Ej. 00012345" maxLength={15} />
                                         </Field>
                                     </div>
-                                    <div className="flex justify-center sm:justify-end pt-0.5">
+                                    <div className="pt-0.5">
                                         <button type="submit" disabled={savingNue}
-                                            className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                            className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 touch-manipulation">
                                             {savingNue ? 'Guardando…' : 'Actualizar NUE'}
                                         </button>
                                     </div>
@@ -260,9 +260,9 @@ export default function MiCuentaPage() {
                                     ))}
                                 </Sel>
                             </Field>
-                            <div className="flex justify-center sm:justify-end pt-0.5">
+                            <div className="pt-0.5">
                                 <button type="submit" disabled={savingDel}
-                                    className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+                                    className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 touch-manipulation">
                                     {savingDel ? 'Guardando…' : 'Guardar delegado'}
                                 </button>
                             </div>
@@ -274,7 +274,7 @@ export default function MiCuentaPage() {
                         to="/dashboard/mi-cuenta/cambiar-contrasena"
                         className="block bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden hover:border-[#AF9460]/30 dark:hover:border-[#AF9460]/30 transition-colors group"
                     >
-                        <div className="px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+                        <div className="px-4 py-3 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
                                     <KeyRound size={14} className="text-[#AF9460]" strokeWidth={1.8} />
