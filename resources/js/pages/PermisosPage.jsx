@@ -44,19 +44,14 @@ export default function PermisosPage() {
             render: (val) => {
                 const [mod, act] = val.split('.');
                 return (
-                    <div className="flex items-center gap-2.5">
-                        <div className="size-7 rounded-lg bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-700">
-                            <Lock size={12} className="text-zinc-400" strokeWidth={2} />
-                        </div>
-                        <div>
-                            <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
-                            {mod && act && (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="px-1.5 py-px rounded bg-[#AF9460]/10 text-[#AF9460] text-[13px] font-bold uppercase">{mod}</span>
-                                    <span className="text-[13px] text-zinc-400">{act}</span>
-                                </div>
-                            )}
-                        </div>
+                    <div>
+                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
+                        {mod && act && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <span className="px-1.5 py-px rounded bg-[#AF9460]/10 text-[#AF9460] text-[13px] font-bold uppercase">{mod}</span>
+                                <span className="text-[13px] text-zinc-400">{act}</span>
+                            </div>
+                        )}
                     </div>
                 );
             },
@@ -82,8 +77,8 @@ export default function PermisosPage() {
                             <Plus size={13} strokeWidth={2.5} /> Nuevo Permiso
                         </button>
                         <button onClick={() => navigate('/dashboard/permisos/nuevo')}
-                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-14 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
-                            <Plus size={24} strokeWidth={2.5} />
+                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
+                            <Plus size={18} strokeWidth={2.5} />
                         </button>
                     </>
                 }
