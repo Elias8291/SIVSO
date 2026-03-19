@@ -12,14 +12,21 @@ import {
     MiCuentaPage,
     MiCuentaCambiarContrasenaPage,
     EmpleadosPage,
+    EmpleadoFormPage,
     ProductosPage,
+    ProductoFormPage,
     UsuariosPage,
+    UsuarioFormPage,
     RolesPage,
+    RolFormPage,
     PermisosPage,
+    PermisoFormPage,
     OrganizacionPage,
     DelegadosPage,
     PartidasPage,
+    PartidasLimitePage,
 } from './pages';
+import { DependenciaFormPage, DelegadoFormPage } from './pages/organizacion';
 
 export default function App({ initialState }) {
     const authValue = initialState ? {
@@ -47,13 +54,28 @@ export default function App({ initialState }) {
                             <Route path="mi-cuenta"       element={<MiCuentaPage />} />
                             <Route path="mi-cuenta/cambiar-contrasena" element={<MiCuentaCambiarContrasenaPage />} />
                             <Route path="empleados"       element={<EmpleadosPage />} />
+                            <Route path="empleados/nuevo" element={<EmpleadoFormPage />} />
+                            <Route path="empleados/:id/editar" element={<EmpleadoFormPage />} />
                             <Route path="productos"       element={<ProductosPage />} />
-                            <Route path="organizacion"    element={<OrganizacionPage />} />
+                            <Route path="productos/nuevo" element={<ProductoFormPage />} />
+                            <Route path="productos/:id/editar" element={<ProductoFormPage />} />
+                            <Route path="organizacion" element={<OrganizacionPage />} />
+                            <Route path="organizacion/dependencias/nueva" element={<DependenciaFormPage />} />
+                            <Route path="organizacion/dependencias/:id/editar" element={<DependenciaFormPage />} />
+                            <Route path="organizacion/delegados/nuevo" element={<DelegadoFormPage />} />
+                            <Route path="organizacion/delegados/:id/editar" element={<DelegadoFormPage />} />
                             <Route path="delegados"      element={<DelegadosPage />} />
                             <Route path="partidas"        element={<PartidasPage />} />
+                            <Route path="partidas/limites/editar" element={<PartidasLimitePage />} />
                             <Route path="usuarios"        element={<UsuariosPage />} />
+                            <Route path="usuarios/nuevo"  element={<UsuarioFormPage />} />
+                            <Route path="usuarios/:id/editar" element={<UsuarioFormPage />} />
                             <Route path="roles"           element={<RolesPage />} />
+                            <Route path="roles/nuevo"     element={<RolFormPage />} />
+                            <Route path="roles/:id/editar" element={<RolFormPage />} />
                             <Route path="permisos"        element={<PermisosPage />} />
+                            <Route path="permisos/nuevo"  element={<PermisoFormPage />} />
+                            <Route path="permisos/:id/editar" element={<PermisoFormPage />} />
                             <Route path="*"               element={<Navigate to="/dashboard" replace />} />
                         </Route>
 

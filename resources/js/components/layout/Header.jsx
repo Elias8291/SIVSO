@@ -1,14 +1,14 @@
 import { Sun, Moon, Bell, Menu } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocation } from 'react-router-dom';
-import { ROUTE_LABELS } from '../../config/routes';
+import { getRouteLabel } from '../../config/routes';
 
 const Header = ({ onMenuClick }) => {
     const { isDarkMode, toggleTheme } = useTheme();
     const location = useLocation();
 
     const currentPath = location.pathname;
-    const pageLabel = ROUTE_LABELS[currentPath] || 'Dashboard';
+    const pageLabel = getRouteLabel(currentPath);
 
     return (
         <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-3 sm:px-8 xl:px-14">

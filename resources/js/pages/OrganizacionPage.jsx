@@ -1,8 +1,9 @@
 /**
  * Explorador Organizacional — Página refactorizada
- * Composición limpia con diseño innovador y estructura modular
+ * Crear/editar en vistas separadas (no modales).
  */
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Building2,
     Users,
@@ -23,48 +24,21 @@ import {
     ProgramaCard,
     Panel,
     MobileLevel,
-    DependenciaModal,
-    DelegadoModal,
     ConfirmDeleteModal,
 } from '../features/organizacion/components';
 
-/* ─── Modales ───────────────────────────────────────────────────────────── */
-const initialFormDep = { clave: '', nombre: '' };
-const initialFormDel = { nombre: '', delegacion: '' };
-
 export default function OrganizacionPage() {
+    const navigate = useNavigate();
     const ctx = useOrganizacion();
     const { selDep, selDel, selTrab, depCtx, delCtx, trabCtx, progCtx } = ctx;
 
-    /* Estado de modales */
-    const [modalDep, setModalDep] = useState(null);
-    const [modalDel, setModalDel] = useState(null);
     const [confirm, setConfirm] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [formErrors, setFormErrors] = useState({});
-    const [formDep, setFormDep] = useState(initialFormDep);
-    const [formDel, setFormDel] = useState(initialFormDel);
 
-    const openCreateDep = () => {
-        setFormDep(initialFormDep);
-        setFormErrors({});
-        setModalDep('create');
-    };
-    const openEditDep = (item) => {
-        setFormDep({ clave: item.clave, nombre: item.nombre });
-        setFormErrors({});
-        setModalDep({ mode: 'edit', item });
-    };
-    const openCreateDel = () => {
-        setFormDel(initialFormDel);
-        setFormErrors({});
-        setModalDel('create');
-    };
-    const openEditDel = (item) => {
-        setFormDel({ nombre: item.nombre, delegacion: item.clave });
-        setFormErrors({});
-        setModalDel({ mode: 'edit', item });
-    };
+    const openCreateDep = () => navigate('/dashboard/organizacion/dependencias/nueva');
+    const openEditDep = (item) => navigate(`/dashboard/organizacion/dependencias/${item.id}/editar`);
+    const openCreateDel = () => selDep && navigate('/dashboard/organizacion/delegados/nuevo', { state: { ur: selDep.clave, dep: selDep } });
+    const openEditDel = (item) => navigate(`/dashboard/organizacion/delegados/${item.id}/editar`, { state: { item } });
 
     const deleteDep = async () => {
         setSaving(true);
@@ -379,34 +353,6 @@ export default function OrganizacionPage() {
                 </div>
             </div>
 
-            {/* Modales */}
-            <DependenciaModal
-                open={!!modalDep}
-                onClose={() => setModalDep(null)}
-                mode={modalDep === 'create' ? 'create' : 'edit'}
-                item={modalDep?.item}
-                form={formDep}
-                setForm={setFormDep}
-                formErrors={formErrors}
-                setFormErrors={setFormErrors}
-                saving={saving}
-                setSaving={setSaving}
-                onSuccess={() => depCtx.reload()}
-            />
-            <DelegadoModal
-                open={!!modalDel}
-                onClose={() => setModalDel(null)}
-                mode={modalDel === 'create' ? 'create' : 'edit'}
-                item={modalDel?.item}
-                form={formDel}
-                setForm={setFormDel}
-                formErrors={formErrors}
-                setFormErrors={setFormErrors}
-                saving={saving}
-                setSaving={setSaving}
-                selDep={selDep}
-                onSuccess={() => delCtx.reload()}
-            />
             <ConfirmDeleteModal
                 open={!!confirm}
                 onClose={() => setConfirm(null)}

@@ -59,6 +59,15 @@ class PermissionController extends Controller
         return response()->json(['message' => 'Permiso creado correctamente.', 'id' => $permission->id], 201);
     }
 
+    public function show(Permission $permission): JsonResponse
+    {
+        return response()->json([
+            'id'         => $permission->id,
+            'name'       => $permission->name,
+            'guard_name' => $permission->guard_name,
+        ]);
+    }
+
     public function update(Request $request, Permission $permission): JsonResponse
     {
         $data = $request->validate([

@@ -78,6 +78,17 @@ class RoleController extends Controller
         ]);
     }
 
+    public function show(Role $role): JsonResponse
+    {
+        $permissions = $role->permissions->pluck('id')->values()->all();
+        return response()->json([
+            'id'          => $role->id,
+            'name'        => $role->name,
+            'guard_name'  => $role->guard_name,
+            'permissions' => $permissions,
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

@@ -69,6 +69,25 @@ class UserController extends Controller
         ]);
     }
 
+    public function show(User $user): JsonResponse
+    {
+        $roles = \DB::table('model_has_roles')
+            ->where('model_id', $user->id)
+            ->where('model_type', User::class)
+            ->pluck('role_id')
+            ->values()
+            ->all();
+
+        return response()->json([
+            'id'     => $user->id,
+            'name'   => $user->name,
+            'rfc'    => $user->rfc,
+            'email'  => $user->email,
+            'activo' => (bool) $user->activo,
+            'roles'  => $roles->values()->all(),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

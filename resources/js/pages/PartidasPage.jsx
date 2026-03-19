@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
-import { PageHeader, Modal } from '../components/ui';
+import { PageHeader } from '../components/ui';
 
 const fmt = (n) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 }).format(n ?? 0);
@@ -106,9 +107,7 @@ export default function PartidasPage() {
     const [data, setData]         = useState(null);
     const [loading, setLoading]   = useState(false);
     const [search, setSearch]     = useState('');
-    const [editRow, setEditRow]   = useState(null);
-    const [editVals, setEditVals] = useState({});
-    const [saving, setSaving]     = useState(false);
+    const navigate = useNavigate();
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -133,39 +132,7 @@ export default function PartidasPage() {
     const partidas = data?.partidas ?? [];
 
     const openEdit = (row) => {
-        const vals = {};
-        (row.columnas ?? []).forEach((c) => {
-            vals[c.partida_especifica] = c.limite > 0 ? c.limite.toFixed(2) : '';
-        });
-        setEditVals(vals);
-        setEditRow(row);
-    };
-
-    const saveLimite = async () => {
-        if (!editRow) return;
-        setSaving(true);
-        try {
-            const payload = {
-                ur: editRow.ur,
-                anio,
-                limites: Object.entries(editVals).map(([pe, val]) => ({
-                    partida_especifica: parseInt(pe, 10),
-                    limite: parseFloat(val) || 0,
-                })),
-            };
-            await fetch('/api/partidas/limite', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-            setEditRow(null);
-            load();
-        } catch {
-            /* silent */
-        } finally {
-            setSaving(false);
-        }
+        navigate('/dashboard/partidas/limites/editar', { state: { row, anio } });
     };
 
     const totalesGlobales = data?.totales_globales ?? [];
@@ -391,76 +358,6 @@ export default function PartidasPage() {
                 )}
             </div>
 
-            {/* Modal editar límites */}
-            <Modal
-                open={!!editRow}
-                onClose={() => setEditRow(null)}
-                title={`Límites — UR ${editRow?.ur ?? ''}`}
-                size="sm"
-                footer={
-                    <>
-                        <button
-                            type="button"
-                            onClick={() => setEditRow(null)}
-                            className="px-4 py-2 text-[14px] font-semibold text-zinc-500 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={saveLimite}
-                            disabled={saving}
-                            className="px-5 py-2 text-[14px] font-bold bg-[#AF9460] hover:bg-[#9a7f50] text-white rounded-lg transition-all disabled:opacity-60 flex items-center gap-1.5"
-                        >
-                            {saving && <RefreshCw size={11} className="animate-spin" />}
-                            Guardar
-                        </button>
-                    </>
-                }
-            >
-                {editRow && (
-                    <div className="space-y-5">
-                        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                            Establece el límite de gasto para cada partida específica en <strong className="text-[#AF9460]">{editRow.nombre}</strong> para el año <strong>{anio}</strong>.
-                        </p>
-
-                        {(editRow.columnas ?? []).map((col) => (
-                            <div key={col.partida_especifica}>
-                                <label className="block text-[13px] font-bold uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400 mb-1.5">
-                                    Partida Específica {col.partida_especifica}
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] text-zinc-400 font-semibold">$</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={editVals[col.partida_especifica] ?? ''}
-                                        onChange={(e) =>
-                                            setEditVals((prev) => ({
-                                                ...prev,
-                                                [col.partida_especifica]: e.target.value,
-                                            }))
-                                        }
-                                        className="w-full pl-7 pr-4 py-2.5 text-[12px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-[#AF9460] transition-all"
-                                    />
-                                </div>
-                                <p className="text-[12px] text-zinc-400 mt-1">
-                                    Gasto actual: <strong>{fmt(col.gastado)}</strong>
-                                    {col.limite > 0 && <> &nbsp;·&nbsp; Límite anterior: {fmt(col.limite)}</>}
-                                </p>
-                            </div>
-                        ))}
-
-                        {(editRow.columnas ?? []).length === 0 && (
-                            <p className="text-[14px] text-zinc-400 text-center py-4">
-                                Esta UR no tiene partidas con gasto registrado aún.
-                            </p>
-                        )}
-                    </div>
-                )}
-            </Modal>
         </div>
     );
 }
