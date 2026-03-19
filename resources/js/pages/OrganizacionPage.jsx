@@ -84,7 +84,7 @@ export default function OrganizacionPage() {
 
             {/* ─── MÓVIL: Flujo drill-down ────────────────────────────────── */}
             <div className="lg:hidden flex flex-col flex-1 min-h-0">
-                <div className="flex items-center justify-center gap-1 sm:gap-2 mb-4 py-3 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50">
+                <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 mb-4 py-3 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 overflow-x-auto flex-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     <ExplorerStepPill active={!selDep} done={!!selDep} label="Dependencia" />
                     <ArrowRight size={12} className="text-zinc-300 dark:text-zinc-600 shrink-0" />
                     <ExplorerStepPill active={!!selDep && !selDel} done={!!selDel} label="Delegación" />
