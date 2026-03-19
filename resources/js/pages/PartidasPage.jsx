@@ -239,130 +239,194 @@ export default function PartidasPage() {
                         <p className="text-[13px] mt-1">Asegúrate de que concentrado y propuesta tengan registros.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto overflow-y-auto max-h-[65vh] relative">
-                        <table className="w-full text-left min-w-[600px] border-collapse">
-                            <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-800">
-                                <tr>
-                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                        Dependencia / UR
-                                    </th>
-                                    {partidas.map((pe) => (
-                                        <th key={pe} className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                            Partida Esp. {pe}
-                                        </th>
-                                    ))}
-                                    {partidas.length === 0 && (
-                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                            Importe
-                                        </th>
-                                    )}
-                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                        Total
-                                    </th>
-                                    <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
-                                        Límites
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, i) => {
-                                    const isLast = i === rows.length - 1;
-                                    return (
-                                        <tr
-                                            key={row.ur}
-                                            className={`${!isLast ? 'border-b border-zinc-50 dark:border-zinc-800/40' : ''} hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors`}
-                                        >
-                                            {/* UR info */}
-                                            <td className="px-4 py-3 align-top">
-                                                <p className="text-[14px] font-extrabold text-brand-gold uppercase tracking-wide leading-none">
-                                                    UR {row.ur}
-                                                </p>
-                                                <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
-                                                    {row.nombre}
-                                                </p>
-                                                {row.trabajadores > 0 && (
-                                                    <p className="text-[12px] text-zinc-400 mt-0.5">
-                                                        {row.trabajadores} trabajador{row.trabajadores !== 1 ? 'es' : ''}
-                                                    </p>
-                                                )}
-                                            </td>
-
-                                            {/* Columnas por partida_especifica */}
-                                            {row.columnas.map((col) => (
-                                                <CeldaPartida key={col.partida_especifica} col={col} />
-                                            ))}
-
-                                            {/* Fallback si no hay partidas */}
-                                            {row.columnas.length === 0 && (
-                                                <td className="px-4 py-3 text-[14px] text-zinc-400">—</td>
-                                            )}
-
-                                            {/* Total UR */}
-                                            <td className="px-4 py-3 align-top">
-                                                <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
-                                                    {fmt(row.total_gastado)}
-                                                </p>
-                                                {row.total_limite > 0 && (
-                                                    <>
-                                                        <p className="text-[12px] text-zinc-400 mt-0.5">
-                                                            / {fmt(row.total_limite)}
-                                                        </p>
-                                                        <ProgressBar
-                                                            pct={row.total_pct}
-                                                            alerta={nivelAlerta(row.total_pct)}
-                                                        />
-                                                        <div className="mt-1">
-                                                            <AlertaBadge pct={row.total_pct} />
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </td>
-
-                                            {/* Acción editar límites */}
-                                            <td className="px-4 py-3 align-top text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEdit(row)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all"
-                                                >
-                                                    <Edit2 size={11} strokeWidth={2} />
-                                                    Límites
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-
-                            {/* Fila totales */}
-                            {rows.length > 1 && (
-                                <tfoot className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-700">
+                    <>
+                        {/* 💻 VISTA ESCRITORIO (Tabla) */}
+                        <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[65vh] relative">
+                            <table className="w-full text-left min-w-[600px] border-collapse">
+                                <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-800">
                                     <tr>
-                                        <td className="px-4 py-4">
-                                            <p className="text-[14px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-                                                Total general
-                                            </p>
-                                        </td>
-                                        {totalesGlobales.map((t) => (
-                                            <td key={t.partida_especifica} className="px-4 py-4">
-                                                <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">
-                                                    {fmt(t.gastado)}
-                                                </p>
-                                                {t.limite > 0 && (
-                                                    <p className="text-[12px] text-zinc-400">/ {fmt(t.limite)}</p>
-                                                )}
-                                            </td>
+                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                            Dependencia / UR
+                                        </th>
+                                        {partidas.map((pe) => (
+                                            <th key={pe} className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                                Partida Esp. {pe}
+                                            </th>
                                         ))}
-                                        {totalesGlobales.length === 0 && <td />}
-                                        <td className="px-4 py-4">
-                                            <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
-                                        </td>
-                                        <td />
+                                        {partidas.length === 0 && (
+                                            <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                                Importe
+                                            </th>
+                                        )}
+                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                            Total
+                                        </th>
+                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
+                                            Límites
+                                        </th>
                                     </tr>
-                                </tfoot>
+                                </thead>
+                                <tbody>
+                                    {rows.map((row, i) => {
+                                        const isLast = i === rows.length - 1;
+                                        return (
+                                            <tr
+                                                key={row.ur}
+                                                className={`${!isLast ? 'border-b border-zinc-50 dark:border-zinc-800/40' : ''} hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors`}
+                                            >
+                                                <td className="px-4 py-3 align-top">
+                                                    <p className="text-[14px] font-extrabold text-brand-gold uppercase tracking-wide leading-none">
+                                                        UR {row.ur}
+                                                    </p>
+                                                    <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
+                                                        {row.nombre}
+                                                    </p>
+                                                    {row.trabajadores > 0 && (
+                                                        <p className="text-[12px] text-zinc-400 mt-0.5">
+                                                            {row.trabajadores} trabajador{row.trabajadores !== 1 ? 'es' : ''}
+                                                        </p>
+                                                    )}
+                                                </td>
+                                                {row.columnas.map((col) => (
+                                                    <CeldaPartida key={col.partida_especifica} col={col} />
+                                                ))}
+                                                {row.columnas.length === 0 && (
+                                                    <td className="px-4 py-3 text-[14px] text-zinc-400">—</td>
+                                                )}
+                                                <td className="px-4 py-3 align-top">
+                                                    <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
+                                                        {fmt(row.total_gastado)}
+                                                    </p>
+                                                    {row.total_limite > 0 && (
+                                                        <>
+                                                            <p className="text-[12px] text-zinc-400 mt-0.5">
+                                                                / {fmt(row.total_limite)}
+                                                            </p>
+                                                            <ProgressBar pct={row.total_pct} alerta={nivelAlerta(row.total_pct)} />
+                                                            <div className="mt-1"><AlertaBadge pct={row.total_pct} /></div>
+                                                        </>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 align-top text-right">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(row)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all"
+                                                    >
+                                                        <Edit2 size={11} strokeWidth={2} /> Límites
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                                {rows.length > 1 && (
+                                    <tfoot className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-700">
+                                        <tr>
+                                            <td className="px-4 py-4">
+                                                <p className="text-[14px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total general</p>
+                                            </td>
+                                            {totalesGlobales.map((t) => (
+                                                <td key={t.partida_especifica} className="px-4 py-4">
+                                                    <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(t.gastado)}</p>
+                                                    {t.limite > 0 && <p className="text-[12px] text-zinc-400">/ {fmt(t.limite)}</p>}
+                                                </td>
+                                            ))}
+                                            {totalesGlobales.length === 0 && <td />}
+                                            <td className="px-4 py-4">
+                                                <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
+                                            </td>
+                                            <td />
+                                        </tr>
+                                    </tfoot>
+                                )}
+                            </table>
+                        </div>
+
+                        {/* 📱 VISTA MÓVIL (Tarjetas apiladas) */}
+                        <div className="sm:hidden flex flex-col max-h-[75vh] overflow-y-auto relative">
+                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                                {rows.map((row) => (
+                                    <div key={row.ur} className="p-4 space-y-4">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[14px] font-extrabold text-brand-gold uppercase tracking-wide leading-none">UR {row.ur}</p>
+                                                <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-1 leading-snug">{row.nombre}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => openEdit(row)}
+                                                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 active:scale-95 transition-all shadow-sm"
+                                            >
+                                                <Edit2 size={13} strokeWidth={2.5} /> Límites
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl p-3 border border-zinc-100 dark:border-zinc-800">
+                                            {row.columnas.map((col) => {
+                                                const nivel = nivelAlerta(col.porcentaje);
+                                                return (
+                                                    <div key={col.partida_especifica} className="flex flex-col">
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 pl-1">Partida {col.partida_especifica}</p>
+                                                        <div className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl p-3 shadow-sm flex flex-col justify-center">
+                                                            <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400' : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}`}>
+                                                                {fmt(col.gastado)}
+                                                            </p>
+                                                            {col.limite > 0 ? (
+                                                                <>
+                                                                    <p className="text-[11px] font-medium text-zinc-400 mt-0.5">/ {fmt(col.limite)}</p>
+                                                                    <ProgressBar pct={col.porcentaje} alerta={nivel} />
+                                                                </>
+                                                            ) : (
+                                                                <p className="text-[11px] font-medium text-zinc-400 mt-0.5">Sin límite</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Subtotal UR */}
+                                            <div className="col-span-2 mt-1 pt-3 border-t border-zinc-200 dark:border-zinc-700/60">
+                                                <div className="flex justify-between items-end">
+                                                    <div>
+                                                        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">Total Gastado</p>
+                                                        <p className="text-[16px] font-black text-zinc-800 dark:text-zinc-100 leading-none">{fmt(row.total_gastado)}</p>
+                                                    </div>
+                                                    {row.total_limite > 0 && (
+                                                        <p className="text-[12px] font-medium text-zinc-400">/ {fmt(row.total_limite)}</p>
+                                                    )}
+                                                </div>
+                                                {row.total_limite > 0 && (
+                                                    <div className="mt-2.5">
+                                                        <ProgressBar pct={row.total_pct} alerta={nivelAlerta(row.total_pct)} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Fila totales Móvil */}
+                            {rows.length > 1 && (
+                                <div className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 p-5 shadow-[0_-4px_15px_rgba(0,0,0,0.08)] outline outline-1 outline-zinc-100 dark:outline-zinc-700 space-y-4">
+                                    <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 text-center">Total General (Todas las UR)</p>
+                                    <div className="flex flex-wrap gap-4 justify-between">
+                                        {totalesGlobales.map((t) => (
+                                            <div key={t.partida_especifica}>
+                                                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">P. Esp {t.partida_especifica}</p>
+                                                <p className="text-[15px] font-bold text-zinc-700 dark:text-zinc-200 mt-0.5">{fmt(t.gastado)}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+                                        <span className="text-[13px] font-black uppercase tracking-widest text-zinc-500">GRAN TOTAL</span>
+                                        <span className="font-black text-brand-gold text-[18px]">{fmt(totalGastado)}</span>
+                                    </div>
+                                </div>
                             )}
-                        </table>
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
 

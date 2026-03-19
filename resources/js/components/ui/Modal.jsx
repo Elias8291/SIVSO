@@ -30,13 +30,13 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
     return (
         <div
             ref={overlayRef}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
             onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
         >
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-            <div className={`relative bg-white dark:bg-zinc-900 border-t sm:border border-zinc-100 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full ${SIZES[size]} flex flex-col max-h-[92vh] sm:max-h-[90vh]`}>
-                <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
+            <div className={`relative bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-2xl w-full ${SIZES[size]} flex flex-col max-h-[85vh] sm:max-h-[90vh]`}>
+                <div className="flex items-center justify-between px-4 py-3.5 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
                         <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
                         <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
