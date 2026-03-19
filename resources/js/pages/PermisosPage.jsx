@@ -21,10 +21,10 @@ export default function PermisosPage() {
                 }, {});
                 setAllModules(groups);
             })
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
-    const [saving, setSaving]   = useState(false);
+    const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
 
     const handleDelete = async () => {
@@ -76,10 +76,16 @@ export default function PermisosPage() {
                 title="Permisos"
                 description="Control granular de acciones disponibles en el sistema."
                 actions={
-                    <button onClick={() => navigate('/dashboard/permisos/nuevo')}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                        <Plus size={13} strokeWidth={2.5} /> Nuevo Permiso
-                    </button>
+                    <>
+                        <button onClick={() => navigate('/dashboard/permisos/nuevo')}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                            <Plus size={13} strokeWidth={2.5} /> Nuevo Permiso
+                        </button>
+                        <button onClick={() => navigate('/dashboard/permisos/nuevo')}
+                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-14 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
+                            <Plus size={24} strokeWidth={2.5} />
+                        </button>
+                    </>
                 }
                 search={
                     <SearchInput
@@ -95,15 +101,13 @@ export default function PermisosPage() {
                 <div className="flex flex-wrap gap-2 mb-6">
                     {Object.entries(allModules).map(([mod, count]) => (
                         <button key={mod} onClick={() => setSearch(mod)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold uppercase tracking-wider transition-all ${
-                                search === mod
-                                    ? 'bg-[#AF9460] border-[#AF9460] text-white'
-                                    : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-[#AF9460]/40'
-                            }`}>
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold uppercase tracking-wider transition-all ${search === mod
+                                ? 'bg-[#AF9460] border-[#AF9460] text-white'
+                                : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-[#AF9460]/40'
+                                }`}>
                             {mod}
-                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${
-                                search === mod ? 'bg-white/20 text-white' : 'bg-[#AF9460]/10 text-[#AF9460]'
-                            }`}>{count}</span>
+                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${search === mod ? 'bg-white/20 text-white' : 'bg-[#AF9460]/10 text-[#AF9460]'
+                                }`}>{count}</span>
                         </button>
                     ))}
                     {search && (

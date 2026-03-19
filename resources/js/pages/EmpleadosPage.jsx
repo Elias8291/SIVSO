@@ -39,29 +39,29 @@ export default function EmpleadosPage() {
     const [filterDel, setFilterDel] = useState('');
 
     useEffect(() => {
-        api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => {});
+        api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => { });
     }, []);
 
     useEffect(() => {
         if (!filterDep) { setDelegaciones([]); setFilterDel(''); return; }
         api.get(`/api/delegaciones?ur=${filterDep}`)
-            .then(r => setDelegaciones(r.data ?? [])).catch(() => {});
+            .then(r => setDelegaciones(r.data ?? [])).catch(() => { });
     }, [filterDep]);
 
     const buildExtra = useCallback(() => {
         const p = {};
         if (filterDep) p.dependencia_clave = filterDep;
-        if (filterDel) p.delegacion_clave  = filterDel;
+        if (filterDel) p.delegacion_clave = filterDel;
         return p;
     }, [filterDep, filterDel]);
 
     const extraParams = buildExtra();
-    const extraKey    = JSON.stringify(extraParams);
+    const extraKey = JSON.stringify(extraParams);
 
     const { data: empleados, meta, loading, search, setSearch, page, setPage, reload } =
         usePaginatedApi('/api/empleados', { perPage: 20, extra: extraParams, extraKey });
 
-    const [saving, setSaving]   = useState(false);
+    const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
 
     const handleDelete = async () => {
@@ -141,10 +141,16 @@ export default function EmpleadosPage() {
                 title="Empleados"
                 description="Registro de empleados vinculados al sistema de vestuario."
                 actions={
-                    <button onClick={() => navigate('/dashboard/empleados/nuevo')}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                        <Plus size={13} strokeWidth={2.5} /> Nuevo Empleado
-                    </button>
+                    <>
+                        <button onClick={() => navigate('/dashboard/empleados/nuevo')}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                            <Plus size={13} strokeWidth={2.5} /> Nuevo Empleado
+                        </button>
+                        <button onClick={() => navigate('/dashboard/empleados/nuevo')}
+                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-14 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
+                            <Plus size={24} strokeWidth={2.5} />
+                        </button>
+                    </>
                 }
                 search={
                     <SearchInput

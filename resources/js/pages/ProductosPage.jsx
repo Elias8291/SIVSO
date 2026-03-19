@@ -10,7 +10,7 @@ export default function ProductosPage() {
     const { data: productos, meta, loading, search, setSearch, page, setPage, reload } =
         usePaginatedApi('/api/productos', { perPage: 20 });
 
-    const [saving, setSaving]   = useState(false);
+    const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
 
     const handleDelete = async () => {
@@ -70,10 +70,16 @@ export default function ProductosPage() {
                 title="Productos"
                 description="Catálogo de artículos de vestuario y calzado."
                 actions={
-                    <button onClick={() => navigate('/dashboard/productos/nuevo')}
-                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                        <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
-                    </button>
+                    <>
+                        <button onClick={() => navigate('/dashboard/productos/nuevo')}
+                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                            <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
+                        </button>
+                        <button onClick={() => navigate('/dashboard/productos/nuevo')}
+                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-14 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
+                            <Plus size={24} strokeWidth={2.5} />
+                        </button>
+                    </>
                 }
                 search={
                     <SearchInput
