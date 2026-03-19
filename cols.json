@@ -1,0 +1,42 @@
+{
+    "concentrado": [
+        "id",
+        "nombre_trab",
+        "apellp_trab",
+        "apellm_trab",
+        "nue",
+        "ur",
+        "dependencia",
+        "ur_dependencia",
+        "cantidad",
+        "clave2025",
+        "descripcion",
+        "precio_unitario",
+        "importe",
+        "iva",
+        "total",
+        "no_partida",
+        "partida_descripcion",
+        "clave_partida",
+        "clave_descripcion_partida",
+        "clave_descripcion",
+        "talla",
+        "cantidad2",
+        "clave_presupuestal"
+    ],
+    "propuesta": [
+        "id",
+        "lote",
+        "partida_especifica",
+        "partida",
+        "descripcion",
+        "cantidad",
+        "unidad",
+        "marca",
+        "precio_unitario",
+        "subtotal",
+        "proveedor",
+        "medida",
+        "codigo"
+    ]
+}

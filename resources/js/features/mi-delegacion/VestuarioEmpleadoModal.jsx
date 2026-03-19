@@ -106,7 +106,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     useEffect(() => {
         if (!item) return;
         setLoadingP(true);
-        const url = `/api/productos?all=1&search=${encodeURIComponent(debouncedSearch)}`;
+        const url = `/api/productos?all=1&partida=${item.partida}&search=${encodeURIComponent(debouncedSearch)}`;
         api.get(url).then(j => { setProductos(j.data ?? []); setLoadingP(false); }).catch(() => setLoadingP(false));
     }, [debouncedSearch, item]);
 

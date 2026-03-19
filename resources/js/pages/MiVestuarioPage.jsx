@@ -174,7 +174,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
         if (!item) return;
         setLoadingP(true);
         const ctrl = new AbortController();
-        fetch(`/api/productos?all=1&search=${encodeURIComponent(debouncedSearch)}`, {
+        fetch(`/api/productos?all=1&partida=${item.partida}&search=${encodeURIComponent(debouncedSearch)}`, {
             signal: ctrl.signal, headers: { Accept: 'application/json' }, credentials: 'same-origin',
         })
             .then(r => r.json()).then(j => { setProductos(j.data ?? []); setLoadingP(false); })
