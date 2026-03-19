@@ -62,9 +62,9 @@ export default function LoginPage() {
         <AuthLayout title="Inicio de Sesión" subtitle="Ingrese su RFC para acceder">
             {/* Overlay de carga en pantalla */}
             {loading && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 dark:bg-[#0f0f0f]/90 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 dark:bg-zinc-950/90 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
-                        <span className="size-12 border-4 border-[#AF9460]/30 border-t-[#AF9460] rounded-full animate-spin" />
+                        <span className="size-12 border-4 border-brand-gold/30 border-t-brand-gold rounded-full animate-spin" />
                         <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">
                             Iniciando sesión...
                         </p>
@@ -100,7 +100,7 @@ export default function LoginPage() {
                         value={rfc}
                         onChange={(e) => setRfc(e.target.value)}
                         placeholder="ABCD123456XYZ"
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-[#050505] border border-zinc-200 dark:border-[#1f1f1f] rounded-lg focus:ring-1 focus:ring-[#AF9460] outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white text-sm shadow-sm uppercase"
+                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white text-sm shadow-sm uppercase"
                         required
                         autoFocus
                     />

@@ -19,7 +19,7 @@ function Field({ label, error, children }) {
 function Inp({ className = '', ...props }) {
     return (
         <input
-            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation ${className}`}
+            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all touch-manipulation ${className}`}
             {...props}
         />
     );
@@ -28,7 +28,7 @@ function Inp({ className = '', ...props }) {
 function Sel({ className = '', ...props }) {
     return (
         <select
-            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation ${className}`}
+            className={`w-full min-w-0 px-3 py-3 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all touch-manipulation ${className}`}
             {...props}
         >
             {props.children}
@@ -38,10 +38,10 @@ function Sel({ className = '', ...props }) {
 
 function SectionCard({ icon: Icon, title, description, children }) {
     return (
-        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-2.5 text-left">
-                <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                    <Icon size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                <div className="size-7 rounded-lg bg-brand-gold/10 flex items-center justify-center shrink-0">
+                    <Icon size={14} className="text-brand-gold" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0">
                     <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{title}</p>
@@ -70,39 +70,39 @@ function Toast({ message, onDone }) {
 }
 
 export default function MiCuentaPage() {
-    const [profile, setProfile]     = useState(null);
-    const [loading, setLoading]     = useState(true);
-    const [toast, setToast]         = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [toast, setToast] = useState(null);
 
     // Formulario datos personales
-    const [formInfo, setFormInfo]   = useState({ name: '', rfc: '', email: '' });
-    const [errInfo, setErrInfo]     = useState({});
+    const [formInfo, setFormInfo] = useState({ name: '', rfc: '', email: '' });
+    const [errInfo, setErrInfo] = useState({});
     const [savingInfo, setSavingInfo] = useState(false);
 
     // Formulario NUE (solo si tiene empleado)
-    const [formNue, setFormNue]     = useState({ nue: '' });
-    const [errNue, setErrNue]       = useState({});
+    const [formNue, setFormNue] = useState({ nue: '' });
+    const [errNue, setErrNue] = useState({});
     const [savingNue, setSavingNue] = useState(false);
 
     // Delegado asignado
-    const [delegados, setDelegados]     = useState([]);
-    const [delegadoId, setDelegadoId]   = useState('');
-    const [savingDel, setSavingDel]     = useState(false);
-    const [errDel, setErrDel]           = useState({});
+    const [delegados, setDelegados] = useState([]);
+    const [delegadoId, setDelegadoId] = useState('');
+    const [savingDel, setSavingDel] = useState(false);
+    const [errDel, setErrDel] = useState({});
 
     useEffect(() => {
         api.get('/api/perfil')
             .then((res) => {
                 setProfile(res);
                 setFormInfo({
-                    name:  res.user?.name  ?? '',
-                    rfc:   res.user?.rfc   ?? '',
+                    name: res.user?.name ?? '',
+                    rfc: res.user?.rfc ?? '',
                     email: res.user?.email ?? '',
                 });
                 setFormNue({ nue: res.empleado?.nue ?? res.user?.nue ?? '' });
                 setDelegadoId(res.user?.delegado_id ? String(res.user.delegado_id) : '');
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setLoading(false));
     }, []);
 
@@ -150,7 +150,7 @@ export default function MiCuentaPage() {
         ?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
     return (
-        <div className="mx-auto w-full max-w-3xl px-0 text-center sm:text-left">
+        <div>
             <PageHeader
                 title="Mi Cuenta"
                 description="Gestiona tu información personal y credenciales de acceso."
@@ -159,14 +159,14 @@ export default function MiCuentaPage() {
 
             {loading ? (
                 <div className="flex items-center justify-center py-16">
-                    <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                    <span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
                 </div>
             ) : (
                 <div className="space-y-3 lg:space-y-4">
                     {/* Avatar + resumen compacto */}
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-4 py-3 bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl text-center sm:text-left">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl text-center sm:text-left">
                         <div className="size-11 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                            <span className="text-base font-black text-[#AF9460]">{initials}</span>
+                            <span className="text-base font-black text-brand-gold">{initials}</span>
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm font-extrabold text-zinc-900 dark:text-white leading-tight truncate">
@@ -174,7 +174,7 @@ export default function MiCuentaPage() {
                             </p>
                             <p className="text-[13px] text-zinc-400 mt-0.5 truncate">{profile?.user?.email ?? '—'}</p>
                             {(profile?.user?.nue || profile?.empleado) && (
-                                <span className="inline-flex items-center justify-center sm:justify-start gap-1 mt-1 text-[12px] font-semibold text-[#AF9460] bg-[#AF9460]/10 px-2 py-0.5 rounded-full">
+                                <span className="inline-flex items-center justify-center sm:justify-start gap-1 mt-1 text-[12px] font-semibold text-brand-gold bg-brand-gold/10 px-2 py-0.5 rounded-full">
                                     <Hash size={10} strokeWidth={2.5} />
                                     NUE {profile?.empleado?.nue ?? profile?.user?.nue}
                                     {profile?.empleado?.delegacion_clave && ` · ${profile.empleado.delegacion_clave}`}
@@ -272,19 +272,19 @@ export default function MiCuentaPage() {
                     {/* Cambiar contraseña — compacto */}
                     <Link
                         to="/dashboard/mi-cuenta/cambiar-contrasena"
-                        className="block bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden hover:border-[#AF9460]/30 dark:hover:border-[#AF9460]/30 transition-colors group"
+                        className="block bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden hover:border-brand-gold/30 dark:hover:border-brand-gold/30 transition-colors group"
                     >
                         <div className="px-4 py-3 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                                    <KeyRound size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                                <div className="size-7 rounded-lg bg-brand-gold/10 flex items-center justify-center shrink-0">
+                                    <KeyRound size={14} className="text-brand-gold" strokeWidth={1.8} />
                                 </div>
                                 <div>
-                                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-[#AF9460] transition-colors">Cambiar contraseña</p>
+                                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-brand-gold transition-colors">Cambiar contraseña</p>
                                     <p className="text-[13px] text-zinc-400">Actualiza tu contraseña de acceso</p>
                                 </div>
                             </div>
-                            <ChevronRight size={16} className="text-zinc-300 dark:text-zinc-600 group-hover:text-[#AF9460] shrink-0" />
+                            <ChevronRight size={16} className="text-zinc-300 dark:text-zinc-600 group-hover:text-brand-gold shrink-0" />
                         </div>
                     </Link>
                 </div>

@@ -7,7 +7,7 @@ export default function SolicitudesPage() {
                 title="Solicitudes"
                 description="Seguimiento de solicitudes de vestuario y calzado."
             />
-            <div className="bg-white dark:bg-[#111111] rounded-[2rem] border border-zinc-100 dark:border-zinc-800 p-12 text-center">
+            <div className="bg-white dark:bg-zinc-800 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 p-12 text-center">
                 <p className="text-zinc-500 dark:text-zinc-400 text-sm">Módulo en desarrollo. Próximamente disponible.</p>
             </div>
         </div>

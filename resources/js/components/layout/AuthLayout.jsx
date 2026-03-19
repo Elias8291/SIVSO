@@ -13,7 +13,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
         <div className="h-screen min-h-[100dvh] flex items-center justify-center bg-zinc-100 dark:bg-[#050505] p-0 lg:p-8 transition-colors duration-300 relative overflow-hidden overscroll-none touch-pan-y">
             {/* SIVSO decorativo en el fondo exterior (detrás de la tarjeta) */}
             <span className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-                <span className="text-[20rem] lg:text-[28rem] font-black tracking-[0.15em] text-[#AF9460]/10 dark:text-[#AF9460]/15 leading-none italic">SIVSO</span>
+                <span className="text-[20rem] lg:text-[28rem] font-black tracking-[0.15em] text-brand-gold/10 dark:text-brand-gold/15 leading-none italic">SIVSO</span>
             </span>
             <main className="w-full max-w-5xl lg:h-[600px] flex flex-col lg:flex-row overflow-hidden lg:rounded-2xl bg-white dark:bg-[#0f0f0f] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-none lg:border border-zinc-200 dark:border-[#1f1f1f] relative z-10">
                 {/* Panel izquierdo con imagen */}
@@ -41,7 +41,7 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
                     </div>
                     <div className="hidden lg:flex relative z-10 flex-col justify-end p-10 h-full w-full">
                         <h1 className="text-6xl font-extrabold tracking-[0.2em] text-white mb-6">SIVSO</h1>
-                        <div className="h-[2px] w-10 bg-[#AF9460] mb-4" />
+                        <div className="h-[2px] w-10 bg-brand-gold mb-4" />
                         <h2 className="text-xl font-light leading-snug text-white drop-shadow-md">
                             SISTEMA INTEGRAL VESTUARIO SINDICATO OAXACA
                         </h2>

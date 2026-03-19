@@ -17,11 +17,11 @@ export default function PageHeader({ title, description, actions, search, compac
             {/* Fila 1: título + acciones */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div>
-                    <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                    <h2 className="text-[19px] sm:text-[21px] font-bold tracking-tight text-zinc-800 dark:text-zinc-100 leading-tight">
                         {title}
                     </h2>
                     {description && (
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-normal mt-0.5">
+                        <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 font-normal mt-1 leading-relaxed">
                             {description}
                         </p>
                     )}

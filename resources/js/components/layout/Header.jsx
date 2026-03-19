@@ -40,7 +40,7 @@ const Header = ({ onMenuClick }) => {
                     aria-label="Notificaciones"
                 >
                     <Bell size={16} strokeWidth={1.8} />
-                    <span className="absolute top-1.5 right-1.5 size-1.5 bg-[#AF9460] rounded-full" />
+                    <span className="absolute top-1.5 right-1.5 size-1.5 bg-brand-gold rounded-full" />
                 </button>
 
                 {/* Toggle tema */}

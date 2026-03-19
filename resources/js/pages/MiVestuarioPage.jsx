@@ -7,9 +7,9 @@ import { useDebounce } from '../lib/useDebounce';
 /* ── Categorías visuales por partida ──────────────────────────────────────── */
 const CATEGORY_STYLE = {
     default: { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-500 dark:text-zinc-400', dot: 'bg-zinc-400' },
-    2711:    { bg: 'bg-amber-50  dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-400' },
-    2712:    { bg: 'bg-sky-50    dark:bg-sky-900/20',   text: 'text-sky-700 dark:text-sky-400',     dot: 'bg-sky-400' },
-    2721:    { bg: 'bg-violet-50 dark:bg-violet-900/20',text: 'text-violet-700 dark:text-violet-400',dot: 'bg-violet-400' },
+    2711: { bg: 'bg-amber-50  dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-400' },
+    2712: { bg: 'bg-sky-50    dark:bg-sky-900/20', text: 'text-sky-700 dark:text-sky-400', dot: 'bg-sky-400' },
+    2721: { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-700 dark:text-violet-400', dot: 'bg-violet-400' },
 };
 const catStyle = (partida) => CATEGORY_STYLE[partida] ?? CATEGORY_STYLE.default;
 
@@ -33,7 +33,7 @@ function Toast({ message, onDone }) {
 function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
     const st = catStyle(item.partida);
     return (
-        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden flex flex-col">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden flex flex-col">
             {/* Encabezado coloreado */}
             <div className={`${st.bg} px-4 py-3 flex items-center justify-between`}>
                 <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                         <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Talla</span>
                         <button
                             onClick={() => onEditTalla(item)}
-                            className="flex items-center gap-1 text-sm font-black text-[#AF9460] hover:underline"
+                            className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline"
                         >
                             {item.talla || '—'}
                             <Ruler size={10} strokeWidth={2} />
@@ -88,13 +88,13 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
             <div className="px-4 pb-4 flex gap-2">
                 <button
                     onClick={() => onEditTalla(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] transition-all touch-manipulation"
+                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
                 >
                     <Ruler size={11} strokeWidth={2} /> Cambiar talla
                 </button>
                 <button
                     onClick={() => onCambiarProducto(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] transition-all touch-manipulation"
+                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
                 >
                     <RefreshCw size={11} strokeWidth={2} /> Cambiar artículo
                 </button>
@@ -128,14 +128,14 @@ function ModalTalla({ item, onClose, onSave, saving }) {
                     <p className="text-[11px] text-zinc-500 leading-snug">{item.descripcion}</p>
                     <div>
                         <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">
-                            Talla actual: <span className="text-[#AF9460]">{item.talla || '—'}</span>
+                            Talla actual: <span className="text-brand-gold">{item.talla || '—'}</span>
                         </label>
                         <input
                             value={talla}
                             onChange={(e) => setTalla(e.target.value.toUpperCase())}
                             maxLength={10}
                             placeholder="Ej. M, 27, XL…"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all mb-3"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all mb-3"
                         />
                         {/* Tallas rápidas */}
                         <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Selección rápida</p>
@@ -143,11 +143,10 @@ function ModalTalla({ item, onClose, onSave, saving }) {
                             {TALLAS_COMUNES.map(t => (
                                 <button key={t} type="button"
                                     onClick={() => setTalla(t)}
-                                    className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all ${
-                                        talla === t
-                                            ? 'bg-[#AF9460] border-[#AF9460] text-white'
-                                            : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50'
-                                    }`}
+                                    className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all ${talla === t
+                                        ? 'bg-brand-gold border-brand-gold text-white'
+                                        : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50'
+                                        }`}
                                 >
                                     {t}
                                 </button>
@@ -162,12 +161,12 @@ function ModalTalla({ item, onClose, onSave, saving }) {
 
 /* ── Modal cambiar producto ───────────────────────────────────────────────── */
 function ModalCambiarProducto({ item, onClose, onSave, saving }) {
-    const [search, setSearch]     = useState('');
+    const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
-    const [talla, setTalla]       = useState('');
+    const [talla, setTalla] = useState('');
     const [loadingP, setLoadingP] = useState(false);
-    const debouncedSearch         = useDebounce(search, 350);
+    const debouncedSearch = useDebounce(search, 350);
 
     useEffect(() => { if (item) { setSelected(null); setTalla(item.talla ?? ''); setSearch(''); } }, [item]);
 
@@ -210,7 +209,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                         <input
                             value={search} onChange={(e) => setSearch(e.target.value)}
                             placeholder="Buscar artículo de reemplazo..."
-                            className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 transition-all"
+                            className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
                         />
                     </div>
 
@@ -218,7 +217,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                     <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40">
                         {loadingP ? (
                             <div className="py-8 flex items-center justify-center">
-                                <span className="size-5 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                                <span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
                             </div>
                         ) : productos.length === 0 ? (
                             <p className="py-8 text-center text-[11px] text-zinc-400">Sin resultados.</p>
@@ -226,18 +225,17 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                             productos.map(p => (
                                 <button key={p.id} type="button"
                                     onClick={() => setSelected(p)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${
-                                        selected?.id === p.id
-                                            ? 'bg-[#AF9460]/8 border-l-2 border-[#AF9460]'
-                                            : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-                                    }`}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${selected?.id === p.id
+                                        ? 'bg-brand-gold/8 border-l-2 border-brand-gold'
+                                        : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                                        }`}
                                 >
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{p.descripcion}</p>
                                         <p className="text-[9px] text-zinc-400 mt-0.5">{p.clave_vestuario || p.codigo || '—'}</p>
                                     </div>
                                     {selected?.id === p.id && (
-                                        <CheckCircle size={14} className="text-[#AF9460] shrink-0" strokeWidth={2} />
+                                        <CheckCircle size={14} className="text-brand-gold shrink-0" strokeWidth={2} />
                                     )}
                                 </button>
                             ))
@@ -251,7 +249,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                             </label>
                             <input value={talla} onChange={(e) => setTalla(e.target.value.toUpperCase())} maxLength={10}
                                 placeholder="Talla (opcional)"
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
                             />
                         </div>
                     )}
@@ -263,16 +261,16 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
 
 /* ── Página principal ─────────────────────────────────────────────────────── */
 export default function MiVestuarioPage() {
-    const [data, setData]           = useState(null);
-    const [apiError, setApiError]   = useState(null);
-    const [loading, setLoading]     = useState(true);
-    const [toast, setToast]         = useState(null);
-    const [saving, setSaving]       = useState(false);
+    const [data, setData] = useState(null);
+    const [apiError, setApiError] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [toast, setToast] = useState(null);
+    const [saving, setSaving] = useState(false);
 
-    const [editTalla, setEditTalla]       = useState(null);
-    const [cambiarProd, setCambiarProd]   = useState(null);
+    const [editTalla, setEditTalla] = useState(null);
+    const [cambiarProd, setCambiarProd] = useState(null);
     const [filterSearch, setFilterSearch] = useState('');
-    const debouncedFilter                 = useDebounce(filterSearch, 250);
+    const debouncedFilter = useDebounce(filterSearch, 250);
 
     const load = useCallback(() => {
         setLoading(true);
@@ -329,7 +327,7 @@ export default function MiVestuarioPage() {
     const asignaciones = (data?.asignaciones ?? []).filter(a =>
         debouncedFilter
             ? a.descripcion.toLowerCase().includes(debouncedFilter.toLowerCase()) ||
-              (a.clave_vestuario ?? '').toLowerCase().includes(debouncedFilter.toLowerCase())
+            (a.clave_vestuario ?? '').toLowerCase().includes(debouncedFilter.toLowerCase())
             : true
     );
 
@@ -337,7 +335,7 @@ export default function MiVestuarioPage() {
 
     if (loading) return (
         <div className="flex items-center justify-center py-32">
-            <span className="size-7 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+            <span className="size-7 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
         </div>
     );
 
@@ -398,10 +396,10 @@ export default function MiVestuarioPage() {
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                     <div>
-                        <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
+                        <h2 className="text-[19px] sm:text-[21px] font-bold tracking-tight text-zinc-800 dark:text-zinc-100 leading-tight">
                             Mi Vestuario
                         </h2>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 mt-1 font-normal leading-relaxed">
                             Ejercicio {data.anio} · NUE {data.empleado.nue} · {data.empleado.delegacion_clave}
                         </p>
                     </div>
@@ -417,7 +415,7 @@ export default function MiVestuarioPage() {
                         {total > 0 && (
                             <div className="text-right">
                                 <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Importe</p>
-                                <p className="text-xl font-black text-[#AF9460]">
+                                <p className="text-xl font-black text-brand-gold">
                                     ${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                                 </p>
                             </div>
@@ -432,7 +430,7 @@ export default function MiVestuarioPage() {
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Filtrar artículos…"
-                        className="w-full pl-9 pr-4 py-3 text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation"
+                        className="w-full pl-9 pr-4 py-3 text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all touch-manipulation"
                     />
                 </div>
             </div>
@@ -458,7 +456,7 @@ export default function MiVestuarioPage() {
                 </div>
             )}
 
-            <ModalTalla  item={editTalla}   onClose={() => setEditTalla(null)}   onSave={handleSaveTalla}    saving={saving} />
+            <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
             <ModalCambiarProducto item={cambiarProd} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
 
             {toast && <Toast message={toast} onDone={() => setToast(null)} />}

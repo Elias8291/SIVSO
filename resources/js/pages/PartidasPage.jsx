@@ -18,7 +18,7 @@ function ProgressBar({ pct, alerta }) {
     const color =
         alerta === 'critico' ? 'bg-red-500'
         : alerta === 'alto'  ? 'bg-amber-500'
-        : 'bg-[#AF9460]';
+        : 'bg-brand-gold';
 
     return (
         <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mt-1.5">
@@ -47,8 +47,8 @@ function nivelAlerta(pct) {
 function StatSummary({ label, gastado, limite, pct, icon }) {
     const nivel = nivelAlerta(pct);
     return (
-        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 flex items-start gap-4">
-            <div className="size-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-center shrink-0 text-[#AF9460]">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 flex items-start gap-4">
+            <div className="size-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-center shrink-0 text-brand-gold">
                 {icon}
             </div>
             <div className="flex-1 min-w-0">
@@ -162,7 +162,7 @@ export default function PartidasPage() {
                             type="button"
                             onClick={load}
                             disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all disabled:opacity-50"
                         >
                             <RefreshCw size={13} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
                             Actualizar
@@ -208,7 +208,7 @@ export default function PartidasPage() {
                     placeholder="Buscar dependencia o clave UR…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full sm:max-w-xs text-[14px] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 focus:outline-none focus:border-[#AF9460] transition-all"
+                    className="w-full sm:max-w-xs text-[14px] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 focus:outline-none focus:border-brand-gold transition-all"
                 />
                 <span className="text-[13px] text-zinc-400 shrink-0">
                     {rows.length} dependencia{rows.length !== 1 ? 's' : ''}
@@ -216,7 +216,7 @@ export default function PartidasPage() {
             </div>
 
             {/* Tabla pivot */}
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden">
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="flex items-center gap-3 text-zinc-400">
@@ -266,7 +266,7 @@ export default function PartidasPage() {
                                         >
                                             {/* UR info */}
                                             <td className="px-4 py-3 align-top">
-                                                <p className="text-[14px] font-extrabold text-[#AF9460] uppercase tracking-wide leading-none">
+                                                <p className="text-[14px] font-extrabold text-brand-gold uppercase tracking-wide leading-none">
                                                     UR {row.ur}
                                                 </p>
                                                 <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
@@ -315,7 +315,7 @@ export default function PartidasPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => openEdit(row)}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-[#AF9460] hover:text-[#AF9460] transition-all"
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all"
                                                 >
                                                     <Edit2 size={11} strokeWidth={2} />
                                                     Límites
@@ -347,7 +347,7 @@ export default function PartidasPage() {
                                         ))}
                                         {totalesGlobales.length === 0 && <td />}
                                         <td className="px-4 py-3">
-                                            <p className="text-[14px] font-bold text-[#AF9460]">{fmt(totalGastado)}</p>
+                                            <p className="text-[14px] font-bold text-brand-gold">{fmt(totalGastado)}</p>
                                         </td>
                                         <td />
                                     </tr>

@@ -21,7 +21,7 @@ function Field({ label, error, children }) {
 
 const EMPTY_FORM = { name: '', rfc: '', email: '', password: '', activo: true, roles: [] };
 
-const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/40 transition-all touch-manipulation";
+const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
 export default function UsuarioFormPage() {
     const { id } = useParams();
@@ -89,7 +89,7 @@ export default function UsuarioFormPage() {
     if (loading) {
         return (
             <div className="flex justify-center py-16">
-                <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                <span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
             </div>
         );
     }
@@ -98,13 +98,13 @@ export default function UsuarioFormPage() {
         <div className="mx-auto max-w-lg">
             <Link
                 to="/dashboard/usuarios"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] mb-6 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
                 Volver a Usuarios
             </Link>
 
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="px-4 py-4 border-b border-zinc-50 dark:border-zinc-800/60">
                     <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                         {isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -173,7 +173,7 @@ export default function UsuarioFormPage() {
                                     key={role.id}
                                     className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all min-h-[44px] ${
                                         form.roles.includes(role.id)
-                                            ? 'border-[#AF9460]/40 bg-[#AF9460]/8 text-[#AF9460]'
+                                            ? 'border-brand-gold/40 bg-brand-gold/8 text-brand-gold'
                                             : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
                                     }`}
                                 >
@@ -185,7 +185,7 @@ export default function UsuarioFormPage() {
                                     />
                                     <span
                                         className={`size-4 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-                                            form.roles.includes(role.id) ? 'bg-[#AF9460] border-[#AF9460]' : 'border-zinc-300 dark:border-zinc-600'
+                                            form.roles.includes(role.id) ? 'bg-brand-gold border-brand-gold' : 'border-zinc-300 dark:border-zinc-600'
                                         }`}
                                     >
                                         {form.roles.includes(role.id) && (
@@ -204,7 +204,7 @@ export default function UsuarioFormPage() {
                         <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Usuario activo</span>
                         <div
                             onClick={(e) => { e.preventDefault(); setForm((p) => ({ ...p, activo: !p.activo })); }}
-                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-[#AF9460]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-brand-gold' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                         >
                             <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.activo ? 'left-4' : 'left-0.5'}`} />
                         </div>

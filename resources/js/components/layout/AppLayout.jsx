@@ -8,7 +8,7 @@ const AppLayout = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     return (
-        <div className="flex min-h-screen bg-[#F7F7F8] dark:bg-[#060607] text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-300">
+        <div className="flex min-h-screen bg-[#F7F7F8] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-300">
             <Sidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}

@@ -35,10 +35,10 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
         >
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-            <div className={`relative bg-white dark:bg-[#0F0F10] border-t sm:border border-zinc-100 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-[calc(100vw-2rem)] ${SIZES[size]} flex flex-col max-h-[92vh] sm:max-h-[90vh]`}>
+            <div className={`relative bg-white dark:bg-zinc-900 border-t sm:border border-zinc-100 dark:border-zinc-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-[calc(100vw-2rem)] ${SIZES[size]} flex flex-col max-h-[92vh] sm:max-h-[90vh]`}>
                 <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
-                        <span className="size-1.5 bg-[#AF9460] rounded-full shrink-0" />
+                        <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
                         <h3 className="text-[13px] sm:text-[14px] font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate">
                             {title}
                         </h3>

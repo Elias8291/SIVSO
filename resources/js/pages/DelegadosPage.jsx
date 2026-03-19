@@ -26,7 +26,7 @@ export default function DelegadosPage() {
     const handleSearch = (e) => { e.preventDefault(); fetchDelegados(); };
 
     return (
-        <div className="mx-auto w-full max-w-2xl px-0">
+        <div>
             <PageHeader title="Delegados" description="Delegados y delegaciones que representa cada uno." compact />
 
             <form onSubmit={handleSearch} className="mb-4">
@@ -37,14 +37,14 @@ export default function DelegadosPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Buscar..."
-                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/30"
+                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/30"
                     />
                 </div>
             </form>
 
             {loading ? (
                 <div className="flex justify-center py-12">
-                    <span className="size-5 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                    <span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
                 </div>
             ) : delegados.length === 0 ? (
                 <p className="py-10 text-center text-sm text-zinc-500">Sin delegados.</p>
@@ -53,7 +53,7 @@ export default function DelegadosPage() {
                     {delegados.map((d) => (
                         <div
                             key={d.nombre}
-                            className="rounded-lg border border-zinc-100 dark:border-zinc-800 px-3 py-2.5 bg-white dark:bg-[#0F0F10]"
+                            className="rounded-lg border border-zinc-100 dark:border-zinc-800 px-3 py-2.5 bg-white dark:bg-zinc-900"
                         >
                             <div className="flex items-center justify-between gap-3">
                                 <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{d.nombre}</p>

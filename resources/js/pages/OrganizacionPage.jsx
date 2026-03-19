@@ -74,10 +74,10 @@ export default function OrganizacionPage() {
         <div className="flex flex-col h-full">
             {/* Encabezado innovador — omnibox style */}
             <header className="mb-6">
-                <h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                <h2 className="text-[19px] sm:text-[21px] font-bold tracking-tight text-zinc-800 dark:text-zinc-100 leading-tight">
                     Explorador Organizacional
                 </h2>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 mt-1 font-normal leading-relaxed">
                     Navega por la estructura o busca sin seleccionar — toca el buscador para cargar resultados
                 </p>
             </header>

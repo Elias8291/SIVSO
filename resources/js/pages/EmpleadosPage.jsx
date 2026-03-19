@@ -11,7 +11,7 @@ import { api } from '../lib/api';
 function Sel({ children, ...props }) {
     return (
         <select
-            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/50 transition-all"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/50 transition-all"
             {...props}
         >
             {children}
@@ -22,9 +22,9 @@ function Sel({ children, ...props }) {
 /* ── Chip de filtro ────────────────────────────────────────────────────────── */
 function FilterChip({ label, onClear }) {
     return (
-        <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-[#AF9460]/10 border border-[#AF9460]/25 text-[12px] font-bold text-[#AF9460]">
+        <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/25 text-[12px] font-bold text-brand-gold">
             {label}
-            <button onClick={onClear} className="size-4 rounded-full hover:bg-[#AF9460]/20 flex items-center justify-center transition-all">
+            <button onClick={onClear} className="size-4 rounded-full hover:bg-brand-gold/20 flex items-center justify-center transition-all">
                 ×
             </button>
         </span>
@@ -92,7 +92,7 @@ export default function EmpleadosPage() {
                 <div>
                     <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
                     {row.user_id && (
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] text-[#AF9460] font-semibold">
+                        <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] text-brand-gold font-semibold">
                             <UserCheck size={9} strokeWidth={2.5} /> Vinculado
                         </span>
                     )}

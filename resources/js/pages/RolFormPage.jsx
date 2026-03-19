@@ -21,7 +21,7 @@ function Field({ label, error, children }) {
 
 const EMPTY_FORM = { name: '', guard_name: 'web', permissions: [] };
 
-const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/40 transition-all touch-manipulation";
+const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
 function groupPermisos(permisos) {
     return permisos.reduce((acc, p) => {
@@ -111,7 +111,7 @@ export default function RolFormPage() {
     if (loading) {
         return (
             <div className="flex justify-center py-16">
-                <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                <span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
             </div>
         );
     }
@@ -120,13 +120,13 @@ export default function RolFormPage() {
         <div className="mx-auto max-w-2xl">
             <Link
                 to="/dashboard/roles"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] mb-6 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
                 Volver a Roles
             </Link>
 
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="px-4 py-4 border-b border-zinc-50 dark:border-zinc-800/60">
                     <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                         {isEdit ? 'Editar Rol' : 'Nuevo Rol'}
@@ -183,9 +183,9 @@ export default function RolFormPage() {
                                             <span
                                                 className={`size-4 rounded border-2 flex items-center justify-center transition-all ${
                                                     allSelected
-                                                        ? 'bg-[#AF9460] border-[#AF9460]'
+                                                        ? 'bg-brand-gold border-brand-gold'
                                                         : someSelected
-                                                            ? 'border-[#AF9460]'
+                                                            ? 'border-brand-gold'
                                                             : 'border-zinc-300 dark:border-zinc-600'
                                                 }`}
                                             >
@@ -194,7 +194,7 @@ export default function RolFormPage() {
                                                         <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
                                                 )}
-                                                {someSelected && !allSelected && <span className="size-1.5 rounded-sm bg-[#AF9460] block" />}
+                                                {someSelected && !allSelected && <span className="size-1.5 rounded-sm bg-brand-gold block" />}
                                             </span>
                                         </button>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 p-2">
@@ -203,7 +203,7 @@ export default function RolFormPage() {
                                                     key={p.id}
                                                     className={`flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer transition-all min-h-[44px] text-[13px] font-medium ${
                                                         form.permissions.includes(p.id)
-                                                            ? 'bg-[#AF9460]/8 text-[#AF9460] border border-[#AF9460]/20'
+                                                            ? 'bg-brand-gold/8 text-brand-gold border border-brand-gold/20'
                                                             : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 border border-transparent'
                                                     }`}
                                                 >
@@ -215,7 +215,7 @@ export default function RolFormPage() {
                                                     />
                                                     <span
                                                         className={`size-3.5 rounded border flex items-center justify-center shrink-0 ${
-                                                            form.permissions.includes(p.id) ? 'bg-[#AF9460] border-[#AF9460]' : 'border-zinc-300 dark:border-zinc-600'
+                                                            form.permissions.includes(p.id) ? 'bg-brand-gold border-brand-gold' : 'border-zinc-300 dark:border-zinc-600'
                                                         }`}
                                                     >
                                                         {form.permissions.includes(p.id) && (

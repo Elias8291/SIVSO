@@ -133,7 +133,7 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
                     collapsed ? 'lg:justify-center lg:px-2' : 'px-4'
                 }`}>
                     <div className="size-8 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                        <span className="text-[13px] font-bold text-[#AF9460]">{initials}</span>
+                        <span className="text-[13px] font-bold text-brand-gold">{initials}</span>
                     </div>
                     {!collapsed && (
                         <div className="min-w-0 flex-1">

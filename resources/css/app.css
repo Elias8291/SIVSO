@@ -14,28 +14,44 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
     /* Brand gold */
-    --color-brand-gold:     #AF9460;
-    --color-brand-gold-10:  rgb(175 148 96 / 0.10);
-    --color-brand-gold-25:  rgb(175 148 96 / 0.25);
+    --color-brand-gold: #AF9460;
+    --color-brand-gold-10: rgb(175 148 96 / 0.10);
+    --color-brand-gold-25: rgb(175 148 96 / 0.25);
 
     /* Superficies */
-    --color-surface:        #F7F7F8;
-    --color-surface-dark:   #060607;
-    --color-card:           #ffffff;
-    --color-card-dark:      #0F0F10;
+    --color-surface: #F7F7F8;
+    --color-surface-dark: #060607;
+    --color-card: #ffffff;
+    --color-card-dark: #0F0F10;
 }
 
 /* Scrollbar sutil */
-::-webkit-scrollbar        { width: 4px; height: 4px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: #d4d4d8; border-radius: 99px; }
-.dark ::-webkit-scrollbar-thumb { background: #27272a; }
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d4d4d8;
+    border-radius: 99px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #27272a;
+}
 
 /* Selección de texto */
-::selection { background: rgb(175 148 96 / 0.18); }
+::selection {
+    background: rgb(175 148 96 / 0.18);
+}
 
 /* Evitar zoom en inputs en móvil (iOS zoom si font-size < 16px) */
 @media screen and (max-width: 768px) {
+
     input,
     select,
     textarea {
@@ -45,7 +61,8 @@
 
 /* Base de fuente equilibrada: legible sin exagerar */
 html {
-    font-size: 18px; /* ~12% más que 16px: elegante y readable */
+    font-size: 18px;
+    /* ~12% más que 16px: elegante y readable */
 }
 
 /* Fondo unificado: evitar franja gris al hacer scroll/overscroll en móvil */
@@ -54,9 +71,11 @@ body {
     min-height: 100vh;
     -webkit-overflow-scrolling: touch;
 }
+
 body {
     background-color: #F7F7F8;
 }
+
 html.dark body {
     background-color: #060607;
 }
@@ -64,13 +83,16 @@ html.dark body {
 /* Móvil: layout fijo para evitar que el contenido "se baje" al hacer scroll
    (cuando la barra del navegador se oculta, 100vh cambia y todo se desplaza) */
 @media screen and (max-width: 1024px) {
-    html, body {
+
+    html,
+    body {
         overflow: hidden;
         height: 100%;
         min-height: 100%;
         position: fixed;
         inset: 0;
     }
+
     #root {
         position: fixed;
         inset: 0;

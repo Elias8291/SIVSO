@@ -24,7 +24,7 @@ const EMPTY_FORM = {
     clave_vestuario: '', descripcion: '', marca: '', unidad: '', medida: '', activo: true,
 };
 
-const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/40 transition-all touch-manipulation";
+const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
 export default function ProductoFormPage() {
     const { id } = useParams();
@@ -86,7 +86,7 @@ export default function ProductoFormPage() {
     if (loading) {
         return (
             <div className="flex justify-center py-16">
-                <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                <span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
             </div>
         );
     }
@@ -95,13 +95,13 @@ export default function ProductoFormPage() {
         <div className="mx-auto max-w-lg">
             <Link
                 to="/dashboard/productos"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] mb-6 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
                 Volver a Productos
             </Link>
 
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="px-4 py-4 border-b border-zinc-50 dark:border-zinc-800/60">
                     <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                         {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
@@ -217,7 +217,7 @@ export default function ProductoFormPage() {
                             type="checkbox"
                             checked={form.activo}
                             onChange={fCheck('activo')}
-                            className="rounded accent-[#AF9460] size-5"
+                            className="rounded accent-brand-gold size-5"
                         />
                     </label>
 

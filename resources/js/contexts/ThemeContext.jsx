@@ -27,7 +27,7 @@ export function useTheme() {
     if (!context) {
         return {
             isDarkMode: true,
-            toggleTheme: () => {},
+            toggleTheme: () => { },
         };
     }
     return context;

@@ -25,7 +25,7 @@ function PwdInp({ value, onChange, placeholder }) {
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
-                className="w-full px-3.5 py-3 pr-10 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/20 focus:border-[#AF9460]/40 transition-all touch-manipulation"
+                className="w-full px-3.5 py-3 pr-10 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base sm:text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all touch-manipulation"
             />
             <button
                 type="button"
@@ -77,7 +77,7 @@ export default function MiCuentaCambiarContrasenaPage() {
         <div className="mx-auto w-full max-w-xl px-0">
             <Link
                 to="/dashboard/mi-cuenta"
-                className="inline-flex items-center gap-2 text-[14px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] dark:hover:text-[#AF9460] mb-4 transition-colors"
+                className="inline-flex items-center gap-2 text-[14px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold dark:hover:text-brand-gold mb-4 transition-colors"
             >
                 <ArrowLeft size={14} strokeWidth={2} />
                 Volver a Mi Cuenta
@@ -88,10 +88,10 @@ export default function MiCuentaCambiarContrasenaPage() {
                 description="Actualiza tu contraseña de acceso. Usa una contraseña segura de al menos 8 caracteres."
             />
 
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden">
                 <div className="px-4 sm:px-6 py-5 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-3">
-                    <div className="size-8 rounded-xl bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                        <KeyRound size={15} className="text-[#AF9460]" strokeWidth={1.8} />
+                    <div className="size-8 rounded-xl bg-brand-gold/10 flex items-center justify-center shrink-0">
+                        <KeyRound size={15} className="text-brand-gold" strokeWidth={1.8} />
                     </div>
                     <div>
                         <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Nueva contraseña</p>

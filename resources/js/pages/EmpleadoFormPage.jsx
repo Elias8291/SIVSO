@@ -24,8 +24,8 @@ const EMPTY_FORM = {
     dependencia_clave: '', delegacion_clave: '', activo: true, user_id: '',
 };
 
-const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/40 transition-all touch-manipulation";
-const selectClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 focus:border-[#AF9460]/40 transition-all touch-manipulation";
+const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
+const selectClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
 export default function EmpleadoFormPage() {
     const { id } = useParams();
@@ -113,7 +113,7 @@ export default function EmpleadoFormPage() {
     if (loading) {
         return (
             <div className="flex justify-center py-16">
-                <span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" />
+                <span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
             </div>
         );
     }
@@ -122,13 +122,13 @@ export default function EmpleadoFormPage() {
         <div className="mx-auto max-w-lg">
             <Link
                 to="/dashboard/empleados"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-[#AF9460] mb-6 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
                 Volver a Empleados
             </Link>
 
-            <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="px-4 py-4 border-b border-zinc-50 dark:border-zinc-800/60">
                     <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
                         {isEdit ? 'Editar Empleado' : 'Nuevo Empleado'}
@@ -223,7 +223,7 @@ export default function EmpleadoFormPage() {
 
                     <Field label="Vincular a usuario del sistema (opcional)" error={errors.user_id?.[0]}>
                         {userLinked ? (
-                            <div className="flex items-center justify-between px-3 py-3 rounded-xl border border-[#AF9460]/40 bg-[#AF9460]/5">
+                            <div className="flex items-center justify-between px-3 py-3 rounded-xl border border-brand-gold/40 bg-brand-gold/5">
                                 <div>
                                     <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{userLinked.name}</p>
                                     <p className="text-[11px] text-zinc-400 font-mono">{userLinked.rfc}</p>
@@ -254,7 +254,7 @@ export default function EmpleadoFormPage() {
                                                 key={u.id}
                                                 type="button"
                                                 onClick={() => { setUserLinked(u); setForm(p => ({ ...p, user_id: u.id })); resetUserSearch(); }}
-                                                className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-[#AF9460]/5 transition-all min-h-[44px]"
+                                                className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-brand-gold/5 transition-all min-h-[44px]"
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{u.name}</p>
@@ -275,7 +275,7 @@ export default function EmpleadoFormPage() {
                         <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Empleado activo</span>
                         <div
                             onClick={(e) => { e.preventDefault(); setForm(p => ({ ...p, activo: !p.activo })); }}
-                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-[#AF9460]' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-brand-gold' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                         >
                             <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.activo ? 'left-4' : 'left-0.5'}`} />
                         </div>

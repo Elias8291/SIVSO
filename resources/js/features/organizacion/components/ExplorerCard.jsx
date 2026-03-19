@@ -26,17 +26,17 @@ export function ItemCard({ item, selected, onClick, onEdit, onDelete, stats }) {
             onClick={onClick}
             className={`group relative mx-3 my-1.5 rounded-xl px-4 py-3.5 cursor-pointer transition-all border select-none ${
                 selected
-                    ? 'bg-[#AF9460]/8 border-[#AF9460]/30 shadow-sm'
+                    ? 'bg-brand-gold/8 border-brand-gold/30 shadow-sm'
                     : 'border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800/40 hover:border-zinc-100 dark:hover:border-zinc-800'
             }`}
         >
             {selected && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-[#AF9460] rounded-r-full" />
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-brand-gold rounded-r-full" />
             )}
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[10px] font-black tracking-wider font-mono ${selected ? 'text-[#AF9460]' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                        <span className={`text-[10px] font-black tracking-wider font-mono ${selected ? 'text-brand-gold' : 'text-zinc-400 dark:text-zinc-500'}`}>
                             {item.clave}
                         </span>
                     </div>
@@ -56,7 +56,7 @@ export function ItemCard({ item, selected, onClick, onEdit, onDelete, stats }) {
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit?.(item); }}
                         title="Editar"
-                        className="size-6 rounded-lg flex items-center justify-center text-zinc-400 hover:text-[#AF9460] hover:bg-[#AF9460]/10 transition-all"
+                        className="size-6 rounded-lg flex items-center justify-center text-zinc-400 hover:text-brand-gold hover:bg-brand-gold/10 transition-all"
                     >
                         <EditIcon />
                     </button>
@@ -69,7 +69,7 @@ export function ItemCard({ item, selected, onClick, onEdit, onDelete, stats }) {
                     </button>
                 </div>
             </div>
-            {selected && <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#AF9460]" strokeWidth={2.5} />}
+            {selected && <ChevronRight size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-gold" strokeWidth={2.5} />}
         </div>
     );
 }
@@ -79,11 +79,11 @@ export function MobileCard({ badge, title, stats, onClick, onEdit, onDelete }) {
     return (
         <div
             onClick={onClick}
-            className="group relative rounded-2xl px-4 py-4 cursor-pointer transition-all border border-zinc-100 dark:border-zinc-800/60 hover:border-[#AF9460]/30 hover:bg-[#AF9460]/5 active:scale-[0.99]"
+            className="group relative rounded-2xl px-4 py-4 cursor-pointer transition-all border border-zinc-100 dark:border-zinc-800/60 hover:border-brand-gold/30 hover:bg-brand-gold/5 active:scale-[0.99]"
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <span className="inline-block px-2 py-0.5 rounded-lg bg-[#AF9460]/15 text-[#AF9460] text-[10px] font-black font-mono tracking-wider mb-2">
+                    <span className="inline-block px-2 py-0.5 rounded-lg bg-brand-gold/15 text-brand-gold text-[10px] font-black font-mono tracking-wider mb-2">
                         {badge}
                     </span>
                     <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 leading-snug">{title}</p>
@@ -96,10 +96,10 @@ export function MobileCard({ badge, title, stats, onClick, onEdit, onDelete }) {
                         ))}
                     </div>
                 </div>
-                <ChevronRight size={18} className="text-zinc-300 group-hover:text-[#AF9460] shrink-0 mt-1" strokeWidth={2.5} />
+                <ChevronRight size={18} className="text-zinc-300 group-hover:text-brand-gold shrink-0 mt-1" strokeWidth={2.5} />
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 right-10">
                     <button onClick={(e) => { e.stopPropagation(); onEdit?.(); }} title="Editar"
-                        className="size-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-[#AF9460] hover:bg-[#AF9460]/10">
+                        className="size-7 rounded-lg flex items-center justify-center text-zinc-400 hover:text-brand-gold hover:bg-brand-gold/10">
                         <EditIcon />
                     </button>
                     <button onClick={(e) => { e.stopPropagation(); onDelete?.(); }} title="Eliminar"
@@ -119,13 +119,13 @@ export function TrabajadorCard({ trab, selected, onClick }) {
             onClick={onClick}
             className={`mx-3 my-1.5 rounded-xl px-4 py-3 border cursor-pointer transition-all ${
                 selected
-                    ? 'bg-[#AF9460]/8 border-[#AF9460]/30 shadow-sm'
+                    ? 'bg-brand-gold/8 border-brand-gold/30 shadow-sm'
                     : 'border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/30'
             }`}
         >
             <div className="flex items-center gap-3">
-                <div className="size-8 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                    <IdCard size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                <div className="size-8 rounded-lg bg-brand-gold/10 flex items-center justify-center shrink-0">
+                    <IdCard size={14} className="text-brand-gold" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{trab.nombre_completo}</p>
@@ -134,7 +134,7 @@ export function TrabajadorCard({ trab, selected, onClick }) {
                         <span className="text-[9px] text-zinc-400">{trab.delegacion}</span>
                     </div>
                 </div>
-                {selected && <ChevronRight size={14} className="text-[#AF9460] shrink-0" strokeWidth={2.5} />}
+                {selected && <ChevronRight size={14} className="text-brand-gold shrink-0" strokeWidth={2.5} />}
             </div>
         </div>
     );
@@ -145,8 +145,8 @@ export function ProgramaCard({ prog }) {
     return (
         <div className="mx-3 my-1.5 rounded-xl px-4 py-3 border border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-all">
             <div className="flex items-start gap-3">
-                <div className="size-8 rounded-lg bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                    <ClipboardList size={14} className="text-[#AF9460]" strokeWidth={1.8} />
+                <div className="size-8 rounded-lg bg-brand-gold/10 flex items-center justify-center shrink-0">
+                    <ClipboardList size={14} className="text-brand-gold" strokeWidth={1.8} />
                 </div>
                 <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-mono font-bold text-zinc-500 dark:text-zinc-400">{prog.clave}</span>

@@ -20,7 +20,7 @@ const TALLAS_COMUNES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '22', '23', '24
 function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
     const st = catStyle(item.partida);
     return (
-        <div className="bg-white dark:bg-[#0F0F10] border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden flex flex-col">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden flex flex-col">
             <div className={`${st.bg} px-3 py-2 flex items-center justify-between`}>
                 <span className={`text-[9px] font-bold uppercase tracking-wider ${st.text}`}>
                     {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
@@ -36,7 +36,7 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                     </div>
                     <button onClick={() => onEditTalla(item)} className="flex flex-col items-start">
                         <span className="text-[8px] font-bold uppercase text-zinc-400">Talla</span>
-                        <span className="text-xs font-bold text-[#AF9460]">{item.talla || '—'}</span>
+                        <span className="text-xs font-bold text-brand-gold">{item.talla || '—'}</span>
                     </button>
                     {item.precio_unitario && (
                         <div className="flex flex-col ml-auto">
@@ -49,10 +49,10 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                 </div>
             </div>
             <div className="px-3 pb-3 flex gap-2">
-                <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] touch-manipulation">
+                <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
                     <Ruler size={10} /> Talla
                 </button>
-                <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-[#AF9460]/50 hover:text-[#AF9460] active:scale-[0.98] touch-manipulation">
+                <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
                     <RefreshCw size={10} /> Artículo
                 </button>
             </div>
@@ -78,11 +78,11 @@ function ModalTalla({ item, onClose, onSave, saving }) {
                 <div className="space-y-3">
                     <p className="text-[11px] text-zinc-500">{item.descripcion}</p>
                     <input value={talla} onChange={(e) => setTalla(e.target.value.toUpperCase())} maxLength={10} placeholder="Ej. M, 27"
-                        className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25" />
+                        className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
                     <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                         {TALLAS_COMUNES.map(t => (
                             <button key={t} type="button" onClick={() => setTalla(t)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${talla === t ? 'bg-[#AF9460] border-[#AF9460] text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'}`}>
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${talla === t ? 'bg-brand-gold border-brand-gold text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'}`}>
                                 {t}
                             </button>
                         ))}
@@ -131,15 +131,15 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                     </div>
                     <div className="max-h-40 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800">
                         {loadingP ? (
-                            <div className="py-6 flex justify-center"><span className="size-5 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" /></div>
+                            <div className="py-6 flex justify-center"><span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                         ) : productos.length === 0 ? (
                             <p className="py-6 text-center text-[11px] text-zinc-400">Sin resultados.</p>
                         ) : (
                             productos.map(p => (
                                 <button key={p.id} type="button" onClick={() => setSelected(p)}
-                                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-[11px] ${selected?.id === p.id ? 'bg-[#AF9460]/10 border-l-2 border-[#AF9460]' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}>
+                                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-[11px] ${selected?.id === p.id ? 'bg-brand-gold/10 border-l-2 border-brand-gold' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}>
                                     <span className="flex-1 truncate">{p.descripcion}</span>
-                                    {selected?.id === p.id && <CheckCircle size={12} className="text-[#AF9460] shrink-0" strokeWidth={2} />}
+                                    {selected?.id === p.id && <CheckCircle size={12} className="text-brand-gold shrink-0" strokeWidth={2} />}
                                 </button>
                             ))
                         )}
@@ -213,7 +213,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                         <p className="text-[11px] text-zinc-500">NUE {empleado.nue} · {empleado.delegacion || ''}</p>
                     )}
                     {loading ? (
-                        <div className="py-12 flex justify-center"><span className="size-6 border-2 border-zinc-200 border-t-[#AF9460] rounded-full animate-spin" /></div>
+                        <div className="py-12 flex justify-center"><span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                     ) : error ? (
                         <p className="py-8 text-center text-sm text-red-500">{error}</p>
                     ) : !data?.asignaciones?.length ? (

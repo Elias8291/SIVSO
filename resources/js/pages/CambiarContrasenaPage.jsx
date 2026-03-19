@@ -72,7 +72,7 @@ export default function CambiarContrasenaPage() {
                 <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.content} />
                 <div className="space-y-1.5">
                     <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
-                        Nueva Contraseña <span className="text-[#AF9460]">*</span>
+                        Nueva Contraseña <span className="text-brand-gold">*</span>
                     </label>
                     <PasswordInput
                         name="password"
@@ -85,7 +85,7 @@ export default function CambiarContrasenaPage() {
                 </div>
                 <div className="space-y-1.5">
                     <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
-                        Confirmar Contraseña <span className="text-[#AF9460]">*</span>
+                        Confirmar Contraseña <span className="text-brand-gold">*</span>
                     </label>
                     <PasswordInput
                         name="password_confirmation"

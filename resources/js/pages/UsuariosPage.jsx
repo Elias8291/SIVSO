@@ -54,7 +54,7 @@ export default function UsuariosPage() {
                 <div className="flex flex-wrap gap-1">
                     {val?.length
                         ? val.map((r) => (
-                            <span key={r} className="px-2 py-0.5 rounded-lg bg-[#AF9460]/10 text-[#AF9460] text-[11px] font-bold uppercase tracking-wider border border-[#AF9460]/20">{r}</span>
+                            <span key={r} className="px-2 py-0.5 rounded-lg bg-brand-gold/10 text-brand-gold text-[11px] font-bold uppercase tracking-wider border border-brand-gold/20">{r}</span>
                         ))
                         : <span className="text-[11px] text-zinc-400">—</span>
                     }
@@ -80,7 +80,7 @@ export default function UsuariosPage() {
                     placeholder="Buscar por nombre, RFC o correo..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#AF9460]/25 transition-all"
+                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
                 />
                 <button
                     onClick={() => navigate('/dashboard/usuarios/nuevo')}

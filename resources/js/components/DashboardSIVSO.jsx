@@ -21,12 +21,12 @@ const DashboardSIVSO = () => {
     };
 
     return (
-        <div className="flex min-h-screen bg-[#FBFBFC] dark:bg-[#080808] text-zinc-900 dark:text-zinc-100 font-['Plus_Jakarta_Sans'] transition-colors duration-300">
+        <div className="flex min-h-screen bg-[#FBFBFC] dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-['Plus_Jakarta_Sans'] transition-colors duration-300">
             {/* Sidebar */}
-            <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-[#080808] border-r border-zinc-100 dark:border-zinc-900 hidden lg:flex flex-col z-50">
+            <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-zinc-900 border-r border-zinc-100 dark:border-zinc-900 hidden lg:flex flex-col z-50">
                 <div className="p-10">
                     <h1 className="text-2xl font-extrabold tracking-[0.2em] dark:text-white">
-                        SIVSO<span className="text-[#AF9460]">.</span>
+                        SIVSO<span className="text-brand-gold">.</span>
                     </h1>
                     <p className="text-[11px] text-zinc-400 uppercase tracking-[0.3em] mt-1 font-bold">Oaxaca Institucional</p>
                 </div>
@@ -68,7 +68,7 @@ const DashboardSIVSO = () => {
 
             {/* Main Content */}
             <main className="flex-1 lg:ml-64 flex flex-col">
-                <header className="h-20 bg-white/70 dark:bg-[#080808]/70 backdrop-blur-xl border-b border-zinc-100 dark:border-zinc-900 sticky top-0 z-40 flex items-center justify-between px-10">
+                <header className="h-20 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border-b border-zinc-100 dark:border-zinc-900 sticky top-0 z-40 flex items-center justify-between px-10">
                     <div className="flex items-center gap-4">
                         <span className="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">Global / {activeTab}</span>
                     </div>
@@ -76,18 +76,18 @@ const DashboardSIVSO = () => {
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => setIsDarkMode(!isDarkMode)}
-                            className="p-2 text-zinc-400 hover:text-[#AF9460] transition-colors bg-zinc-50 dark:bg-zinc-900 rounded-lg"
+                            className="p-2 text-zinc-400 hover:text-brand-gold transition-colors bg-zinc-50 dark:bg-zinc-900 rounded-lg"
                         >
                             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
                         <div className="h-8 w-px bg-zinc-100 dark:bg-zinc-800" />
                         <div className="flex items-center gap-4 group cursor-pointer">
                             <div className="text-right hidden sm:block">
-                                <p className="text-[13px] font-bold dark:text-white uppercase tracking-tighter group-hover:text-[#AF9460] transition-colors">{user.name}</p>
+                                <p className="text-[13px] font-bold dark:text-white uppercase tracking-tighter group-hover:text-brand-gold transition-colors">{user.name}</p>
                                 <p className="text-[9px] text-zinc-400 font-medium">{user.email}</p>
                             </div>
-                            <div className="size-10 rounded-full border-2 border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-zinc-50 dark:bg-[#111111] group-hover:border-[#AF9460] transition-all overflow-hidden">
-                                <span className="text-xs font-bold text-[#AF9460]">AD</span>
+                            <div className="size-10 rounded-full border-2 border-zinc-100 dark:border-zinc-800 flex items-center justify-center bg-zinc-50 dark:bg-zinc-800 group-hover:border-brand-gold transition-all overflow-hidden">
+                                <span className="text-xs font-bold text-brand-gold">AD</span>
                             </div>
                         </div>
                     </div>
@@ -102,7 +102,7 @@ const DashboardSIVSO = () => {
                         <div className="flex gap-3">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-                                <input type="text" placeholder="Buscar folio..." className="pl-10 pr-4 py-2.5 bg-white dark:bg-[#111111] border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-[#AF9460]/20 outline-none" />
+                                <input type="text" placeholder="Buscar folio..." className="pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-brand-gold/20 outline-none" />
                             </div>
                         </div>
                     </header>
@@ -111,16 +111,16 @@ const DashboardSIVSO = () => {
                         <StatCard label="Stock Total" value="4,812" trend="+12%" icon={<TrendingUp size={16} />} isMain />
                         <StatCard label="Pendientes" value="24" color="text-orange-500" icon={<Clock size={16} />} />
                         <StatCard label="Completados" value="912" icon={<CheckCircle size={16} />} />
-                        <StatCard label="Sindicatos" value="08" color="text-[#AF9460]" icon={<Users size={16} />} special />
+                        <StatCard label="Sindicatos" value="08" color="text-brand-gold" icon={<Users size={16} />} special />
                     </div>
 
-                    <div className="bg-white dark:bg-[#111111] rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <div className="bg-white dark:bg-zinc-800 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
                         <div className="px-8 py-6 border-b border-zinc-50 dark:border-zinc-800 flex items-center justify-between">
                             <h3 className="font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                                <span className="size-2 bg-[#AF9460] rounded-full" />
+                                <span className="size-2 bg-brand-gold rounded-full" />
                                 Actividad Reciente
                             </h3>
-                            <button className="text-[13px] font-black text-[#AF9460] uppercase tracking-widest hover:tracking-[0.2em] transition-all">Reporte Global</button>
+                            <button className="text-[13px] font-black text-brand-gold uppercase tracking-widest hover:tracking-[0.2em] transition-all">Reporte Global</button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
@@ -151,19 +151,19 @@ const NavItem = ({ icon, label, active, onClick }) => (
         onClick={onClick}
         className={`flex items-center space-x-3 w-full px-5 py-3.5 rounded-2xl transition-all duration-200 group ${
             active
-                ? 'bg-[#AF9460]/10 text-[#AF9460] font-bold shadow-sm shadow-[#AF9460]/5'
-                : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-[#111111] hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-brand-gold/10 text-brand-gold font-bold shadow-sm shadow-brand-gold/5'
+                : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white'
         }`}
     >
-        <span className={active ? 'text-[#AF9460]' : 'group-hover:text-[#AF9460] transition-colors'}>{icon}</span>
+        <span className={active ? 'text-brand-gold' : 'group-hover:text-brand-gold transition-colors'}>{icon}</span>
         <span className="text-xs uppercase tracking-widest">{label}</span>
     </button>
 );
 
 const StatCard = ({ label, value, color, icon, isMain, special }) => (
     <div className={`p-8 rounded-[2.5rem] border transition-all duration-300 hover:-translate-y-2 ${
-        special ? 'bg-[#AF9460] border-transparent shadow-xl shadow-[#AF9460]/20' :
-        'bg-white dark:bg-[#111111] border-zinc-100 dark:border-zinc-800'
+        special ? 'bg-brand-gold border-transparent shadow-xl shadow-brand-gold/20' :
+        'bg-white dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800'
     }`}>
         <div className="flex justify-between items-center mb-4">
             <p className={`text-[9px] uppercase font-bold tracking-[0.2em] ${special ? 'text-white/70' : 'text-zinc-400'}`}>
@@ -174,12 +174,12 @@ const StatCard = ({ label, value, color, icon, isMain, special }) => (
         <p className={`text-4xl font-black tracking-tighter ${special ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
             {value}
         </p>
-        <div className={`h-1.5 w-10 mt-6 rounded-full ${special ? 'bg-white/30' : 'bg-[#AF9460]'}`} />
+        <div className={`h-1.5 w-10 mt-6 rounded-full ${special ? 'bg-white/30' : 'bg-brand-gold'}`} />
     </div>
 );
 
 const TableRow = ({ rfc, name, type, status }) => (
-    <tr className="group hover:bg-zinc-50/50 dark:hover:bg-[#111111]/40 transition-colors">
+    <tr className="group hover:bg-zinc-50/50 dark:hover:bg-zinc-800/40 transition-colors">
         <td className="px-8 py-6">
             <p className="font-bold dark:text-white uppercase tracking-wider text-[11px]">{rfc}</p>
             <p className="text-[13px] text-zinc-500 mt-1 font-medium">{name}</p>
@@ -191,13 +191,13 @@ const TableRow = ({ rfc, name, type, status }) => (
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest border ${
                 status === 'entregado'
                     ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20'
-                    : 'bg-[#AF9460]/10 text-[#AF9460] border-[#AF9460]/20'
+                    : 'bg-brand-gold/10 text-brand-gold border-brand-gold/20'
             }`}>
                 {status}
             </span>
         </td>
         <td className="px-8 py-6 text-right">
-            <button className="size-9 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-[#AF9460] group-hover:text-white transition-all transform group-hover:rotate-90">
+            <button className="size-9 rounded-xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-brand-gold group-hover:text-white transition-all transform group-hover:rotate-90">
                 <ChevronRight size={16} />
             </button>
         </td>

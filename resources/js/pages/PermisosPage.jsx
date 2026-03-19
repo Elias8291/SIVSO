@@ -48,7 +48,7 @@ export default function PermisosPage() {
                         <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
                         {mod && act && (
                             <div className="flex items-center gap-1 mt-0.5">
-                                <span className="px-1.5 py-px rounded bg-[#AF9460]/10 text-[#AF9460] text-[13px] font-bold uppercase">{mod}</span>
+                                <span className="px-1.5 py-px rounded bg-brand-gold/10 text-brand-gold text-[13px] font-bold uppercase">{mod}</span>
                                 <span className="text-[13px] text-zinc-400">{act}</span>
                             </div>
                         )}
@@ -97,11 +97,11 @@ export default function PermisosPage() {
                     {Object.entries(allModules).map(([mod, count]) => (
                         <button key={mod} onClick={() => setSearch(mod)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold uppercase tracking-wider transition-all ${search === mod
-                                ? 'bg-[#AF9460] border-[#AF9460] text-white'
-                                : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-[#AF9460]/40'
+                                ? 'bg-brand-gold border-brand-gold text-white'
+                                : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-brand-gold/40'
                                 }`}>
                             {mod}
-                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${search === mod ? 'bg-white/20 text-white' : 'bg-[#AF9460]/10 text-[#AF9460]'
+                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${search === mod ? 'bg-white/20 text-white' : 'bg-brand-gold/10 text-brand-gold'
                                 }`}>{count}</span>
                         </button>
                     ))}

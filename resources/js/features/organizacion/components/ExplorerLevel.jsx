@@ -21,7 +21,7 @@ export function Panel({
 }) {
     return (
         <div
-            className={`flex flex-col h-full rounded-2xl border bg-white dark:bg-[#0F0F10] overflow-hidden transition-all duration-300 ${
+            className={`flex flex-col h-full rounded-2xl border bg-white dark:bg-zinc-900 overflow-hidden transition-all duration-300 ${
                 locked
                     ? 'border-zinc-100 dark:border-zinc-800/50 opacity-50 pointer-events-none'
                     : 'border-zinc-100 dark:border-zinc-800/80'
@@ -29,14 +29,14 @@ export function Panel({
         >
             <div className="shrink-0 px-5 pt-5 pb-4 border-b border-zinc-50 dark:border-zinc-800/60 space-y-3">
                 {stepHint && (
-                    <span className="inline-block text-[9px] font-bold text-[#AF9460] uppercase tracking-wider">
+                    <span className="inline-block text-[9px] font-bold text-brand-gold uppercase tracking-wider">
                         {stepHint}
                     </span>
                 )}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="size-7 rounded-lg bg-[#AF9460]/10 flex items-center justify-center">
-                            <Icon size={14} className="text-[#AF9460]" strokeWidth={2} />
+                        <div className="size-7 rounded-lg bg-brand-gold/10 flex items-center justify-center">
+                            <Icon size={14} className="text-brand-gold" strokeWidth={2} />
                         </div>
                         <span className="text-[11px] font-extrabold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
                             {title}
@@ -86,20 +86,20 @@ export function MobileLevel({
     children,
 }) {
     return (
-        <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-[#0F0F10] overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 overflow-hidden">
             <div className="shrink-0 px-4 pt-4 pb-3 border-b border-zinc-50 dark:border-zinc-800/60 space-y-3">
                 {onBack && (
                     <button
                         onClick={onBack}
-                        className="flex items-center gap-2 text-[11px] font-semibold text-[#AF9460] hover:underline"
+                        className="flex items-center gap-2 text-[11px] font-semibold text-brand-gold hover:underline"
                     >
                         <ChevronLeft size={14} strokeWidth={2.5} /> Volver a {backLabel}
                     </button>
                 )}
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-9 rounded-xl bg-[#AF9460]/10 flex items-center justify-center shrink-0">
-                            <Icon size={18} className="text-[#AF9460]" strokeWidth={2} />
+                        <div className="size-9 rounded-xl bg-brand-gold/10 flex items-center justify-center shrink-0">
+                            <Icon size={18} className="text-brand-gold" strokeWidth={2} />
                         </div>
                         <div className="min-w-0">
                             <h3 className="text-sm font-extrabold text-zinc-800 dark:text-zinc-200 truncate">{title}</h3>
