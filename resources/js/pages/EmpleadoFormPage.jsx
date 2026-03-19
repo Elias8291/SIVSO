@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, X } from 'lucide-react';
+import { ArrowLeft, Search, X, ChevronDown } from 'lucide-react';
 import { api } from '../lib/api';
 
 function Field({ label, error, children }) {
@@ -44,13 +44,13 @@ export default function EmpleadoFormPage() {
     const userSearchTimer = useRef(null);
 
     useEffect(() => {
-        api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => {});
+        api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => { });
     }, []);
 
     useEffect(() => {
         if (!form.dependencia_clave) { setDelegaciones([]); return; }
         api.get(`/api/delegaciones?ur=${form.dependencia_clave}`)
-            .then(r => setDelegaciones(r.data ?? [])).catch(() => {});
+            .then(r => setDelegaciones(r.data ?? [])).catch(() => { });
     }, [form.dependencia_clave]);
 
     useEffect(() => {
@@ -58,7 +58,7 @@ export default function EmpleadoFormPage() {
         if (!userSearch.trim()) { setUserResults([]); return; }
         userSearchTimer.current = setTimeout(() => {
             api.get(`/api/usuarios?search=${encodeURIComponent(userSearch)}&per_page=8`)
-                .then(r => setUserResults(r.data ?? [])).catch(() => {});
+                .then(r => setUserResults(r.data ?? [])).catch(() => { });
         }, 350);
         return () => clearTimeout(userSearchTimer.current);
     }, [userSearch]);
@@ -193,31 +193,37 @@ export default function EmpleadoFormPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Dependencia" error={errors.dependencia_clave?.[0]}>
-                            <select
-                                value={form.dependencia_clave}
-                                onChange={(e) => setForm(p => ({ ...p, dependencia_clave: e.target.value, delegacion_clave: '' }))}
-                                required
-                                className={selectClass}
-                            >
-                                <option value="">Seleccionar…</option>
-                                {dependencias.map(d => (
-                                    <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={form.dependencia_clave}
+                                    onChange={(e) => setForm(p => ({ ...p, dependencia_clave: e.target.value, delegacion_clave: '' }))}
+                                    required
+                                    className={`${selectClass} appearance-none pr-10 truncate min-w-0`}
+                                >
+                                    <option value="">Seleccionar…</option>
+                                    {dependencias.map(d => (
+                                        <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
+                            </div>
                         </Field>
                         <Field label="Delegación" error={errors.delegacion_clave?.[0]}>
-                            <select
-                                value={form.delegacion_clave}
-                                onChange={f('delegacion_clave')}
-                                disabled={!form.dependencia_clave}
-                                required
-                                className={selectClass}
-                            >
-                                <option value="">Seleccionar…</option>
-                                {delegaciones.map(d => (
-                                    <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
-                                ))}
-                            </select>
+                            <div className="relative">
+                                <select
+                                    value={form.delegacion_clave}
+                                    onChange={f('delegacion_clave')}
+                                    disabled={!form.dependencia_clave}
+                                    required
+                                    className={`${selectClass} appearance-none pr-10 truncate min-w-0`}
+                                >
+                                    <option value="">Seleccionar…</option>
+                                    {delegaciones.map(d => (
+                                        <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
+                            </div>
                         </Field>
                     </div>
 
