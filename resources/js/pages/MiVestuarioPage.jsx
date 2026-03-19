@@ -109,7 +109,7 @@ function ModalTalla({ item, onClose, onSave, saving }) {
     useEffect(() => { if (item) setTalla(item.talla ?? ''); }, [item]);
 
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="sm"
+        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="md"
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
@@ -124,10 +124,10 @@ function ModalTalla({ item, onClose, onSave, saving }) {
             }
         >
             {item && (
-                <div className="space-y-4">
-                    <p className="text-[11px] text-zinc-500 leading-snug">{item.descripcion}</p>
+                <div className="space-y-5">
+                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300 leading-relaxed">{item.descripcion}</p>
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                        <label className="block text-[11px] sm:text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-2">
                             Talla actual: <span className="text-brand-gold">{item.talla || '—'}</span>
                         </label>
                         <input
@@ -135,15 +135,15 @@ function ModalTalla({ item, onClose, onSave, saving }) {
                             onChange={(e) => setTalla(e.target.value.toUpperCase())}
                             maxLength={10}
                             placeholder="Ej. M, 27, XL…"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all mb-3"
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all mb-4"
                         />
                         {/* Tallas rápidas */}
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 mb-2">Selección rápida</p>
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300 mb-3">Selección rápida</p>
                         <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
                             {TALLAS_COMUNES.map(t => (
                                 <button key={t} type="button"
                                     onClick={() => setTalla(t)}
-                                    className={`px-3 py-1 rounded-lg text-[10px] font-bold border transition-all ${talla === t
+                                    className={`px-4 py-2 rounded-lg text-[12px] font-bold border transition-all ${talla === t
                                         ? 'bg-brand-gold border-brand-gold text-white'
                                         : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50'
                                         }`}
@@ -183,7 +183,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     }, [debouncedSearch, item]);
 
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="md"
+        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg"
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
@@ -198,18 +198,18 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
             }
         >
             {item && (
-                <div className="space-y-4">
-                    <div className="px-3 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 text-[11px] text-zinc-500">
-                        Artículo actual: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{item.descripcion}</span>
+                <div className="space-y-5">
+                    <div className="px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 text-[13px] text-zinc-600 dark:text-zinc-300">
+                        Artículo actual: <span className="font-semibold text-zinc-800 dark:text-zinc-100">{item.descripcion}</span>
                     </div>
 
                     {/* Buscador */}
                     <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
+                        <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
                         <input
                             value={search} onChange={(e) => setSearch(e.target.value)}
                             placeholder="Buscar artículo de reemplazo..."
-                            className="w-full pl-9 pr-4 py-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
+                            className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
                         />
                     </div>
 
@@ -225,17 +225,17 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                             productos.map(p => (
                                 <button key={p.id} type="button"
                                     onClick={() => setSelected(p)}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all ${selected?.id === p.id
-                                        ? 'bg-brand-gold/8 border-l-2 border-brand-gold'
+                                    className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-all ${selected?.id === p.id
+                                        ? 'bg-brand-gold/8 border-l-4 border-brand-gold'
                                         : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
                                         }`}
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{p.descripcion}</p>
-                                        <p className="text-[9px] text-zinc-400 mt-0.5">{p.clave_vestuario || p.codigo || '—'}</p>
+                                        <p className="text-[13px] sm:text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 truncate">{p.descripcion}</p>
+                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{p.clave_vestuario || p.codigo || '—'}</p>
                                     </div>
                                     {selected?.id === p.id && (
-                                        <CheckCircle size={14} className="text-brand-gold shrink-0" strokeWidth={2} />
+                                        <CheckCircle size={18} className="text-brand-gold shrink-0" strokeWidth={2} />
                                     )}
                                 </button>
                             ))
@@ -243,13 +243,13 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
                     </div>
 
                     {selected && (
-                        <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5">
+                        <div className="pt-2">
+                            <label className="block text-[11px] sm:text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-2">
                                 Talla para el nuevo artículo
                             </label>
                             <input value={talla} onChange={(e) => setTalla(e.target.value.toUpperCase())} maxLength={10}
                                 placeholder="Talla (opcional)"
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
                             />
                         </div>
                     )}

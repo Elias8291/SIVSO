@@ -9,7 +9,7 @@ const fmt = (n) =>
 const fmtCompact = (n) => {
     if (!n) return '$0';
     if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000)     return `$${(n / 1_000).toFixed(0)}K`;
+    if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
     return `$${n}`;
 };
 
@@ -17,8 +17,8 @@ function ProgressBar({ pct, alerta }) {
     const clamped = Math.min(pct ?? 0, 100);
     const color =
         alerta === 'critico' ? 'bg-red-500'
-        : alerta === 'alto'  ? 'bg-amber-500'
-        : 'bg-brand-gold';
+            : alerta === 'alto' ? 'bg-amber-500'
+                : 'bg-brand-gold';
 
     return (
         <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mt-1.5">
@@ -32,15 +32,15 @@ function ProgressBar({ pct, alerta }) {
 
 function AlertaBadge({ pct }) {
     if (pct === null) return <span className="text-[12px] text-zinc-400">sin límite</span>;
-    if (pct >= 100)   return <span className="text-[12px] font-bold text-red-600 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded-full">EXCEDIDO</span>;
-    if (pct >= 85)    return <span className="text-[12px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full">{pct}%</span>;
+    if (pct >= 100) return <span className="text-[12px] font-bold text-red-600 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded-full">EXCEDIDO</span>;
+    if (pct >= 85) return <span className="text-[12px] font-semibold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full">{pct}%</span>;
     return <span className="text-[12px] text-zinc-400">{pct}%</span>;
 }
 
 function nivelAlerta(pct) {
     if (pct === null) return 'ninguno';
-    if (pct >= 100)   return 'critico';
-    if (pct >= 85)    return 'alto';
+    if (pct >= 100) return 'critico';
+    if (pct >= 85) return 'alto';
     return 'ok';
 }
 
@@ -77,11 +77,10 @@ function CeldaPartida({ col }) {
     return (
         <td className="px-4 py-3 align-top">
             <div className="min-w-[130px]">
-                <p className={`text-[14px] font-bold leading-none ${
-                    nivel === 'critico' ? 'text-red-600 dark:text-red-400'
-                    : nivel === 'alto'  ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-zinc-700 dark:text-zinc-300'
-                }`}>{fmt(col.gastado)}</p>
+                <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400'
+                    : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-zinc-700 dark:text-zinc-300'
+                    }`}>{fmt(col.gastado)}</p>
 
                 {col.limite > 0 ? (
                     <>
@@ -103,16 +102,16 @@ function CeldaPartida({ col }) {
 
 export default function PartidasPage() {
     const anioActual = new Date().getFullYear();
-    const [anio, setAnio]         = useState(anioActual);
-    const [data, setData]         = useState(null);
-    const [loading, setLoading]   = useState(false);
-    const [search, setSearch]     = useState('');
+    const [anio, setAnio] = useState(anioActual);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [search, setSearch] = useState('');
     const navigate = useNavigate();
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res  = await fetch(`/api/partidas?anio=${anio}`, { credentials: 'include' });
+            const res = await fetch(`/api/partidas?anio=${anio}`, { credentials: 'include' });
             const json = await res.json();
             setData(json);
         } catch {
@@ -136,11 +135,20 @@ export default function PartidasPage() {
     };
 
     const totalesGlobales = data?.totales_globales ?? [];
-    const totalGastado    = totalesGlobales.reduce((s, t) => s + t.gastado, 0);
-    const totalLimite     = totalesGlobales.reduce((s, t) => s + t.limite,  0);
-    const totalPct        = totalLimite > 0 ? Math.min(Math.round((totalGastado / totalLimite) * 100), 999) : null;
+    const totalGastado = totalesGlobales.reduce((s, t) => s + t.gastado, 0);
+    const totalLimite = totalesGlobales.reduce((s, t) => s + t.limite, 0);
+    const totalPct = totalLimite > 0 ? Math.min(Math.round((totalGastado / totalLimite) * 100), 999) : null;
 
     const anosOpts = [anioActual - 1, anioActual, anioActual + 1];
+
+    const getGridColsClass = () => {
+        if (partidas.length === 0) return 'grid-cols-1 sm:grid-cols-3';
+        const cols = Math.min(partidas.length + 1, 4);
+        if (cols === 2) return 'grid-cols-1 sm:grid-cols-2';
+        if (cols === 3) return 'grid-cols-1 sm:grid-cols-3';
+        if (cols >= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+        return 'grid-cols-1 sm:grid-cols-3';
+    };
 
     return (
         <div>
@@ -172,7 +180,7 @@ export default function PartidasPage() {
             />
 
             {/* Resumen global */}
-            <div className={`grid gap-4 mb-8 ${partidas.length > 0 ? `grid-cols-1 sm:grid-cols-${Math.min(partidas.length + 1, 4)}` : 'grid-cols-1 sm:grid-cols-3'}`}>
+            <div className={`grid gap-4 mb-8 ${getGridColsClass()}`}>
                 <StatSummary
                     label="Total General"
                     gastado={totalGastado}
@@ -231,10 +239,10 @@ export default function PartidasPage() {
                         <p className="text-[13px] mt-1">Asegúrate de que concentrado y propuesta tengan registros.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left min-w-[600px]">
-                            <thead>
-                                <tr className="border-b border-zinc-50 dark:border-zinc-800/60">
+                    <div className="overflow-x-auto overflow-y-auto max-h-[65vh] relative">
+                        <table className="w-full text-left min-w-[600px] border-collapse">
+                            <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-800">
+                                <tr>
                                     <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                         Dependencia / UR
                                     </th>
@@ -328,16 +336,16 @@ export default function PartidasPage() {
 
                             {/* Fila totales */}
                             {rows.length > 1 && (
-                                <tfoot>
-                                    <tr className="border-t-2 border-zinc-100 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/20">
-                                        <td className="px-4 py-3">
-                                            <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                                <tfoot className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-700">
+                                    <tr>
+                                        <td className="px-4 py-4">
+                                            <p className="text-[14px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                                 Total general
                                             </p>
                                         </td>
                                         {totalesGlobales.map((t) => (
-                                            <td key={t.partida_especifica} className="px-4 py-3">
-                                                <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200">
+                                            <td key={t.partida_especifica} className="px-4 py-4">
+                                                <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">
                                                     {fmt(t.gastado)}
                                                 </p>
                                                 {t.limite > 0 && (
@@ -346,8 +354,8 @@ export default function PartidasPage() {
                                             </td>
                                         ))}
                                         {totalesGlobales.length === 0 && <td />}
-                                        <td className="px-4 py-3">
-                                            <p className="text-[14px] font-bold text-brand-gold">{fmt(totalGastado)}</p>
+                                        <td className="px-4 py-4">
+                                            <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
                                         </td>
                                         <td />
                                     </tr>

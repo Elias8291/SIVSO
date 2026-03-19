@@ -64,7 +64,7 @@ function ModalTalla({ item, onClose, onSave, saving }) {
     const [talla, setTalla] = useState(item?.talla ?? '');
     useEffect(() => { if (item) setTalla(item.talla ?? ''); }, [item]);
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="sm"
+        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="md"
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
@@ -75,14 +75,14 @@ function ModalTalla({ item, onClose, onSave, saving }) {
             }
         >
             {item && (
-                <div className="space-y-3">
-                    <p className="text-[11px] text-zinc-500">{item.descripcion}</p>
+                <div className="space-y-4">
+                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300">{item.descripcion}</p>
                     <input value={talla} onChange={(e) => setTalla(e.target.value.toUpperCase())} maxLength={10} placeholder="Ej. M, 27"
-                        className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
-                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                         {TALLAS_COMUNES.map(t => (
                             <button key={t} type="button" onClick={() => setTalla(t)}
-                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${talla === t ? 'bg-brand-gold border-brand-gold text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'}`}>
+                                className={`px-4 py-2 rounded-lg text-[12px] font-bold border ${talla === t ? 'bg-brand-gold border-brand-gold text-white' : 'border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400'}`}>
                                 {t}
                             </button>
                         ))}
@@ -111,7 +111,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     }, [debouncedSearch, item]);
 
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="md"
+        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg"
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
@@ -122,31 +122,31 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
             }
         >
             {item && (
-                <div className="space-y-3">
-                    <p className="text-[11px] text-zinc-500">Actual: <span className="font-semibold text-zinc-700 dark:text-zinc-300">{item.descripcion}</span></p>
+                <div className="space-y-4">
+                    <p className="text-[13px] text-zinc-600 dark:text-zinc-300">Actual: <span className="font-semibold text-zinc-800 dark:text-zinc-100">{item.descripcion}</span></p>
                     <div className="relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" strokeWidth={1.8} />
+                        <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" strokeWidth={1.8} />
                         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar artículo..."
-                            className="w-full pl-9 pr-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm" />
+                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base" />
                     </div>
-                    <div className="max-h-40 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800">
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800">
                         {loadingP ? (
                             <div className="py-6 flex justify-center"><span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                         ) : productos.length === 0 ? (
-                            <p className="py-6 text-center text-[11px] text-zinc-400">Sin resultados.</p>
+                            <p className="py-6 text-center text-[13px] text-zinc-400 dark:text-zinc-500">Sin resultados.</p>
                         ) : (
                             productos.map(p => (
                                 <button key={p.id} type="button" onClick={() => setSelected(p)}
-                                    className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-[11px] ${selected?.id === p.id ? 'bg-brand-gold/10 border-l-2 border-brand-gold' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}>
-                                    <span className="flex-1 truncate">{p.descripcion}</span>
-                                    {selected?.id === p.id && <CheckCircle size={12} className="text-brand-gold shrink-0" strokeWidth={2} />}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-left text-[13px] sm:text-[14px] ${selected?.id === p.id ? 'bg-brand-gold/10 border-l-4 border-brand-gold text-zinc-900 dark:text-zinc-100' : 'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}>
+                                    <span className="flex-1 truncate font-semibold">{p.descripcion}</span>
+                                    {selected?.id === p.id && <CheckCircle size={16} className="text-brand-gold shrink-0" strokeWidth={2} />}
                                 </button>
                             ))
                         )}
                     </div>
                     {selected && (
                         <input value={talla} onChange={(e) => setTalla(e.target.value.toUpperCase())} maxLength={10} placeholder="Talla (opcional)"
-                            className="w-full px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm" />
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base" />
                     )}
                 </div>
             )}
