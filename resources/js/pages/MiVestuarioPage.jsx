@@ -266,21 +266,22 @@ export default function MiVestuarioPage() {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [anio, setAnio] = useState(null);
 
     const [editTalla, setEditTalla] = useState(null);
     const [cambiarProd, setCambiarProd] = useState(null);
     const [filterSearch, setFilterSearch] = useState('');
     const debouncedFilter = useDebounce(filterSearch, 250);
 
-    const load = useCallback(() => {
+    const load = useCallback((anioParam) => {
         setLoading(true);
         setApiError(null);
-        api.get('/api/mi-vestuario')
+        const url = anioParam ? `/api/mi-vestuario?anio=${anioParam}` : '/api/mi-vestuario';
+        api.get(url)
             .then(res => {
-                // If response is an empty object (redirect to login followed by HTML),
-                // treat as auth error
                 if (res && typeof res === 'object' && 'empleado' in res) {
                     setData(res);
+                    if (!anioParam && res.anio) setAnio(res.anio);
                 } else {
                     setApiError('session');
                     setData(null);
@@ -299,6 +300,11 @@ export default function MiVestuarioPage() {
     }, []);
 
     useEffect(() => { load(); }, [load]);
+
+    const handleAnioChange = (newAnio) => {
+        setAnio(newAnio);
+        load(newAnio);
+    };
 
     const showToast = (msg) => setToast(msg);
 
@@ -399,9 +405,25 @@ export default function MiVestuarioPage() {
                         <h2 className="text-[19px] sm:text-[21px] font-bold tracking-tight text-zinc-800 dark:text-zinc-100 leading-tight">
                             Mi Vestuario
                         </h2>
-                        <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 mt-1 font-normal leading-relaxed">
-                            Ejercicio {data.anio} · NUE {data.empleado.nue} · {data.empleado.delegacion_clave}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 font-normal leading-relaxed">
+                                Ejercicio
+                            </p>
+                            {(data.anios_disponibles ?? []).length > 1 ? (
+                                <select
+                                    value={anio ?? data.anio}
+                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                    className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer"
+                                >
+                                    {(data.anios_disponibles ?? []).map(a => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <span className="text-[13px] font-bold text-brand-gold">{data.anio}</span>
+                            )}
+                            <span className="text-[13px] text-zinc-500 dark:text-zinc-400">· NUE {data.empleado.nue} · {data.empleado.delegacion_clave}</span>
+                        </div>
                     </div>
 
                     {/* Resumen */}

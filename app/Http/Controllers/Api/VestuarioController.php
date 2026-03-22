@@ -14,10 +14,9 @@ class VestuarioController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $anio = (int) ($request->get('anio', date('Y')));
 
         if (! $user->nue) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => $anio]);
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => []]);
         }
 
         $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
@@ -25,8 +24,20 @@ class VestuarioController extends Controller
             ->first();
 
         if (! $empleado) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => $anio]);
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => []]);
         }
+
+        $aniosDisponibles = DB::table('selecciones')
+            ->where('empleado_id', $empleado->id)
+            ->distinct()
+            ->pluck('anio')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $anio = $request->has('anio')
+            ? (int) $request->get('anio')
+            : (count($aniosDisponibles) ? max($aniosDisponibles) : (int) date('Y'));
 
         $empleadoData = [
             'nue'                => $empleado->nue,
@@ -39,9 +50,10 @@ class VestuarioController extends Controller
         $asignaciones = $this->getSelecciones($empleado->id, $anio);
 
         return response()->json([
-            'empleado'     => $empleadoData,
-            'asignaciones' => $asignaciones,
-            'anio'         => $anio,
+            'empleado'          => $empleadoData,
+            'asignaciones'      => $asignaciones,
+            'anio'              => $anio,
+            'anios_disponibles' => $aniosDisponibles,
         ]);
     }
 
@@ -151,12 +163,22 @@ class VestuarioController extends Controller
 
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
     {
-        $anio = (int) ($request->get('anio', date('Y')));
-
         $emp = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);
         if (! $emp) {
             return response()->json(['message' => 'Empleado no encontrado.'], 404);
         }
+
+        $aniosDisponibles = DB::table('selecciones')
+            ->where('empleado_id', $emp->id)
+            ->distinct()
+            ->pluck('anio')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $anio = $request->has('anio')
+            ? (int) $request->get('anio')
+            : (count($aniosDisponibles) ? max($aniosDisponibles) : (int) date('Y'));
 
         $empleadoData = [
             'nue'                => $emp->nue,
@@ -169,9 +191,10 @@ class VestuarioController extends Controller
         $asignaciones = $this->getSelecciones($emp->id, $anio);
 
         return response()->json([
-            'empleado'     => $empleadoData,
-            'asignaciones' => $asignaciones,
-            'anio'         => $anio,
+            'empleado'          => $empleadoData,
+            'asignaciones'      => $asignaciones,
+            'anio'              => $anio,
+            'anios_disponibles' => $aniosDisponibles,
         ]);
     }
 
