@@ -47,7 +47,7 @@ export default function ProductosPage() {
             key: 'partida',
             label: 'Partida',
             render: (v, row) => (
-                <span className="text-[13px] text-zinc-500">{v}-{row.partida_especifica}-{row.lote || '?'}</span>
+                <span className="text-[13px] text-zinc-500">{v}{row.lote ? `-${row.lote}` : ''}</span>
             ),
         },
         {

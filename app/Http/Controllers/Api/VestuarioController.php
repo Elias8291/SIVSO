@@ -3,299 +3,40 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Empleado;
+use App\Models\Seleccion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Tabla principal: concentrado
- * Contiene los registros de vestuario asignado por trabajador (por NUE).
- *
- * Campos clave de concentrado:
- *   nue               → identificador del trabajador
- *   ur                → unidad receptora (= dependences.key)
- *   no_partida        → número de partida (= propuesta.partida)
- *   clave2025         → clave/código del artículo (= propuesta.codigo aproximado)
- *   descripcion       → descripción del artículo en concentrado
- *   cantidad, talla, precio_unitario, importe, iva, total
- *
- * Relación con propuesta:
- *   concentrado.no_partida = propuesta.partida  (puede ser 1:N)
- *   Para un match más preciso: también comparar clave2025 ≈ propuesta.codigo
- */
 class VestuarioController extends Controller
 {
-    /** GET /api/mi-vestuario — artículos del trabajador autenticado */
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-
-        // El usuario debe tener NUE vinculado
-        if (! $user->nue) {
-            return response()->json([
-                'empleado'     => null,
-                'asignaciones' => [],
-                'anio'         => date('Y'),
-            ]);
-        }
-
-        // Buscar al trabajador en delegacion
-        $trabajador = DB::table('delegacion')
-            ->where('nue', $user->nue)
-            ->first(['id', 'nue', 'nombre_trab', 'apellp_trab', 'apellm_trab', 'delegacion', 'ur']);
-
-        if (! $trabajador) {
-            return response()->json([
-                'empleado'     => null,
-                'asignaciones' => [],
-                'anio'         => date('Y'),
-            ]);
-        }
-
-        // Nombre de la dependencia
-        $dep = DB::table('dependences')->where('key', $trabajador->ur)->first();
-
-        $empleado = [
-            'nue'                => $trabajador->nue,
-            'nombre'             => trim("{$trabajador->nombre_trab} {$trabajador->apellp_trab} {$trabajador->apellm_trab}"),
-            'delegacion_clave'   => $trabajador->delegacion,
-            'dependencia_clave'  => (string) $trabajador->ur,
-            'dependencia_nombre' => $dep?->name ?? '',
-        ];
-
-        // Obtener todos los registros de concentrado para este NUE
-        $concentrados = DB::table('concentrado AS c')
-            ->where('c.nue', $user->nue)
-            ->leftJoin(
-                DB::raw('(SELECT partida, MIN(id) as pid FROM propuesta GROUP BY partida) AS pp_min'),
-                'pp_min.partida', '=', 'c.no_partida'
-            )
-            ->leftJoin('propuesta AS pp', 'pp.id', '=', 'pp_min.pid')
-            ->select([
-                'c.id',
-                'c.nue',
-                'c.ur',
-                'c.no_partida',
-                'c.clave2025',
-                'c.descripcion',
-                'c.clave_descripcion',
-                'c.cantidad',
-                'c.talla',
-                'c.precio_unitario',
-                'c.importe',
-                'c.iva',
-                'c.total',
-                'pp.id      AS propuesta_id',
-                'pp.marca   AS marca',
-                'pp.unidad  AS unidad',
-                'pp.medida  AS medida',
-                'pp.codigo  AS codigo_propuesta',
-            ])
-            ->orderBy('c.no_partida')
-            ->orderBy('c.descripcion')
-            ->get();
-
-        // Año derivado: si clave2025 tiene datos asumir 2025, sino año actual
-        $anio = $concentrados->isNotEmpty() ? 2025 : (int) date('Y');
-
-        $asignaciones = $concentrados->map(fn ($c) => [
-            'id'              => $c->id,
-            'producto_id'     => $c->propuesta_id ?? $c->id,
-            'cantidad'        => (int) ($c->cantidad ?? 1),
-            'talla'           => $c->talla,
-            'clave_variante'  => $c->clave2025,
-            'precio_unitario' => $c->precio_unitario,
-            'importe'         => $c->importe,
-            'descripcion'     => $c->descripcion
-                                    ?? $c->clave_descripcion
-                                    ?? "Partida {$c->no_partida}",
-            'clave_vestuario' => $c->clave2025 ?? $c->codigo_propuesta,
-            'codigo'          => $c->clave2025,
-            'marca'           => $c->marca,
-            'unidad'          => $c->unidad,
-            'medida'          => $c->medida,
-            'partida'         => $c->no_partida,
-        ]);
-
-        return response()->json([
-            'empleado'     => $empleado,
-            'asignaciones' => $asignaciones,
-            'anio'         => $anio,
-        ]);
-    }
-
-    /** PUT /api/mi-vestuario/{id}/talla — actualizar talla del registro en concentrado */
-    public function updateTalla(Request $request, int $id): JsonResponse
-    {
-        $user = $request->user();
+        $anio = (int) ($request->get('anio', date('Y')));
 
         if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => $anio]);
         }
 
-        $registro = DB::table('concentrado')
-            ->where('id', $id)
+        $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
             ->where('nue', $user->nue)
             ->first();
 
-        if (! $registro) {
-            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        if (! $empleado) {
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => $anio]);
         }
-
-        $request->validate(['talla' => 'required|string|max:10']);
-
-        DB::table('concentrado')
-            ->where('id', $id)
-            ->update(['talla' => strtoupper(trim($request->talla))]);
-
-        return response()->json(['message' => 'Talla actualizada correctamente.']);
-    }
-
-    /**
-     * PUT /api/mi-vestuario/{id}/producto
-     * Cambiar el artículo de un registro de concentrado.
-     * Se recibe el id de un registro de propuesta y se actualizan los campos del concentrado.
-     */
-    public function updateProducto(Request $request, int $id): JsonResponse
-    {
-        $user = $request->user();
-
-        if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
-        }
-
-        $registro = DB::table('concentrado')
-            ->where('id', $id)
-            ->where('nue', $user->nue)
-            ->first();
-
-        if (! $registro) {
-            return response()->json(['message' => 'Registro no encontrado.'], 404);
-        }
-
-        $request->validate([
-            'producto_id' => 'required|integer|exists:propuesta,id',
-            'talla'       => 'nullable|string|max:10',
-        ]);
-
-        $propuesta = DB::table('propuesta')->where('id', $request->producto_id)->first();
-
-        $cantidad = (int) ($registro->cantidad ?? 1);
-        $precio   = $propuesta->precio_unitario ?? $registro->precio_unitario;
-        $importe  = $precio ? round($cantidad * $precio, 2) : $registro->importe;
-
-        DB::table('concentrado')->where('id', $id)->update([
-            'descripcion'     => $propuesta->descripcion,
-            'clave2025'       => $propuesta->codigo,
-            'precio_unitario' => $precio,
-            'importe'         => $importe,
-            'total'           => $importe,
-            'no_partida'      => $propuesta->partida,
-            'talla'           => $request->talla
-                ? strtoupper(trim($request->talla))
-                : $registro->talla,
-        ]);
-
-        return response()->json(['message' => 'Artículo actualizado correctamente.']);
-    }
-
-    /**
-     * Verificar si el usuario (delegado) tiene acceso al empleado.
-     * Retorna el trabajador de delegacion o null.
-     */
-    private function empleadoAccesiblePorDelegado($user, int $empleadoId): ?object
-    {
-        $conn = 'bas_vestuario';
-
-        $trabajador = DB::connection($conn)->table('delegacion')
-            ->where('id', $empleadoId)
-            ->first(['id', 'nue', 'nombre_trab', 'apellp_trab', 'apellm_trab', 'delegacion', 'ur']);
-
-        if (! $trabajador) {
-            return null;
-        }
-
-        $delCode = str_replace('-', '', (string) $trabajador->delegacion);
-        $key     = $trabajador->ur . '_' . $delCode;
-
-        if ($user->delegado_id) {
-            $d = DB::connection($conn)->table('delegado')->where('id', (int) $user->delegado_id)->first();
-            if ($d) {
-                $nombre = trim($d->nombre);
-                $match  = DB::connection($conn)->table('delegado')
-                    ->whereRaw('TRIM(nombre) = ?', [$nombre])
-                    ->where('ur', $trabajador->ur)
-                    ->whereRaw("REPLACE(delegacion, '-', '') = ?", [$delCode])
-                    ->exists();
-                return $match ? $trabajador : null;
-            }
-        }
-
-        if ($user->nue) {
-            $miTrab = DB::connection($conn)->table('delegacion')
-                ->where('nue', $user->nue)
-                ->first(['delegacion', 'ur']);
-            if ($miTrab && $miTrab->ur == $trabajador->ur && str_replace('-', '', $miTrab->delegacion) === $delCode) {
-                return $trabajador;
-            }
-        }
-
-        return null;
-    }
-
-    /** GET /api/empleados/{empleado}/vestuario — vestuario de un empleado (solo si el delegado tiene acceso) */
-    public function empleadoVestuario(Request $request, int $empleado): JsonResponse
-    {
-        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
-        if (! $trabajador) {
-            return response()->json(['message' => 'Empleado no accesible.'], 403);
-        }
-
-        $conn = 'bas_vestuario';
-        $dep = DB::connection($conn)->table('dependences')->where('key', $trabajador->ur)->first();
 
         $empleadoData = [
-            'nue'                => $trabajador->nue,
-            'nombre'             => trim("{$trabajador->nombre_trab} {$trabajador->apellp_trab} {$trabajador->apellm_trab}"),
-            'delegacion_clave'   => $trabajador->delegacion,
-            'dependencia_clave'  => (string) $trabajador->ur,
-            'dependencia_nombre' => $dep?->name ?? '',
+            'nue'                => $empleado->nue,
+            'nombre'             => $empleado->nombre_completo,
+            'delegacion_clave'   => $empleado->delegacion?->clave,
+            'dependencia_clave'  => $empleado->dependencia?->clave,
+            'dependencia_nombre' => $empleado->dependencia?->nombre ?? '',
         ];
 
-        $concentrados = DB::connection($conn)->table('concentrado AS c')
-            ->where('c.nue', $trabajador->nue)
-            ->leftJoin(
-                DB::raw('(SELECT partida, MIN(id) as pid FROM propuesta GROUP BY partida) AS pp_min'),
-                'pp_min.partida', '=', 'c.no_partida'
-            )
-            ->leftJoin('propuesta AS pp', 'pp.id', '=', 'pp_min.pid')
-            ->select([
-                'c.id', 'c.nue', 'c.ur', 'c.no_partida', 'c.clave2025', 'c.descripcion', 'c.clave_descripcion',
-                'c.cantidad', 'c.talla', 'c.precio_unitario', 'c.importe', 'c.iva', 'c.total',
-                'pp.id AS propuesta_id', 'pp.marca', 'pp.unidad', 'pp.medida', 'pp.codigo AS codigo_propuesta',
-            ])
-            ->orderBy('c.no_partida')
-            ->orderBy('c.descripcion')
-            ->get();
-
-        $anio = $concentrados->isNotEmpty() ? 2025 : (int) date('Y');
-
-        $asignaciones = $concentrados->map(fn ($c) => [
-            'id'              => $c->id,
-            'producto_id'     => $c->propuesta_id ?? $c->id,
-            'cantidad'        => (int) ($c->cantidad ?? 1),
-            'talla'           => $c->talla,
-            'clave_variante'  => $c->clave2025,
-            'precio_unitario' => $c->precio_unitario,
-            'importe'         => $c->importe,
-            'descripcion'     => $c->descripcion ?? $c->clave_descripcion ?? "Partida {$c->no_partida}",
-            'clave_vestuario' => $c->clave2025 ?? $c->codigo_propuesta,
-            'codigo'          => $c->clave2025,
-            'marca'           => $c->marca,
-            'unidad'          => $c->unidad,
-            'medida'          => $c->medida,
-            'partida'         => $c->no_partida,
-        ]);
+        $asignaciones = $this->getSelecciones($empleado->id, $anio);
 
         return response()->json([
             'empleado'     => $empleadoData,
@@ -304,73 +45,255 @@ class VestuarioController extends Controller
         ]);
     }
 
-    /** PUT /api/empleados/{empleado}/vestuario/{id}/talla */
-    public function empleadoUpdateTalla(Request $request, int $empleado, int $id): JsonResponse
+    public function updateTalla(Request $request, int $id): JsonResponse
     {
-        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
-        if (! $trabajador) {
-            return response()->json(['message' => 'Empleado no accesible.'], 403);
+        $user = $request->user();
+        if (! $user->nue) {
+            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
         }
 
-        $registro = DB::connection('bas_vestuario')->table('concentrado')
-            ->where('id', $id)
-            ->where('nue', $trabajador->nue)
-            ->first();
+        $empleado = Empleado::where('nue', $user->nue)->first();
+        if (! $empleado) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
 
-        if (! $registro) {
+        $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
+        if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        $request->validate(['talla' => 'required|string|max:10']);
+        $request->validate(['talla' => 'required|string|max:30']);
 
-        DB::connection('bas_vestuario')->table('concentrado')
-            ->where('id', $id)
-            ->update(['talla' => strtoupper(trim($request->talla))]);
+        $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
+        if (! $talla) {
+            $tallaId = DB::table('tallas')->insertGetId(['nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now()]);
+        } else {
+            $tallaId = $talla->id;
+        }
+
+        $newPt = DB::table('producto_tallas')
+            ->where('producto_id', $seleccion->productoTalla->producto_id)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
+
+        if (! $newPt) {
+            $newPt = (object) ['id' => DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $seleccion->productoTalla->producto_id,
+                'talla_id'    => $tallaId,
+                'anio'        => $seleccion->anio,
+                'medidas'     => null,
+                'cantidad_disponible' => 0,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ])];
+        }
+
+        $seleccion->update(['producto_talla_id' => $newPt->id]);
 
         return response()->json(['message' => 'Talla actualizada correctamente.']);
     }
 
-    /** PUT /api/empleados/{empleado}/vestuario/{id}/producto */
-    public function empleadoUpdateProducto(Request $request, int $empleado, int $id): JsonResponse
+    public function updateProducto(Request $request, int $id): JsonResponse
     {
-        $trabajador = $this->empleadoAccesiblePorDelegado($request->user(), $empleado);
-        if (! $trabajador) {
-            return response()->json(['message' => 'Empleado no accesible.'], 403);
+        $user = $request->user();
+        if (! $user->nue) {
+            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
         }
 
-        $registro = DB::connection('bas_vestuario')->table('concentrado')
-            ->where('id', $id)
-            ->where('nue', $trabajador->nue)
-            ->first();
+        $empleado = Empleado::where('nue', $user->nue)->first();
+        if (! $empleado) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
 
-        if (! $registro) {
+        $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
+        if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
         $request->validate([
-            'producto_id' => 'required|integer',
-            'talla'       => 'nullable|string|max:10',
+            'producto_id' => 'required|integer|exists:productos,id',
+            'talla'       => 'nullable|string|max:30',
         ]);
 
-        $propuesta = DB::connection('bas_vestuario')->table('propuesta')->where('id', $request->producto_id)->first();
-        if (! $propuesta) {
-            return response()->json(['message' => 'Producto no encontrado.'], 404);
+        $tallaId = $seleccion->productoTalla->talla_id;
+        if ($request->talla) {
+            $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
+            $tallaId = $talla ? $talla->id : DB::table('tallas')->insertGetId([
+                'nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now(),
+            ]);
         }
 
-        $cantidad = (int) ($registro->cantidad ?? 1);
-        $precio   = $propuesta->precio_unitario ?? $registro->precio_unitario;
-        $importe  = $precio ? round($cantidad * $precio, 2) : $registro->importe;
+        $pt = DB::table('producto_tallas')
+            ->where('producto_id', $request->producto_id)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
 
-        DB::connection('bas_vestuario')->table('concentrado')->where('id', $id)->update([
-            'descripcion'     => $propuesta->descripcion,
-            'clave2025'       => $propuesta->codigo,
-            'precio_unitario' => $precio,
-            'importe'         => $importe,
-            'total'           => $importe,
-            'no_partida'      => $propuesta->partida,
-            'talla'           => $request->talla ? strtoupper(trim($request->talla)) : $registro->talla,
-        ]);
+        if (! $pt) {
+            $ptId = DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $request->producto_id,
+                'talla_id'    => $tallaId,
+                'anio'        => $seleccion->anio,
+                'medidas'     => null,
+                'cantidad_disponible' => 0,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        } else {
+            $ptId = $pt->id;
+        }
+
+        $seleccion->update(['producto_talla_id' => $ptId]);
 
         return response()->json(['message' => 'Artículo actualizado correctamente.']);
+    }
+
+    public function empleadoVestuario(Request $request, int $empleado): JsonResponse
+    {
+        $anio = (int) ($request->get('anio', date('Y')));
+
+        $emp = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);
+        if (! $emp) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
+
+        $empleadoData = [
+            'nue'                => $emp->nue,
+            'nombre'             => $emp->nombre_completo,
+            'delegacion_clave'   => $emp->delegacion?->clave,
+            'dependencia_clave'  => $emp->dependencia?->clave,
+            'dependencia_nombre' => $emp->dependencia?->nombre ?? '',
+        ];
+
+        $asignaciones = $this->getSelecciones($emp->id, $anio);
+
+        return response()->json([
+            'empleado'     => $empleadoData,
+            'asignaciones' => $asignaciones,
+            'anio'         => $anio,
+        ]);
+    }
+
+    public function empleadoUpdateTalla(Request $request, int $empleado, int $id): JsonResponse
+    {
+        $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado)->first();
+        if (! $seleccion) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        $request->validate(['talla' => 'required|string|max:30']);
+
+        $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
+        $tallaId = $talla ? $talla->id : DB::table('tallas')->insertGetId([
+            'nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $newPt = DB::table('producto_tallas')
+            ->where('producto_id', $seleccion->productoTalla->producto_id)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
+
+        if (! $newPt) {
+            $newPt = (object) ['id' => DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $seleccion->productoTalla->producto_id,
+                'talla_id'    => $tallaId,
+                'anio'        => $seleccion->anio,
+                'medidas'     => null,
+                'cantidad_disponible' => 0,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ])];
+        }
+
+        $seleccion->update(['producto_talla_id' => $newPt->id]);
+
+        return response()->json(['message' => 'Talla actualizada correctamente.']);
+    }
+
+    public function empleadoUpdateProducto(Request $request, int $empleado, int $id): JsonResponse
+    {
+        $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado)->first();
+        if (! $seleccion) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        $request->validate([
+            'producto_id' => 'required|integer|exists:productos,id',
+            'talla'       => 'nullable|string|max:30',
+        ]);
+
+        $tallaId = $seleccion->productoTalla->talla_id;
+        if ($request->talla) {
+            $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
+            $tallaId = $talla ? $talla->id : DB::table('tallas')->insertGetId([
+                'nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $pt = DB::table('producto_tallas')
+            ->where('producto_id', $request->producto_id)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
+
+        if (! $pt) {
+            $ptId = DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $request->producto_id,
+                'talla_id'    => $tallaId,
+                'anio'        => $seleccion->anio,
+                'medidas'     => null,
+                'cantidad_disponible' => 0,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        } else {
+            $ptId = $pt->id;
+        }
+
+        $seleccion->update(['producto_talla_id' => $ptId]);
+
+        return response()->json(['message' => 'Artículo actualizado correctamente.']);
+    }
+
+    private function getSelecciones(int $empleadoId, int $anio): \Illuminate\Support\Collection
+    {
+        return DB::table('selecciones AS s')
+            ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
+            ->join('productos AS p', 'p.id', '=', 'pt.producto_id')
+            ->join('tallas AS t', 't.id', '=', 'pt.talla_id')
+            ->leftJoin('producto_precios AS pp', function ($j) {
+                $j->on('pp.producto_id', '=', 'p.id')->on('pp.anio', '=', 's.anio');
+            })
+            ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
+            ->where('s.empleado_id', $empleadoId)
+            ->where('s.anio', $anio)
+            ->select([
+                's.id', 's.cantidad', 's.anio',
+                'p.id AS producto_id', 'p.descripcion', 'p.marca', 'p.unidad', 'p.medida',
+                'pp.clave AS codigo', 'pp.precio_unitario',
+                't.nombre AS talla', 't.id AS talla_id',
+                'pa.numero AS partida',
+            ])
+            ->orderBy('pa.numero')
+            ->orderBy('p.descripcion')
+            ->get()
+            ->map(fn ($c) => [
+                'id'              => $c->id,
+                'producto_id'     => $c->producto_id,
+                'cantidad'        => (int) $c->cantidad,
+                'talla'           => $c->talla,
+                'talla_id'        => $c->talla_id,
+                'clave_vestuario' => $c->codigo,
+                'codigo'          => $c->codigo,
+                'precio_unitario' => $c->precio_unitario,
+                'importe'         => $c->precio_unitario ? round($c->cantidad * $c->precio_unitario, 2) : null,
+                'descripcion'     => $c->descripcion,
+                'marca'           => $c->marca,
+                'unidad'          => $c->unidad,
+                'medida'          => $c->medida,
+                'partida'         => $c->partida,
+            ]);
     }
 }

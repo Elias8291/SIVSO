@@ -4,44 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-/**
- * Tabla: delegado
- * Delegados de cada Unidad Receptora.
- *
- * La columna "delegacion" guarda la clave SIN guión (ej: "3B101").
- * En la tabla "delegacion", el mismo valor se guarda CON guión (ej: "3B-101").
- * Para obtener los trabajadores de un delegado:
- *   Delegacion::whereRaw("REPLACE(delegacion, '-', '') = ?", [$delegado->delegacion])
- */
 class Delegado extends Model
 {
-    protected $table = 'delegado';
+    protected $fillable = ['nombre', 'user_id'];
 
-    public $timestamps = false;
-
-    protected $fillable = [
-        'nombre',
-        'delegacion',
-        'ur',
-    ];
-
-    /**
-     * Dependencia (UR) de este delegado.
-     * delegado.ur = dependences.key
-     */
-    public function dependencia(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(Dependencia::class, 'ur', 'key');
+        return $this->belongsTo(User::class);
     }
 
-    /**
-     * Trabajadores que pertenecen a la misma UR.
-     * (Relación completa via REPLACE requiere consulta manual)
-     */
-    public function trabajadoresDeLaUr(): HasMany
+    public function delegaciones(): BelongsToMany
     {
-        return $this->hasMany(Delegacion::class, 'ur', 'ur');
+        return $this->belongsToMany(Delegacion::class, 'delegado_delegacion')
+                    ->withTimestamps();
     }
 }

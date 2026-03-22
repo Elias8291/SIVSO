@@ -3,201 +3,166 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Producto;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Tabla: propuesta (en bas_vestuario)
- * Catálogo de artículos de vestuario.
- * propuesta.codigo ↔ clave_vestuario en el frontend
- * No existe campo "activo" → siempre se devuelve activo: true
- */
 class ProductoController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        try {
-            return $this->indexLogic($request);
-        }
-        catch (\Throwable $e) {
-            if (config('app.debug')) {
-                return response()->json([
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile() . ':' . $e->getLine(),
-                ], 500);
-            }
-            return response()->json(['message' => 'Error al obtener productos.'], 500);
-        }
-    }
-
-    private function indexLogic(Request $request): JsonResponse
-    {
-        $search = trim((string)$request->get('search', ''));
+        $search  = trim((string) $request->get('search', ''));
         $partida = $request->get('partida');
+        $anio    = (int) ($request->get('anio', date('Y')));
 
         if ($request->boolean('all')) {
-            $rows = DB::table('propuesta')
-                ->select(['id', 'descripcion', 'codigo', 'partida', 'unidad', 'medida', 'marca', 'precio_unitario'])
-                ->when($partida, fn($q) => $q->where('partida', $partida))
-                ->when($search, fn($q) =>
-            $q->where(fn($q2) =>
-            $q2->where('descripcion', 'like', "%{$search}%")
-            ->orWhere('codigo', 'like', "%{$search}%")
-            )
-            )
-                ->orderBy('descripcion')
+            $rows = DB::table('productos AS p')
+                ->join('producto_precios AS pp', function ($j) use ($anio) {
+                    $j->on('pp.producto_id', '=', 'p.id')->where('pp.anio', $anio);
+                })
+                ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
+                ->select([
+                    'p.id', 'p.descripcion', 'pp.clave AS codigo', 'pa.numero AS partida',
+                    'p.unidad', 'p.medida', 'p.marca', 'pp.precio_unitario',
+                ])
+                ->when($partida, fn ($q) => $q->where('pa.numero', $partida))
+                ->when($search, fn ($q) =>
+                    $q->where(fn ($q2) =>
+                        $q2->where('p.descripcion', 'like', "%{$search}%")
+                           ->orWhere('pp.clave', 'like', "%{$search}%")
+                    )
+                )
+                ->orderBy('p.descripcion')
                 ->get()
-                ->map(fn($r) => [
-            'id' => $r->id,
-            'descripcion' => $r->descripcion,
-            'clave_vestuario' => $r->codigo,
-            'codigo' => $r->codigo,
-            'partida' => $r->partida,
-            'unidad' => $r->unidad,
-            'medida' => $r->medida,
-            'marca' => $r->marca,
-            'precio_unitario' => $r->precio_unitario,
-            'activo' => true,
-            ]);
+                ->map(fn ($r) => [
+                    'id'               => $r->id,
+                    'descripcion'      => $r->descripcion,
+                    'clave_vestuario'  => $r->codigo,
+                    'codigo'           => $r->codigo,
+                    'partida'          => $r->partida,
+                    'unidad'           => $r->unidad,
+                    'medida'           => $r->medida,
+                    'marca'            => $r->marca,
+                    'precio_unitario'  => $r->precio_unitario,
+                    'activo'           => true,
+                ]);
+
             return response()->json(['data' => $rows]);
         }
 
-        $perPage = min((int)$request->get('per_page', 20), 100);
+        $perPage = min((int) $request->get('per_page', 20), 100);
 
-        $query = DB::table('propuesta AS p')
+        $query = DB::table('productos AS p')
+            ->leftJoin('producto_precios AS pp', function ($j) use ($anio) {
+                $j->on('pp.producto_id', '=', 'p.id')->where('pp.anio', $anio);
+            })
+            ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
+            ->join('proveedores AS pv', 'pv.id', '=', 'p.proveedor_id')
             ->select([
-            'p.id', 'p.lote', 'p.partida_especifica', 'p.partida',
-            'p.descripcion', 'p.cantidad', 'p.unidad', 'p.marca',
-            'p.precio_unitario', 'p.medida', 'p.codigo', 'p.proveedor',
-        ])
-            ->when($search, fn($q) =>
-        $q->where(fn($q2) =>
-        $q2->where('p.descripcion', 'like', "%{$search}%")
-        ->orWhere('p.codigo', 'like', "%{$search}%")
-        ->orWhere('p.marca', 'like', "%{$search}%")
-        ->orWhere('p.proveedor', 'like', "%{$search}%")
-        )
-        )
-            ->when($partida, fn($q) => $q->where('p.partida', $partida))
+                'p.id', 'p.lote', 'pa.numero AS partida',
+                'p.descripcion', 'p.unidad', 'p.marca',
+                'pp.precio_unitario', 'p.medida', 'pp.clave AS codigo',
+                'pv.nombre AS proveedor', 'p.codigo AS codigo_producto',
+            ])
+            ->when($search, fn ($q) =>
+                $q->where(fn ($q2) =>
+                    $q2->where('p.descripcion', 'like', "%{$search}%")
+                       ->orWhere('pp.clave', 'like', "%{$search}%")
+                       ->orWhere('p.marca', 'like', "%{$search}%")
+                       ->orWhere('pv.nombre', 'like', "%{$search}%")
+                )
+            )
+            ->when($partida, fn ($q) => $q->where('pa.numero', $partida))
             ->orderBy('p.descripcion');
 
         $paginated = $query->paginate($perPage);
 
-        $data = collect($paginated->items())->map(fn($r) => [
-        'id' => $r->id,
-        'clave_vestuario' => $r->codigo ?? null,
-        'codigo' => $r->codigo ?? null,
-        'descripcion' => $r->descripcion ?? '',
-        'marca' => $r->marca ?? null,
-        'unidad' => $r->unidad ?? null,
-        'medida' => $r->medida ?? null,
-        'partida' => $r->partida ?? null,
-        'partida_especifica' => $r->partida_especifica ?? null,
-        'lote' => $r->lote ?? null,
-        'precio_unitario' => $r->precio_unitario ?? null,
-        'proveedor' => $r->proveedor ?? null,
-        'proveedor_nombre' => null,
-        'activo' => true,
+        $data = collect($paginated->items())->map(fn ($r) => [
+            'id'               => $r->id,
+            'clave_vestuario'  => $r->codigo ?? $r->codigo_producto,
+            'codigo'           => $r->codigo ?? $r->codigo_producto,
+            'descripcion'      => $r->descripcion ?? '',
+            'marca'            => $r->marca,
+            'unidad'           => $r->unidad,
+            'medida'           => $r->medida,
+            'partida'          => $r->partida,
+            'lote'             => $r->lote,
+            'precio_unitario'  => $r->precio_unitario,
+            'proveedor'        => $r->proveedor,
+            'proveedor_nombre' => $r->proveedor,
+            'activo'           => true,
         ]);
 
         return response()->json([
             'data' => $data,
             'meta' => [
-                'total' => $paginated->total(),
-                'per_page' => $paginated->perPage(),
+                'total'        => $paginated->total(),
+                'per_page'     => $paginated->perPage(),
                 'current_page' => $paginated->currentPage(),
-                'last_page' => $paginated->lastPage(),
-                'from' => $paginated->firstItem() ?? 0,
-                'to' => $paginated->lastItem() ?? 0,
+                'last_page'    => $paginated->lastPage(),
+                'from'         => $paginated->firstItem() ?? 0,
+                'to'           => $paginated->lastItem() ?? 0,
             ],
         ]);
     }
 
-    public function store(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'partida' => 'required|integer',
-            'partida_especifica' => 'required|integer',
-            'lote' => 'nullable|integer',
-            'codigo' => 'nullable|string|max:30',
-            'clave_vestuario' => 'nullable|string|max:30',
-            'descripcion' => 'required|string',
-            'marca' => 'nullable|string|max:30',
-            'unidad' => 'nullable|string|max:15',
-            'medida' => 'nullable|string|max:5',
-            'proveedor' => 'nullable|string|max:30',
-        ]);
-
-        $id = DB::table('propuesta')->insertGetId([
-            'lote' => $data['lote'] ?? 0,
-            'partida_especifica' => $data['partida_especifica'],
-            'partida' => $data['partida'],
-            'descripcion' => $data['descripcion'],
-            'cantidad' => 0,
-            'unidad' => $data['unidad'] ?? '',
-            'marca' => $data['marca'] ?? '',
-            'precio_unitario' => 0,
-            'subtotal' => 0,
-            'proveedor' => $data['proveedor'] ?? '',
-            'medida' => $data['medida'] ?? '',
-            'codigo' => $data['codigo'] ?? $data['clave_vestuario'] ?? '',
-        ]);
-
-        return response()->json(['message' => 'Producto creado correctamente.', 'id' => $id], 201);
-    }
-
     public function show(int $id): JsonResponse
     {
-        $p = DB::table('propuesta')->where('id', $id)->first();
-        if (!$p) {
+        $p = Producto::with(['proveedor:id,nombre', 'partida:id,numero', 'precios'])->find($id);
+        if (! $p) {
             return response()->json(['message' => 'No encontrado.'], 404);
         }
         return response()->json($p);
     }
 
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'descripcion'  => 'required|string',
+            'marca'        => 'nullable|string|max:255',
+            'unidad'       => 'nullable|string|max:50',
+            'medida'       => 'nullable|string|max:10',
+            'codigo'       => 'nullable|string|max:30',
+            'lote'         => 'nullable|string',
+            'proveedor_id' => 'required|integer|exists:proveedores,id',
+            'partida_id'   => 'required|integer|exists:partidas,id',
+        ]);
+
+        $producto = Producto::create($data);
+
+        return response()->json(['message' => 'Producto creado correctamente.', 'id' => $producto->id], 201);
+    }
+
     public function update(Request $request, int $id): JsonResponse
     {
-        $p = DB::table('propuesta')->where('id', $id)->first();
-        if (!$p) {
+        $p = Producto::find($id);
+        if (! $p) {
             return response()->json(['message' => 'No encontrado.'], 404);
         }
 
         $data = $request->validate([
-            'partida' => 'required|integer',
-            'partida_especifica' => 'required|integer',
-            'lote' => 'nullable|integer',
-            'codigo' => 'nullable|string|max:30',
-            'clave_vestuario' => 'nullable|string|max:30',
-            'descripcion' => 'required|string',
-            'marca' => 'nullable|string|max:30',
-            'unidad' => 'nullable|string|max:15',
-            'medida' => 'nullable|string|max:5',
+            'descripcion'  => 'required|string',
+            'marca'        => 'nullable|string|max:255',
+            'unidad'       => 'nullable|string|max:50',
+            'medida'       => 'nullable|string|max:10',
+            'codigo'       => 'nullable|string|max:30',
+            'lote'         => 'nullable|string',
         ]);
 
-        DB::table('propuesta')->where('id', $id)->update([
-            'lote' => $data['lote'] ?? 0,
-            'partida_especifica' => $data['partida_especifica'],
-            'partida' => $data['partida'],
-            'descripcion' => $data['descripcion'],
-            'unidad' => $data['unidad'] ?? '',
-            'marca' => $data['marca'] ?? '',
-            'medida' => $data['medida'] ?? '',
-            'codigo' => $data['codigo'] ?? $data['clave_vestuario'] ?? '',
-        ]);
+        $p->update($data);
 
         return response()->json(['message' => 'Producto actualizado correctamente.']);
     }
 
     public function destroy(int $id): JsonResponse
     {
-        DB::table('propuesta')->where('id', $id)->delete();
+        Producto::where('id', $id)->delete();
         return response()->json(['message' => 'Producto eliminado correctamente.']);
     }
 
-    /** No hay campo activo en propuesta — retorna ok sin cambios */
     public function toggle(int $id): JsonResponse
     {
-        return response()->json(['message' => 'Los productos del catálogo no tienen estado activo/inactivo.', 'activo' => true]);
+        return response()->json(['message' => 'Los productos no tienen estado activo/inactivo.', 'activo' => true]);
     }
 }

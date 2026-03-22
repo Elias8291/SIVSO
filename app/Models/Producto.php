@@ -4,30 +4,38 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Tabla: propuesta (legacy, en bas_vestuario)
- * Catálogo de artículos de vestuario.
- */
 class Producto extends Model
 {
-    protected $table = 'propuesta';
-
-    public $timestamps = false;
-
     protected $fillable = [
-        'lote', 'partida_especifica', 'partida',
-        'descripcion', 'cantidad', 'unidad', 'marca',
-        'precio_unitario', 'subtotal', 'proveedor', 'medida', 'codigo',
+        'descripcion',
+        'unidad',
+        'marca',
+        'lote',
+        'medida',
+        'codigo',
+        'proveedor_id',
+        'partida_id',
     ];
 
-    protected $casts = [
-        'precio_unitario' => 'decimal:2',
-        'subtotal'        => 'decimal:2',
-    ];
-
-    public function proveedorModel(): BelongsTo
+    public function proveedor(): BelongsTo
     {
-        return $this->belongsTo(Proveedor::class, 'proveedor', 'abreviacion');
+        return $this->belongsTo(Proveedor::class);
+    }
+
+    public function partida(): BelongsTo
+    {
+        return $this->belongsTo(Partida::class);
+    }
+
+    public function precios(): HasMany
+    {
+        return $this->hasMany(ProductoPrecio::class);
+    }
+
+    public function productoTallas(): HasMany
+    {
+        return $this->hasMany(ProductoTalla::class);
     }
 }

@@ -5,31 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Tabla original: proveedor
- */
 class Proveedor extends Model
 {
-    protected $table = 'proveedor';
+    protected $table = 'proveedores';
 
-    public $timestamps = false;
+    protected $fillable = ['pv', 'rfc', 'nombre', 'direccion', 'telefono', 'abreviacion'];
 
-    protected $fillable = [
-        'pv',
-        'rfc',
-        'proveedor',
-        'direccion',
-        'telefono',
-        'abreviacion',
-        'numero',
-    ];
-
-    /**
-     * Productos (propuesta) de este proveedor.
-     * proveedor.abreviacion = propuesta.proveedor
-     */
-    public function propuestas(): HasMany
+    public function productos(): HasMany
     {
-        return $this->hasMany(Propuesta::class, 'proveedor', 'abreviacion');
+        return $this->hasMany(Producto::class);
     }
 }

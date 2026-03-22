@@ -3,158 +3,99 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PresupuestoController extends Controller
 {
-    /**
-     * Pivot: gasto real por UR × partida_especifica + límites configurados.
-     * GET /api/partidas?anio=2025
-     */
-    public function index(Request $request): \Illuminate\Http\JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $anio = (int) ($request->query('anio', date('Y')));
 
-        // 1. Todas las dependencias
-        $dependencias = DB::table('dependences')
-            ->orderBy('key')
-            ->get(['key', 'name']);
+        $dependencias = DB::table('dependencias')->orderBy('clave')->get(['id', 'clave', 'nombre']);
 
-        // 2. Gasto real: concentrado ⟶ propuesta (subquery MIN para evitar multiplicación)
-        $gastados = DB::table('concentrado as c')
-            ->leftJoin(
-                DB::raw('(SELECT partida, MIN(partida_especifica) as partida_especifica FROM propuesta GROUP BY partida) as pp'),
-                'pp.partida',
-                '=',
-                'c.no_partida'
-            )
+        $gastados = DB::table('selecciones AS s')
+            ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
+            ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
+            ->join('productos AS p', 'p.id', '=', 'pt.producto_id')
+            ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
+            ->leftJoin('producto_precios AS pp', function ($j) {
+                $j->on('pp.producto_id', '=', 'p.id')->on('pp.anio', '=', 's.anio');
+            })
+            ->where('s.anio', $anio)
             ->select([
-                'c.ur',
-                DB::raw('COALESCE(pp.partida_especifica, 0) as partida_especifica'),
-                DB::raw('SUM(COALESCE(c.total, 0)) as gastado'),
-                DB::raw('SUM(COALESCE(c.importe, 0)) as importe'),
-                DB::raw('COUNT(DISTINCT c.nue) as trabajadores'),
-                DB::raw('COUNT(c.id) as registros'),
+                'e.dependencia_id',
+                'pa.numero AS partida',
+                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS gastado'),
+                DB::raw('COUNT(DISTINCT e.id) AS trabajadores'),
+                DB::raw('COUNT(s.id) AS registros'),
             ])
-            ->groupBy('c.ur', DB::raw('COALESCE(pp.partida_especifica, 0)'))
+            ->groupBy('e.dependencia_id', 'pa.numero')
             ->get();
 
-        // 3. Límites guardados para el año solicitado
-        $limites = DB::table('presupuesto_limites')
-            ->where('anio', $anio)
-            ->get(['ur', 'partida_especifica', 'limite']);
-
-        // 4. Partidas específicas distintas (excluimos 0 = sin mapeo)
-        $partidas = $gastados
-            ->pluck('partida_especifica')
-            ->filter(fn ($v) => $v > 0)
-            ->unique()
-            ->sort()
-            ->values();
-
-        // 5. Construcción del pivot por UR
-        $limiteMap = [];
-        foreach ($limites as $l) {
-            $limiteMap["{$l->ur}_{$l->partida_especifica}"] = (float) $l->limite;
-        }
+        $partidas = $gastados->pluck('partida')->unique()->sort()->values();
 
         $gastadoMap = [];
         $trabajadoresMap = [];
         foreach ($gastados as $g) {
-            $key = "{$g->ur}_{$g->partida_especifica}";
+            $key = "{$g->dependencia_id}_{$g->partida}";
             $gastadoMap[$key] = (float) $g->gastado;
-            $trabajadoresMap[$g->ur] = ($trabajadoresMap[$g->ur] ?? 0) + (int) $g->trabajadores;
+            $trabajadoresMap[$g->dependencia_id] = ($trabajadoresMap[$g->dependencia_id] ?? 0) + (int) $g->trabajadores;
         }
 
-        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $limiteMap, $trabajadoresMap) {
+        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $trabajadoresMap) {
             $columnas = [];
             $totalGastado = 0;
-            $totalLimite  = 0;
 
-            foreach ($partidas as $pe) {
-                $key     = "{$dep->key}_{$pe}";
+            foreach ($partidas as $pa) {
+                $key     = "{$dep->id}_{$pa}";
                 $gastado = $gastadoMap[$key] ?? 0;
-                $limite  = $limiteMap[$key]  ?? 0;
 
                 $columnas[] = [
-                    'partida_especifica' => $pe,
+                    'partida_especifica' => $pa,
                     'gastado'            => $gastado,
-                    'limite'             => $limite,
-                    'porcentaje'         => $limite > 0 ? min(round(($gastado / $limite) * 100, 1), 999) : null,
+                    'limite'             => 0,
+                    'porcentaje'         => null,
                 ];
 
                 $totalGastado += $gastado;
-                $totalLimite  += $limite;
             }
 
             return [
-                'ur'           => $dep->key,
-                'nombre'       => $dep->name,
-                'trabajadores' => $trabajadoresMap[$dep->key] ?? 0,
-                'columnas'     => $columnas,
-                'total_gastado'=> $totalGastado,
-                'total_limite' => $totalLimite,
-                'total_pct'    => $totalLimite > 0
-                    ? min(round(($totalGastado / $totalLimite) * 100, 1), 999)
-                    : null,
+                'ur'            => $dep->clave,
+                'nombre'        => $dep->nombre,
+                'trabajadores'  => $trabajadoresMap[$dep->id] ?? 0,
+                'columnas'      => $columnas,
+                'total_gastado' => $totalGastado,
+                'total_limite'  => 0,
+                'total_pct'     => null,
             ];
         });
 
-        // Totales globales por partida específica
-        $totalesGlobales = $partidas->map(function ($pe) use ($gastadoMap, $limiteMap, $dependencias) {
+        $totalesGlobales = $partidas->map(function ($pa) use ($gastadoMap, $dependencias) {
             $gastado = 0;
-            $limite  = 0;
             foreach ($dependencias as $dep) {
-                $gastado += $gastadoMap["{$dep->key}_{$pe}"] ?? 0;
-                $limite  += $limiteMap["{$dep->key}_{$pe}"]  ?? 0;
+                $gastado += $gastadoMap["{$dep->id}_{$pa}"] ?? 0;
             }
             return [
-                'partida_especifica' => $pe,
+                'partida_especifica' => $pa,
                 'gastado'            => $gastado,
-                'limite'             => $limite,
-                'porcentaje'         => $limite > 0 ? min(round(($gastado / $limite) * 100, 1), 999) : null,
+                'limite'             => 0,
+                'porcentaje'         => null,
             ];
         });
 
         return response()->json([
-            'anio'            => $anio,
-            'partidas'        => $partidas->values(),
-            'rows'            => $rows->values(),
-            'totales_globales'=> $totalesGlobales->values(),
+            'anio'             => $anio,
+            'partidas'         => $partidas,
+            'rows'             => $rows->values(),
+            'totales_globales' => $totalesGlobales->values(),
         ]);
     }
 
-    /**
-     * Guardar / actualizar límites de una UR para el año dado.
-     * PUT /api/partidas/limite
-     * Body: { ur, anio, limites: [{ partida_especifica, limite }] }
-     */
-    public function setLimite(Request $request): \Illuminate\Http\JsonResponse
+    public function setLimite(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'ur'                           => 'required|string|max:10',
-            'anio'                         => 'required|integer|min:2020|max:2099',
-            'limites'                      => 'required|array|min:1',
-            'limites.*.partida_especifica' => 'required|integer',
-            'limites.*.limite'             => 'required|numeric|min:0',
-        ]);
-
-        foreach ($validated['limites'] as $item) {
-            DB::table('presupuesto_limites')->updateOrInsert(
-                [
-                    'ur'                 => $validated['ur'],
-                    'partida_especifica' => $item['partida_especifica'],
-                    'anio'               => $validated['anio'],
-                ],
-                [
-                    'limite'     => $item['limite'],
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]
-            );
-        }
-
-        return response()->json(['ok' => true]);
+        return response()->json(['message' => 'Funcionalidad de límites en desarrollo.'], 501);
     }
 }

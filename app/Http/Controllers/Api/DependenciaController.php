@@ -15,42 +15,22 @@ class DependenciaController extends Controller
     {
         $search = trim((string) $request->get('search', ''));
 
-        $rows = DB::table('dependences')
-            ->select(['id', 'key', 'name'])
-            ->orderBy('name')
+        $rows = Dependencia::query()
+            ->select(['id', 'clave', 'nombre'])
             ->when($search, fn ($q) =>
-                $q->where(fn ($q2) =>
-                    $q2->where('name', 'like', "%{$search}%")
-                       ->orWhere('key',  'like', "%{$search}%")
-                )
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('clave', 'like', "%{$search}%")
             )
+            ->withCount(['empleados', 'delegaciones'])
+            ->orderBy('nombre')
             ->get();
-
-        if ($rows->isEmpty()) {
-            return response()->json(['data' => []]);
-        }
-
-        // ur en delegado y delegacion es int, key en dependences es varchar — MySQL hace la conversión
-        $keys = $rows->pluck('key')->all();
-
-        $delCounts = DB::table('delegado')
-            ->whereIn('ur', $keys)
-            ->selectRaw('ur, COUNT(*) AS cnt')
-            ->groupBy('ur')
-            ->pluck('cnt', 'ur');
-
-        $trabCounts = DB::table('delegacion')
-            ->whereIn('ur', $keys)
-            ->selectRaw('ur, COUNT(*) AS cnt')
-            ->groupBy('ur')
-            ->pluck('cnt', 'ur');
 
         $data = $rows->map(fn ($d) => [
             'id'                 => $d->id,
-            'clave'              => $d->key,
-            'nombre'             => $d->name,
-            'delegados_count'    => (int) $delCounts->get($d->key, 0),
-            'trabajadores_count' => (int) $trabCounts->get($d->key, 0),
+            'clave'              => $d->clave,
+            'nombre'             => $d->nombre,
+            'delegados_count'    => $d->delegaciones_count,
+            'trabajadores_count' => $d->empleados_count,
         ])
         ->sortByDesc(fn ($d) => $d['delegados_count'] * 1_000_000 + $d['trabajadores_count'])
         ->values();
@@ -61,13 +41,13 @@ class DependenciaController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'clave'  => 'required|string|max:5|unique:dependences,key',
+            'clave'  => 'required|string|max:20|unique:dependencias,clave',
             'nombre' => 'required|string|max:255',
         ]);
 
         $dep = Dependencia::create([
-            'key'  => strtoupper(trim($data['clave'])),
-            'name' => $data['nombre'],
+            'clave'  => strtoupper(trim($data['clave'])),
+            'nombre' => $data['nombre'],
         ]);
 
         return response()->json(['message' => 'Dependencia creada correctamente.', 'id' => $dep->id], 201);
@@ -76,13 +56,13 @@ class DependenciaController extends Controller
     public function update(Request $request, Dependencia $dependencia): JsonResponse
     {
         $data = $request->validate([
-            'clave'  => ['required', 'string', 'max:5', Rule::unique('dependences', 'key')->ignore($dependencia->id)],
+            'clave'  => ['required', 'string', 'max:20', Rule::unique('dependencias', 'clave')->ignore($dependencia->id)],
             'nombre' => 'required|string|max:255',
         ]);
 
         $dependencia->update([
-            'key'  => strtoupper(trim($data['clave'])),
-            'name' => $data['nombre'],
+            'clave'  => strtoupper(trim($data['clave'])),
+            'nombre' => $data['nombre'],
         ]);
 
         return response()->json(['message' => 'Dependencia actualizada correctamente.']);
@@ -90,11 +70,7 @@ class DependenciaController extends Controller
 
     public function destroy(Dependencia $dependencia): JsonResponse
     {
-        if (DB::table('delegado')->where('ur', $dependencia->key)->exists()) {
-            return response()->json(['message' => 'No se puede eliminar: tiene delegados registrados.'], 422);
-        }
-
-        if (DB::table('delegacion')->where('ur', $dependencia->key)->exists()) {
+        if ($dependencia->empleados()->exists()) {
             return response()->json(['message' => 'No se puede eliminar: tiene trabajadores registrados.'], 422);
         }
 

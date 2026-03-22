@@ -8,24 +8,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Empleado extends Model
 {
-    protected $table = 'empleados';
-
     protected $fillable = [
         'nue',
         'nombre',
         'apellido_paterno',
         'apellido_materno',
-        'delegacion_clave',
-        'dependencia_clave',
-        'activo',
+        'dependencia_id',
+        'delegacion_id',
         'user_id',
     ];
 
-    protected function casts(): array
+    public function getNombreCompletoAttribute(): string
     {
-        return [
-            'activo' => 'boolean',
-        ];
+        return trim("{$this->nombre} {$this->apellido_paterno} {$this->apellido_materno}");
+    }
+
+    public function dependencia(): BelongsTo
+    {
+        return $this->belongsTo(Dependencia::class);
+    }
+
+    public function delegacion(): BelongsTo
+    {
+        return $this->belongsTo(Delegacion::class);
     }
 
     public function user(): BelongsTo
@@ -33,13 +38,8 @@ class Empleado extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function asignacionesVestuario(): HasMany
+    public function selecciones(): HasMany
     {
-        return $this->hasMany(AsignacionVestuario::class);
-    }
-
-    public function getNombreCompletoAttribute(): string
-    {
-        return trim("{$this->nombre} {$this->apellido_paterno} {$this->apellido_materno}");
+        return $this->hasMany(Seleccion::class);
     }
 }

@@ -3,67 +3,57 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Delegado;
+use App\Models\Empleado;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    /**
-     * GET /api/perfil
-     * Datos del usuario + su registro en la tabla delegacion (si tiene NUE vinculado).
-     */
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        // Buscar el trabajador por NUE (si el usuario tiene uno registrado)
-        $trabajador = null;
-        if ($user->nue) {
-            $trabajador = DB::table('delegacion')
-                ->where('nue', $user->nue)
-                ->select(['id', 'nue', 'nombre_trab', 'apellp_trab', 'apellm_trab', 'delegacion', 'ur'])
-                ->first();
+        $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
+            ->where('user_id', $user->id)
+            ->first();
 
-            if ($trabajador) {
-                // Obtener el nombre de la dependencia
-                $dep = DB::table('dependences')->where('key', $trabajador->ur)->first();
-                $trabajador->dependencia_nombre = $dep?->name;
-                $trabajador->delegacion_clave   = $trabajador->delegacion;
-                $trabajador->dependencia_clave  = (string) $trabajador->ur;
-            }
+        $empleadoData = null;
+        if ($empleado) {
+            $empleadoData = [
+                'id'                 => $empleado->id,
+                'nue'                => $empleado->nue,
+                'nombre_completo'    => $empleado->nombre_completo,
+                'dependencia_clave'  => $empleado->dependencia?->clave,
+                'dependencia_nombre' => $empleado->dependencia?->nombre,
+                'delegacion_clave'   => $empleado->delegacion?->clave,
+            ];
         }
 
-        $delegado = null;
-        if ($user->delegado_id) {
-            $d = DB::table('delegado')->where('id', $user->delegado_id)->first(['id', 'nombre', 'delegacion', 'ur']);
-            if ($d) {
-                $delegado = [
-                    'id'     => $d->id,
-                    'clave'  => $d->delegacion,
-                    'nombre' => $d->nombre,
-                    'ur'     => $d->ur,
-                ];
-            }
+        $delegadoData = null;
+        $delegado = Delegado::where('user_id', $user->id)->first();
+        if ($delegado) {
+            $delegadoData = [
+                'id'     => $delegado->id,
+                'nombre' => $delegado->nombre,
+            ];
         }
 
         return response()->json([
             'user' => [
-                'id'          => $user->id,
-                'name'        => $user->name,
-                'rfc'         => $user->rfc,
-                'nue'         => $user->nue,
-                'email'       => $user->email,
-                'delegado_id' => $user->delegado_id,
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'rfc'   => $user->rfc,
+                'nue'   => $user->nue,
+                'email' => $user->email,
             ],
-            'empleado'   => $trabajador,
-            'delegado'   => $delegado,
+            'empleado' => $empleadoData,
+            'delegado' => $delegadoData,
         ]);
     }
 
-    /** PUT /api/perfil — actualizar nombre, RFC y correo */
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -80,7 +70,6 @@ class ProfileController extends Controller
         return response()->json(['message' => 'Perfil actualizado correctamente.']);
     }
 
-    /** PUT /api/perfil/password — cambiar contraseña */
     public function updatePassword(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -103,23 +92,16 @@ class ProfileController extends Controller
         return response()->json(['message' => 'Contraseña actualizada correctamente.']);
     }
 
-    /**
-     * PUT /api/perfil/nue — vincular/actualizar el NUE del usuario.
-     * Busca el NUE en la tabla delegacion para verificar que existe.
-     */
     public function updateNue(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        $request->validate([
-            'nue' => 'required|string|max:15',
-        ]);
+        $request->validate(['nue' => 'required|string|max:20']);
 
         $nue = trim($request->nue);
 
-        // Verificar que el NUE existe en la tabla de trabajadores
-        $existe = DB::table('delegacion')->where('nue', $nue)->exists();
-        if (! $existe) {
+        $empleado = Empleado::where('nue', $nue)->first();
+        if (! $empleado) {
             return response()->json(
                 ['errors' => ['nue' => ['Este NUE no se encontró en el padrón de trabajadores.']]],
                 422
@@ -129,22 +111,28 @@ class ProfileController extends Controller
         $user->nue = $nue;
         $user->save();
 
+        if (! $empleado->user_id) {
+            $empleado->user_id = $user->id;
+            $empleado->save();
+        }
+
         return response()->json(['message' => 'NUE actualizado correctamente.']);
     }
 
-    /**
-     * PUT /api/perfil/delegado — asignar o cambiar delegado de la cuenta.
-     */
     public function updateDelegado(Request $request): JsonResponse
     {
         $user = $request->user();
 
         $request->validate([
-            'delegado_id' => 'nullable|integer|exists:delegado,id',
+            'delegado_id' => 'nullable|integer|exists:delegados,id',
         ]);
 
-        $user->delegado_id = $request->delegado_id ?: null;
-        $user->save();
+        if ($request->delegado_id) {
+            Delegado::where('user_id', $user->id)->update(['user_id' => null]);
+            Delegado::where('id', $request->delegado_id)->update(['user_id' => $user->id]);
+        } else {
+            Delegado::where('user_id', $user->id)->update(['user_id' => null]);
+        }
 
         return response()->json(['message' => 'Delegado actualizado correctamente.']);
     }

@@ -3,47 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Tabla: dependences
- * Unidades Receptoras (UR).
- * La columna "key" (varchar 5) es el identificador que usan las demás tablas
- * en su columna "ur" (int) para referenciar la dependencia.
- */
 class Dependencia extends Model
 {
-    protected $table = 'dependences';
+    protected $fillable = ['clave', 'nombre'];
 
-    protected $fillable = [
-        'key',
-        'name',
-    ];
-
-    /**
-     * Delegados de esta UR.
-     * delegado.ur = dependences.key
-     */
-    public function delegados(): HasMany
+    public function delegaciones(): BelongsToMany
     {
-        return $this->hasMany(Delegado::class, 'ur', 'key');
+        return $this->belongsToMany(Delegacion::class, 'dependencia_delegacion')
+                    ->withTimestamps();
     }
 
-    /**
-     * Trabajadores de esta UR (tabla delegacion).
-     * delegacion.ur = dependences.key
-     */
-    public function trabajadores(): HasMany
+    public function empleados(): HasMany
     {
-        return $this->hasMany(Delegacion::class, 'ur', 'key');
-    }
-
-    /**
-     * Registros de concentrado de esta UR.
-     * concentrado.ur = dependences.key
-     */
-    public function concentrados(): HasMany
-    {
-        return $this->hasMany(Concentrado::class, 'ur', 'key');
+        return $this->hasMany(Empleado::class);
     }
 }

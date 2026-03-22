@@ -1,10 +1,9 @@
 /**
  * Vista para crear o editar un Producto.
- * Diseño formal, adaptable a móvil.
  */
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { api } from '../lib/api';
 
 function Field({ label, error, children }) {
@@ -20,11 +19,12 @@ function Field({ label, error, children }) {
 }
 
 const EMPTY_FORM = {
-    partida: '', partida_especifica: '', lote: '', codigo: '',
-    clave_vestuario: '', descripcion: '', marca: '', unidad: '', medida: '', activo: true,
+    descripcion: '', marca: '', unidad: '', medida: '',
+    codigo: '', lote: '', proveedor_id: '', partida_id: '',
 };
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
+const selectClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation appearance-none pr-10";
 
 export default function ProductoFormPage() {
     const { id } = useParams();
@@ -35,6 +35,40 @@ export default function ProductoFormPage() {
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(isEdit);
+    const [proveedores, setProveedores] = useState([]);
+    const [partidas, setPartidas] = useState([]);
+
+    useEffect(() => {
+        Promise.all([
+            api.get('/api/productos?all=1&per_page=1').catch(() => ({ data: [] })),
+            fetch('/api/partidas?anio=' + new Date().getFullYear(), { credentials: 'include' })
+                .then(r => r.json()).catch(() => ({})),
+        ]).then(() => {});
+
+        fetch('/api/dependencias', { credentials: 'include' }).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        api.get('/api/delegados?ur=0').catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        const loadCatalogs = async () => {
+            try {
+                const [provRes] = await Promise.all([
+                    api.get('/api/productos?all=1'),
+                ]);
+                const uniqueProvs = [];
+                const seen = new Set();
+                (provRes.data ?? []).forEach(p => {
+                    if (p.proveedor && !seen.has(p.proveedor)) {
+                        seen.add(p.proveedor);
+                    }
+                });
+            } catch {}
+        };
+        loadCatalogs();
+    }, []);
 
     useEffect(() => {
         if (!isEdit) return;
@@ -43,16 +77,14 @@ export default function ProductoFormPage() {
                 const p = res.data ?? res;
                 if (p) {
                     setForm({
-                        partida: p.partida ?? '',
-                        partida_especifica: p.partida_especifica ?? '',
-                        lote: p.lote ?? '',
-                        codigo: p.codigo ?? '',
-                        clave_vestuario: p.clave_vestuario ?? p.codigo ?? '',
                         descripcion: p.descripcion ?? '',
                         marca: p.marca ?? '',
                         unidad: p.unidad ?? '',
                         medida: p.medida ?? '',
-                        activo: p.activo ?? true,
+                        codigo: p.codigo ?? '',
+                        lote: p.lote ?? '',
+                        proveedor_id: p.proveedor_id ?? '',
+                        partida_id: p.partida_id ?? '',
                     });
                 } else {
                     navigate('/dashboard/productos', { replace: true });
@@ -67,10 +99,11 @@ export default function ProductoFormPage() {
         setSaving(true);
         setErrors({});
         try {
+            const payload = { ...form };
             if (isEdit) {
-                await api.put(`/api/productos/${id}`, form);
+                await api.put(`/api/productos/${id}`, payload);
             } else {
-                await api.post('/api/productos', form);
+                await api.post('/api/productos', payload);
             }
             navigate('/dashboard/productos', { replace: true });
         } catch (err) {
@@ -81,7 +114,6 @@ export default function ProductoFormPage() {
     };
 
     const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
-    const fCheck = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.checked }));
 
     if (loading) {
         return (
@@ -129,22 +161,12 @@ export default function ProductoFormPage() {
                     </Field>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field label="Clave vestuario" error={errors.clave_vestuario?.[0]}>
-                            <input
-                                type="text"
-                                value={form.clave_vestuario}
-                                onChange={f('clave_vestuario')}
-                                placeholder="Ej. CAL-EJE-01"
-                                maxLength={30}
-                                className={inputClass}
-                            />
-                        </Field>
                         <Field label="Código" error={errors.codigo?.[0]}>
                             <input
                                 type="text"
                                 value={form.codigo}
                                 onChange={f('codigo')}
-                                placeholder="Código interno"
+                                placeholder="Ej. CAL-EJE-01"
                                 maxLength={30}
                                 className={inputClass}
                             />
@@ -165,7 +187,7 @@ export default function ProductoFormPage() {
                                 value={form.unidad}
                                 onChange={f('unidad')}
                                 placeholder="Par, Pza, Jgo…"
-                                maxLength={15}
+                                maxLength={50}
                                 className={inputClass}
                             />
                         </Field>
@@ -179,30 +201,9 @@ export default function ProductoFormPage() {
                                 className={inputClass}
                             />
                         </Field>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <Field label="Partida" error={errors.partida?.[0]}>
-                            <input
-                                type="number"
-                                value={form.partida}
-                                onChange={f('partida')}
-                                placeholder="Ej. 2711"
-                                className={inputClass}
-                            />
-                        </Field>
-                        <Field label="P. Específica" error={errors.partida_especifica?.[0]}>
-                            <input
-                                type="number"
-                                value={form.partida_especifica}
-                                onChange={f('partida_especifica')}
-                                placeholder="Ej. 01"
-                                className={inputClass}
-                            />
-                        </Field>
                         <Field label="Lote" error={errors.lote?.[0]}>
                             <input
-                                type="number"
+                                type="text"
                                 value={form.lote}
                                 onChange={f('lote')}
                                 placeholder="Ej. 1"
@@ -210,16 +211,6 @@ export default function ProductoFormPage() {
                             />
                         </Field>
                     </div>
-
-                    <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all min-h-[44px]">
-                        <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Producto activo en el catálogo</span>
-                        <input
-                            type="checkbox"
-                            checked={form.activo}
-                            onChange={fCheck('activo')}
-                            className="rounded accent-brand-gold size-5"
-                        />
-                    </label>
 
                     <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                         <Link

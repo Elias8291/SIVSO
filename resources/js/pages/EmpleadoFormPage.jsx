@@ -71,13 +71,13 @@ export default function EmpleadoFormPage() {
                 if (e) {
                     setForm({
                         nue: e.nue ?? '',
-                        nombre: e.nombre_trab ?? '',
-                        apellido_paterno: e.apellp_trab ?? '',
-                        apellido_materno: e.apellm_trab ?? '',
-                        dependencia_clave: String(e.ur ?? ''),
-                        delegacion_clave: e.delegacion ?? '',
+                        nombre: e.nombre ?? '',
+                        apellido_paterno: e.apellido_paterno ?? '',
+                        apellido_materno: e.apellido_materno ?? '',
+                        dependencia_clave: e.dependencia_clave ?? '',
+                        delegacion_clave: e.delegacion_clave ?? '',
                         activo: true,
-                        user_id: '',
+                        user_id: e.user_id ?? '',
                     });
                 } else {
                     navigate('/dashboard/empleados', { replace: true });

@@ -40,7 +40,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::put('perfil/nue',          [ProfileController::class, 'updateNue']);
     Route::put('perfil/delegado',     [ProfileController::class, 'updateDelegado']);
 
-    // Empleados (tabla: delegacion)
+    // Empleados (tabla: empleados)
     Route::get('empleados',                          [EmpleadoController::class, 'index']);
     Route::post('empleados',                         [EmpleadoController::class, 'store']);
     Route::get('empleados/{empleado}/vestuario',     [VestuarioController::class, 'empleadoVestuario']);
@@ -51,7 +51,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::delete('empleados/{empleado}',            [EmpleadoController::class, 'destroy']);
     Route::patch('empleados/{empleado}/toggle',      [EmpleadoController::class, 'toggle']);
 
-    // Productos (tabla: propuesta)
+    // Productos (tabla: productos + producto_precios)
     Route::get('productos',                      [ProductoController::class, 'index']);
     Route::post('productos',                     [ProductoController::class, 'store']);
     Route::get('productos/{id}',                 [ProductoController::class, 'show']);
@@ -59,12 +59,12 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::delete('productos/{id}',              [ProductoController::class, 'destroy']);
     Route::patch('productos/{id}/toggle',        [ProductoController::class, 'toggle']);
 
-    // Mi vestuario (empleado autenticado)
+    // Mi vestuario (empleado autenticado — tabla: selecciones)
     Route::get ('mi-vestuario',                        [VestuarioController::class, 'index']);
     Route::put ('mi-vestuario/{id}/talla',             [VestuarioController::class, 'updateTalla']);
     Route::put ('mi-vestuario/{id}/producto',          [VestuarioController::class, 'updateProducto']);
 
-    // Mi delegación (delegaciones del usuario por NUE)
+    // Mi delegación (delegaciones del usuario autenticado)
     Route::get('mi-delegacion',                         [MiDelegacionController::class, 'index']);
 
     Route::apiResource('usuarios', UserController::class);
@@ -73,30 +73,30 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permisos', PermissionController::class);
 
-    // Organización — trabaja directamente con bas_vestuario
-    // Panel 1: Dependencias (tabla: dependences — key, name)
+    // Organización
+    // Panel 1: Dependencias (tabla: dependencias)
     Route::get('dependencias',                    [DependenciaController::class, 'index']);
     Route::post('dependencias',                   [DependenciaController::class, 'store']);
     Route::put('dependencias/{dependencia}',      [DependenciaController::class, 'update']);
     Route::delete('dependencias/{dependencia}',   [DependenciaController::class, 'destroy']);
 
-    // Panel 2: Delegados de una UR (tabla: delegado — nombre, delegacion, ur)
+    // Panel 2: Delegados (tabla: delegados + delegado_delegacion)
     Route::get('delegados/resumen',               [DelegadoController::class, 'resumen']);
     Route::get('delegados',                       [DelegadoController::class, 'index']);
     Route::post('delegados',                      [DelegadoController::class, 'store']);
     Route::put('delegados/{id}',                  [DelegadoController::class, 'update']);
     Route::delete('delegados/{id}',               [DelegadoController::class, 'destroy']);
 
-    // Panel 3: Trabajadores de un delegado (tabla: delegacion — por REPLACE(delegacion,'-','') = delegado.delegacion)
+    // Panel 3: Trabajadores de un delegado (tabla: empleados por delegacion_id)
     Route::get('trabajadores',                    [DelegacionController::class, 'index']);
 
-    // Panel 4: Programas/partidas del trabajador (tabla: concentrado)
+    // Panel 4: Programas/selecciones del trabajador (tabla: selecciones)
     Route::get('programas',                       [ProgramasController::class, 'index']);
 
-    // Catálogo de códigos de delegación por UR (para filtros y modales en EmpleadosPage)
+    // Catálogo de delegaciones por dependencia (para filtros)
     Route::get('delegaciones',                    [DelegacionController::class, 'codigos']);
 
-    // Partidas presupuestales: pivot gasto vs límite por UR × partida_especifica
+    // Partidas presupuestales: gasto por UR × partida
     Route::get('partidas',                        [PresupuestoController::class, 'index']);
     Route::put('partidas/limite',                 [PresupuestoController::class, 'setLimite']);
 });

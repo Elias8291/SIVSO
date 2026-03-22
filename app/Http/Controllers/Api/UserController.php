@@ -75,8 +75,7 @@ class UserController extends Controller
             ->where('model_id', $user->id)
             ->where('model_type', User::class)
             ->pluck('role_id')
-            ->values()
-            ->all();
+            ->values();
 
         return response()->json([
             'id'     => $user->id,
@@ -84,7 +83,7 @@ class UserController extends Controller
             'rfc'    => $user->rfc,
             'email'  => $user->email,
             'activo' => (bool) $user->activo,
-            'roles'  => $roles->values()->all(),
+            'roles'  => $roles,
         ]);
     }
 

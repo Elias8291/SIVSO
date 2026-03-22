@@ -3,18 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Delegado;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Tabla: delegado (id, nombre, delegacion, ur)
- * Panel 2 de la página Organización: delegados de una UR (Unidad Receptora).
- *
- * delegado.ur        = dependences.key (relación numérica, conversión implícita en MySQL)
- * delegado.delegacion = REPLACE(delegacion.delegacion, '-', '')
- *   Ej: delegado.delegacion = "3B101"  →  delegacion.delegacion = "3B-101"
- */
 class DelegadoController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -22,90 +15,84 @@ class DelegadoController extends Controller
         $ur     = $request->get('ur');
         $search = trim((string) $request->get('search', ''));
 
-        $query = DB::table('delegado');
+        $query = DB::table('delegados AS d')
+            ->join('delegado_delegacion AS dd', 'dd.delegado_id', '=', 'd.id')
+            ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id');
 
         if ($ur) {
-            $query->where('ur', (int) $ur);
+            $depId = DB::table('dependencias')->where('clave', $ur)->value('id');
+            if ($depId) {
+                $query->join('dependencia_delegacion AS dep_del', function ($j) use ($depId) {
+                    $j->on('dep_del.delegacion_id', '=', 'dl.id')
+                      ->where('dep_del.dependencia_id', $depId);
+                });
+            }
         }
 
         $query->when($search, fn ($q) => $q->where(fn ($q2) =>
-            $q2->where('nombre', 'like', "%{$search}%")
-               ->orWhere('delegacion', 'like', "%{$search}%")
+            $q2->where('d.nombre', 'like', "%{$search}%")
+               ->orWhere('dl.clave', 'like', "%{$search}%")
         ));
 
-        $rows = $query->orderBy('ur')->orderBy('nombre')
+        $rows = $query->select([
+                'd.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
+            ])
+            ->orderBy('d.nombre')
             ->limit(200)
-            ->get(['id', 'nombre', 'delegacion', 'ur']);
+            ->get();
 
-        if ($rows->isEmpty()) {
-            return response()->json(['data' => []]);
-        }
-
-        // Contar trabajadores por (ur, delegacion sin guión)
-        $trabCounts = DB::table('delegacion')
-            ->selectRaw("ur, REPLACE(delegacion, '-', '') AS del_code, COUNT(*) AS cnt")
-            ->groupByRaw("ur, REPLACE(delegacion, '-', '')")
-            ->get()
-            ->keyBy(fn ($r) => "{$r->ur}_{$r->del_code}");
+        $delegacionIds = $rows->pluck('delegacion_id')->unique();
+        $trabCounts = DB::table('empleados')
+            ->whereIn('delegacion_id', $delegacionIds)
+            ->selectRaw('delegacion_id, COUNT(*) AS cnt')
+            ->groupBy('delegacion_id')
+            ->pluck('cnt', 'delegacion_id');
 
         $data = $rows->map(fn ($d) => [
             'id'                 => $d->id,
-            'clave'              => $d->delegacion,   // código ej: "3B101"
+            'clave'              => $d->delegacion_clave,
             'nombre'             => $d->nombre,
-            'ur'                 => $d->ur,
-            'trabajadores_count' => (int) ($trabCounts->get("{$d->ur}_{$d->delegacion}")?->cnt ?? 0),
+            'ur'                 => $ur,
+            'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
         ]);
 
         return response()->json(['data' => $data]);
     }
 
-    /**
-     * GET /api/delegados/resumen
-     * Delegados agrupados por nombre con cuántas delegaciones representa cada uno.
-     */
     public function resumen(Request $request): JsonResponse
     {
-        $conn   = 'bas_vestuario';
         $search = trim((string) $request->get('search', ''));
 
-        $trabCounts = DB::connection($conn)->table('delegacion')
-            ->selectRaw("ur, REPLACE(delegacion, '-', '') AS del_code, COUNT(*) AS cnt")
-            ->groupByRaw("ur, REPLACE(delegacion, '-', '')")
-            ->get()
-            ->keyBy(fn ($r) => "{$r->ur}_{$r->del_code}");
+        $delegados = DB::table('delegados AS d')
+            ->join('delegado_delegacion AS dd', 'dd.delegado_id', '=', 'd.id')
+            ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
+            ->select(['d.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id'])
+            ->orderBy('d.nombre')
+            ->get();
 
-        $delegadoRows = DB::connection($conn)->table('delegado')
-            ->orderBy('nombre')
-            ->orderBy('ur')
-            ->get(['id', 'nombre', 'delegacion', 'ur']);
+        $trabCounts = DB::table('empleados')
+            ->whereNotNull('delegacion_id')
+            ->selectRaw('delegacion_id, COUNT(*) AS cnt')
+            ->groupBy('delegacion_id')
+            ->pluck('cnt', 'delegacion_id');
 
         $byNombre = [];
-        foreach ($delegadoRows as $d) {
-            $key     = trim($d->nombre);
-            $delCode = str_replace('-', '', (string) $d->delegacion);
-            $delKey  = $d->ur . '_' . $delCode; // delegación distinta = UR + clave única
-
+        foreach ($delegados as $d) {
+            $key = trim($d->nombre);
             if (! isset($byNombre[$key])) {
                 $byNombre[$key] = [
                     'nombre'             => $d->nombre,
                     'delegaciones_count' => 0,
                     'delegaciones'       => [],
                     'trabajadores_total' => 0,
-                    '_seen'              => [], // claves ya agregadas (delegaciones distintas)
                 ];
             }
 
-            if (isset($byNombre[$key]['_seen'][$delKey])) {
-                continue; // ya contamos esta delegación (clave + UR)
-            }
-            $byNombre[$key]['_seen'][$delKey] = true;
-
-            $cnt = (int) ($trabCounts->get($delKey)?->cnt ?? 0);
+            $cnt = (int) ($trabCounts[$d->delegacion_id] ?? 0);
             $byNombre[$key]['delegaciones_count']++;
             $byNombre[$key]['delegaciones'][] = [
                 'id'                 => $d->id,
-                'clave'              => $d->delegacion,
-                'ur'                 => $d->ur,
+                'clave'              => $d->delegacion_clave,
                 'trabajadores_count' => $cnt,
             ];
             $byNombre[$key]['trabajadores_total'] += $cnt;
@@ -114,60 +101,55 @@ class DelegadoController extends Controller
         if ($search) {
             $byNombre = array_filter($byNombre, fn ($v) =>
                 stripos($v['nombre'], $search) !== false ||
-                collect($v['delegaciones'])->some(fn ($del) => stripos($del['clave'], $search) !== false)
+                collect($v['delegaciones'])->contains(fn ($del) => stripos($del['clave'], $search) !== false)
             );
         }
 
-        $data = array_values(array_map(fn ($v) => [
-            'nombre'             => $v['nombre'],
-            'delegaciones_count' => $v['delegaciones_count'],
-            'delegaciones'       => $v['delegaciones'],
-            'trabajadores_total' => $v['trabajadores_total'],
-        ], $byNombre));
-
-        return response()->json(['data' => $data]);
+        return response()->json(['data' => array_values($byNombre)]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'nombre'     => 'required|string|max:120',
-            'delegacion' => 'required|string|max:25',
-            'ur'         => 'required|integer',
+            'nombre'        => 'required|string|max:120',
+            'delegacion_id' => 'required|integer|exists:delegaciones,id',
         ]);
 
-        $id = DB::table('delegado')->insertGetId([
-            'nombre'    => strtoupper(trim($data['nombre'])),
-            'delegacion'=> strtoupper(trim($data['delegacion'])),
-            'ur'        => (int) $data['ur'],
+        $delegado = Delegado::create([
+            'nombre' => strtoupper(trim($data['nombre'])),
         ]);
 
-        return response()->json(['message' => 'Delegado creado correctamente.', 'id' => $id], 201);
+        $delegado->delegaciones()->attach($data['delegacion_id']);
+
+        return response()->json(['message' => 'Delegado creado correctamente.', 'id' => $delegado->id], 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $delegado = DB::table('delegado')->where('id', $id)->first();
-        if (!$delegado) {
+        $delegado = Delegado::find($id);
+        if (! $delegado) {
             return response()->json(['message' => 'Delegado no encontrado.'], 404);
         }
 
         $data = $request->validate([
-            'nombre'     => 'required|string|max:120',
-            'delegacion' => 'required|string|max:25',
+            'nombre' => 'required|string|max:120',
         ]);
 
-        DB::table('delegado')->where('id', $id)->update([
-            'nombre'    => strtoupper(trim($data['nombre'])),
-            'delegacion'=> strtoupper(trim($data['delegacion'])),
-        ]);
+        $delegado->update(['nombre' => strtoupper(trim($data['nombre']))]);
 
         return response()->json(['message' => 'Delegado actualizado correctamente.']);
     }
 
     public function destroy(int $id): JsonResponse
     {
-        DB::table('delegado')->where('id', $id)->delete();
+        $delegado = Delegado::find($id);
+        if (! $delegado) {
+            return response()->json(['message' => 'Delegado no encontrado.'], 404);
+        }
+
+        $delegado->delegaciones()->detach();
+        $delegado->delete();
+
         return response()->json(['message' => 'Delegado eliminado correctamente.']);
     }
 }

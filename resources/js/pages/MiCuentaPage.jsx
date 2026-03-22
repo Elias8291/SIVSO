@@ -100,7 +100,7 @@ export default function MiCuentaPage() {
                     email: res.user?.email ?? '',
                 });
                 setFormNue({ nue: res.empleado?.nue ?? res.user?.nue ?? '' });
-                setDelegadoId(res.user?.delegado_id ? String(res.user.delegado_id) : '');
+                setDelegadoId(res.delegado?.id ? String(res.delegado.id) : '');
             })
             .catch(() => { })
             .finally(() => setLoading(false));
@@ -109,7 +109,7 @@ export default function MiCuentaPage() {
     // Cargar delegados para el selector (filtrados por UR si tiene empleado)
     useEffect(() => {
         if (!profile) return;
-        const ur = profile?.empleado?.ur ?? profile?.empleado?.dependencia_clave ?? '';
+        const ur = profile?.empleado?.dependencia_clave ?? '';
         const url = ur ? `/api/delegados?ur=${ur}` : '/api/delegados';
         api.get(url)
             .then((r) => setDelegados(r.data ?? []))
@@ -140,7 +140,7 @@ export default function MiCuentaPage() {
         e.preventDefault(); setSavingDel(true); setErrDel({});
         try {
             await api.put('/api/perfil/delegado', { delegado_id: delegadoId ? parseInt(delegadoId, 10) : null });
-            setProfile((p) => p ? { ...p, user: { ...p.user, delegado_id: delegadoId ? parseInt(delegadoId, 10) : null }, delegado: delegados.find((d) => String(d.id) === delegadoId) || null } : p);
+            setProfile((p) => p ? { ...p, delegado: delegados.find((d) => String(d.id) === delegadoId) || null } : p);
             showToast('Delegado actualizado correctamente.');
         } catch (err) { setErrDel(err.errors ?? { general: err.message }); }
         finally { setSavingDel(false); }
@@ -241,7 +241,7 @@ export default function MiCuentaPage() {
                     <SectionCard
                         icon={UserCheck}
                         title="Mi Delegado"
-                        description={profile?.delegado ? `${profile.delegado.nombre} · ${profile.delegado.clave}` : 'Asigna un delegado a tu cuenta para ver Mi Delegación.'}
+                        description={profile?.delegado ? profile.delegado.nombre : 'Asigna un delegado a tu cuenta para ver Mi Delegación.'}
                     >
                         <form onSubmit={saveDelegado} className="space-y-3">
                             {errDel.general && (
