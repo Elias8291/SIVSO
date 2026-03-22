@@ -87,14 +87,18 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::put('delegados/{id}',                  [DelegadoController::class, 'update']);
     Route::delete('delegados/{id}',               [DelegadoController::class, 'destroy']);
 
-    // Panel 3: Trabajadores de un delegado (tabla: empleados por delegacion_id)
+    // Trabajadores de un delegado
     Route::get('trabajadores',                    [DelegacionController::class, 'index']);
 
-    // Panel 4: Programas/selecciones del trabajador (tabla: selecciones)
+    // Programas/selecciones del trabajador
     Route::get('programas',                       [ProgramasController::class, 'index']);
 
-    // Catálogo de delegaciones por dependencia (para filtros)
+    // Delegaciones CRUD
     Route::get('delegaciones',                    [DelegacionController::class, 'codigos']);
+    Route::get('delegaciones/all',                [DelegacionController::class, 'index']);
+    Route::post('delegaciones',                   [DelegacionController::class, 'store']);
+    Route::put('delegaciones/{id}',               [DelegacionController::class, 'update']);
+    Route::delete('delegaciones/{id}',            [DelegacionController::class, 'destroy']);
 
     // Partidas presupuestales: gasto por UR × partida
     Route::get('partidas',                        [PresupuestoController::class, 'index']);

@@ -37,10 +37,10 @@ export default function DependenciaFormPage() {
                 if (dep) {
                     setForm({ clave: dep.clave, nombre: dep.nombre });
                 } else {
-                    navigate('/dashboard/organizacion', { replace: true });
+                    navigate('/dashboard/dependencias', { replace: true });
                 }
             })
-            .catch(() => navigate('/dashboard/organizacion', { replace: true }))
+            .catch(() => navigate('/dashboard/dependencias', { replace: true }))
             .finally(() => setLoading(false));
     }, [id, isEdit, navigate]);
 
@@ -54,7 +54,7 @@ export default function DependenciaFormPage() {
             } else {
                 await api.post('/api/dependencias', form);
             }
-            navigate('/dashboard/organizacion', { replace: true });
+            navigate('/dashboard/dependencias', { replace: true });
         } catch (err) {
             setErrors(err.errors ?? { general: err.message });
         } finally {
@@ -73,11 +73,11 @@ export default function DependenciaFormPage() {
     return (
         <div className="mx-auto max-w-lg">
             <Link
-                to="/dashboard/organizacion"
+                to="/dashboard/dependencias"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
-                Volver a Organización
+                Volver a Dependencias
             </Link>
 
             <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
@@ -122,7 +122,7 @@ export default function DependenciaFormPage() {
 
                     <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                         <Link
-                            to="/dashboard/organizacion"
+                            to="/dashboard/dependencias"
                             className="w-full sm:w-auto min-h-[44px] flex items-center justify-center px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all touch-manipulation"
                         >
                             Cancelar

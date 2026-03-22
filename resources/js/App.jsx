@@ -22,6 +22,8 @@ import {
     PermisosPage,
     PermisoFormPage,
     OrganizacionPage,
+    DependenciasPage,
+    DelegacionesPage,
     DelegadosPage,
     PartidasPage,
     PartidasLimitePage,
@@ -60,11 +62,11 @@ export default function App({ initialState }) {
                             <Route path="productos/nuevo" element={<ProductoFormPage />} />
                             <Route path="productos/:id/editar" element={<ProductoFormPage />} />
                             <Route path="organizacion" element={<OrganizacionPage />} />
-                            <Route path="organizacion/dependencias/nueva" element={<DependenciaFormPage />} />
-                            <Route path="organizacion/dependencias/:id/editar" element={<DependenciaFormPage />} />
-                            <Route path="organizacion/delegados/nuevo" element={<DelegadoFormPage />} />
-                            <Route path="organizacion/delegados/:id/editar" element={<DelegadoFormPage />} />
-                            <Route path="delegados"      element={<DelegadosPage />} />
+                            <Route path="dependencias"       element={<DependenciasPage />} />
+                            <Route path="dependencias/nueva" element={<DependenciaFormPage />} />
+                            <Route path="dependencias/:id/editar" element={<DependenciaFormPage />} />
+                            <Route path="delegaciones"       element={<DelegacionesPage />} />
+                            <Route path="delegados"          element={<DelegadosPage />} />
                             <Route path="partidas"        element={<PartidasPage />} />
                             <Route path="partidas/limites/editar" element={<PartidasLimitePage />} />
                             <Route path="usuarios"        element={<UsuariosPage />} />

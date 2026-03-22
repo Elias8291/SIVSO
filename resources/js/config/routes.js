@@ -10,27 +10,27 @@ export const ROUTES = {
     MI_CUENTA:     '/dashboard/mi-cuenta',
     MI_CUENTA_CAMBIAR_PASSWORD: '/dashboard/mi-cuenta/cambiar-contrasena',
     ORGANIZACION:  '/dashboard/organizacion',
-    ORGANIZACION_DEP_NUEVA:   '/dashboard/organizacion/dependencias/nueva',
-    ORGANIZACION_DEP_EDITAR:  '/dashboard/organizacion/dependencias/:id/editar',
-    ORGANIZACION_DEL_NUEVO:   '/dashboard/organizacion/delegados/nuevo',
-    ORGANIZACION_DEL_EDITAR:  '/dashboard/organizacion/delegados/:id/editar',
-    EMPLEADOS_NUEVO:         '/dashboard/empleados/nuevo',
-    EMPLEADOS_EDITAR:        '/dashboard/empleados/:id/editar',
-    PRODUCTOS_NUEVO:         '/dashboard/productos/nuevo',
-    PRODUCTOS_EDITAR:        '/dashboard/productos/:id/editar',
-    USUARIOS_NUEVO:          '/dashboard/usuarios/nuevo',
-    USUARIOS_EDITAR:         '/dashboard/usuarios/:id/editar',
-    ROLES_NUEVO:             '/dashboard/roles/nuevo',
-    ROLES_EDITAR:            '/dashboard/roles/:id/editar',
-    PERMISOS_NUEVO:          '/dashboard/permisos/nuevo',
-    PERMISOS_EDITAR:         '/dashboard/permisos/:id/editar',
+    DEPENDENCIAS:  '/dashboard/dependencias',
+    DEPENDENCIAS_NUEVA:  '/dashboard/dependencias/nueva',
+    DEPENDENCIAS_EDITAR: '/dashboard/dependencias/:id/editar',
+    DELEGACIONES:  '/dashboard/delegaciones',
     DELEGADOS:     '/dashboard/delegados',
-    PARTIDAS:      '/dashboard/partidas',
     EMPLEADOS:     '/dashboard/empleados',
+    EMPLEADOS_NUEVO:     '/dashboard/empleados/nuevo',
+    EMPLEADOS_EDITAR:    '/dashboard/empleados/:id/editar',
     PRODUCTOS:     '/dashboard/productos',
+    PRODUCTOS_NUEVO:     '/dashboard/productos/nuevo',
+    PRODUCTOS_EDITAR:    '/dashboard/productos/:id/editar',
+    PARTIDAS:      '/dashboard/partidas',
     USUARIOS:      '/dashboard/usuarios',
+    USUARIOS_NUEVO:      '/dashboard/usuarios/nuevo',
+    USUARIOS_EDITAR:     '/dashboard/usuarios/:id/editar',
     ROLES:         '/dashboard/roles',
+    ROLES_NUEVO:         '/dashboard/roles/nuevo',
+    ROLES_EDITAR:        '/dashboard/roles/:id/editar',
     PERMISOS:      '/dashboard/permisos',
+    PERMISOS_NUEVO:      '/dashboard/permisos/nuevo',
+    PERMISOS_EDITAR:     '/dashboard/permisos/:id/editar',
 };
 
 /**
@@ -58,7 +58,8 @@ export const SIDEBAR_SECTIONS = [
     {
         label: 'Estructura',
         links: [
-            { path: ROUTES.ORGANIZACION, label: 'Organización', iconKey: 'Network' },
+            { path: ROUTES.DEPENDENCIAS, label: 'Dependencias', iconKey: 'Building2' },
+            { path: ROUTES.DELEGACIONES, label: 'Delegaciones', iconKey: 'Network' },
             { path: ROUTES.DELEGADOS,    label: 'Delegados',    iconKey: 'UserCheck' },
         ],
     },
@@ -77,10 +78,8 @@ export const SIDEBAR_LINKS = SIDEBAR_SECTIONS.flatMap((s) => s.links);
 
 /** Obtener etiqueta para el Header breadcrumb */
 export function getRouteLabel(path) {
-    if (path.startsWith('/dashboard/organizacion/dependencias/nueva')) return 'Nueva Dependencia';
-    if (path.match(/^\/dashboard\/organizacion\/dependencias\/\d+\/editar/)) return 'Editar Dependencia';
-    if (path.startsWith('/dashboard/organizacion/delegados/nuevo')) return 'Nuevo Delegado';
-    if (path.match(/^\/dashboard\/organizacion\/delegados\/\d+\/editar/)) return 'Editar Delegado';
+    if (path.startsWith('/dashboard/dependencias/nueva')) return 'Nueva Dependencia';
+    if (path.match(/^\/dashboard\/dependencias\/\d+\/editar/)) return 'Editar Dependencia';
     if (path.startsWith('/dashboard/empleados/nuevo')) return 'Nuevo Empleado';
     if (path.match(/^\/dashboard\/empleados\/\d+\/editar/)) return 'Editar Empleado';
     if (path.startsWith('/dashboard/productos/nuevo')) return 'Nuevo Producto';
@@ -105,6 +104,8 @@ export const ROUTE_LABELS = {
     '/dashboard/empleados':     'Empleados',
     '/dashboard/productos':     'Productos',
     '/dashboard/organizacion':  'Organización',
+    '/dashboard/dependencias':  'Dependencias',
+    '/dashboard/delegaciones':  'Delegaciones',
     '/dashboard/delegados':     'Delegados',
     '/dashboard/partidas':      'Partidas',
     '/dashboard/partidas/limites/editar': 'Editar Límites',
