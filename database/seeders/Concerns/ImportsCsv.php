@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 trait ImportsCsv
 {
-    protected function importCsv(string $file, string $table, array $ignoreColumns = []): void
+    protected function importCsv(string $file, string $table, array $ignoreColumns = [], bool $ignoreDuplicates = false): void
     {
         $path = database_path("seeders/json/{$file}.csv");
 
@@ -43,13 +43,13 @@ trait ImportsCsv
             $count++;
 
             if ($count % 1000 === 0) {
-                DB::table($table)->insert($rows);
+                $ignoreDuplicates ? DB::table($table)->insertOrIgnore($rows) : DB::table($table)->insert($rows);
                 $rows = [];
             }
         }
 
         if (! empty($rows)) {
-            DB::table($table)->insert($rows);
+            $ignoreDuplicates ? DB::table($table)->insertOrIgnore($rows) : DB::table($table)->insert($rows);
         }
 
         fclose($handle);
