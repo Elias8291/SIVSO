@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shirt, Ruler, RefreshCw, CheckCircle, Search, ChevronRight, CalendarClock, Lock } from 'lucide-react';
+import { Shirt, Ruler, RefreshCw, CheckCircle, Search, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
@@ -410,19 +410,13 @@ export default function MiVestuarioPage() {
         <div>
             {/* Banner periodo */}
             {periodoActivo ? (
-                <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
-                    <CalendarClock size={16} className="text-green-600 dark:text-green-400 shrink-0" strokeWidth={2} />
-                    <p className="text-sm text-green-700 dark:text-green-300">
-                        <span className="font-semibold">{periodoActivo.nombre}</span> — Periodo abierto hasta el {(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()}. Puedes actualizar tus tallas y artículos.
-                    </p>
-                </div>
+                <p className="mb-5 text-xs text-zinc-500 dark:text-zinc-400">
+                    Periodo activo · Puedes actualizar tus tallas y artículos
+                </p>
             ) : (
-                <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-                    <Lock size={16} className="text-zinc-400 shrink-0" strokeWidth={2} />
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        No hay un periodo de actualización activo. La edición está deshabilitada.
-                    </p>
-                </div>
+                <p className="mb-5 text-xs text-zinc-400 dark:text-zinc-500">
+                    Edición no disponible — no hay periodo activo
+                </p>
             )}
 
             {/* Encabezado */}
