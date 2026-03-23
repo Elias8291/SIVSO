@@ -192,7 +192,7 @@ export default function PartidasPage() {
         <div>
             <PageHeader
                 title="Partidas Presupuestales"
-                description={`Gasto por partida · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
+                description={`Gasto por partida (IVA incluido) · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
                 actions={
                     <div className="flex items-center gap-2">
                         <select

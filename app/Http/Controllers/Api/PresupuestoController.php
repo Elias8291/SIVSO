@@ -37,7 +37,7 @@ class PresupuestoController extends Controller
             ->select([
                 'e.dependencia_id',
                 'pa.numero AS partida',
-                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS gastado'),
+                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0) * 1.16) AS gastado'),
                 DB::raw('SUM(s.cantidad) AS total_cantidad'),
                 DB::raw('COUNT(s.id) AS registros'),
             ])
