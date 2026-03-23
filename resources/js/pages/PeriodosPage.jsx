@@ -140,7 +140,7 @@ export default function PeriodosPage() {
                                         {p.estado !== 'abierto' && (
                                             <button
                                                 onClick={() => toggleEstado(p, 'abierto')}
-                                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                             >
                                                 Abrir
                                             </button>
@@ -148,7 +148,7 @@ export default function PeriodosPage() {
                                         {p.estado === 'abierto' && (
                                             <button
                                                 onClick={() => toggleEstado(p, 'cerrado')}
-                                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                                className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                             >
                                                 Cerrar
                                             </button>
@@ -161,7 +161,7 @@ export default function PeriodosPage() {
                                         </button>
                                         <button
                                             onClick={() => eliminar(p.id)}
-                                            className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                            className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                         >
                                             Eliminar
                                         </button>
