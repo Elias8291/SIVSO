@@ -1,28 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Lock } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Pagination } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
+
+/** Etiqueta legible: módulo + acción (soporta `modulo.accion` o `accion_modulo`) */
+function parsePermissionDisplay(name) {
+    if (!name) return { recurso: '', accion: '', raw: '' };
+    const raw = String(name);
+    if (raw.includes('.')) {
+        const [a, ...rest] = raw.split('.');
+        return { recurso: rest.join('.'), accion: a, raw };
+    }
+    const parts = raw.split('_');
+    if (parts.length >= 2) {
+        return { accion: parts[0], recurso: parts.slice(1).join('_'), raw };
+    }
+    return { recurso: raw, accion: '', raw };
+}
 
 export default function PermisosPage() {
     const navigate = useNavigate();
     const { data: permisos, meta, loading, search, setSearch, page, setPage, reload } =
         usePaginatedApi('/api/permisos', { perPage: 20 });
-
-    const [allModules, setAllModules] = useState({});
-    useEffect(() => {
-        api.get('/api/permisos?all=1')
-            .then((r) => {
-                const groups = (r.data ?? []).reduce((acc, p) => {
-                    const [mod] = (p.name || '').split('.');
-                    if (mod) acc[mod] = (acc[mod] ?? 0) + 1;
-                    return acc;
-                }, {});
-                setAllModules(groups);
-            })
-            .catch(() => { });
-    }, []);
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
@@ -42,14 +43,20 @@ export default function PermisosPage() {
             key: 'name',
             label: 'Permiso',
             render: (val) => {
-                const [mod, act] = val.split('.');
+                const { recurso, accion, raw } = parsePermissionDisplay(val);
                 return (
                     <div>
-                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{val}</span>
-                        {mod && act && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                                <span className="px-1.5 py-px rounded bg-brand-gold/10 text-brand-gold text-[13px] font-bold uppercase">{mod}</span>
-                                <span className="text-[13px] text-zinc-400">{act}</span>
+                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 font-mono">{raw}</span>
+                        {(recurso || accion) && (
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                                {accion && (
+                                    <span className="px-1.5 py-px rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[11px] font-bold uppercase tracking-wide">
+                                        {accion}
+                                    </span>
+                                )}
+                                {recurso && (
+                                    <span className="text-[12px] text-brand-gold font-semibold">{recurso}</span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -59,8 +66,8 @@ export default function PermisosPage() {
         {
             key: 'guard_name',
             label: 'Guard',
-            render: (val) => (
-                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[12px] font-mono border border-zinc-100 dark:border-zinc-700">{val}</span>
+            render: (v) => (
+                <span className="px-2 py-0.5 rounded-md bg-zinc-50 dark:bg-zinc-800 text-zinc-500 text-[12px] font-mono border border-zinc-100 dark:border-zinc-700">{v}</span>
             ),
         },
     ];
@@ -90,29 +97,6 @@ export default function PermisosPage() {
                     />
                 }
             />
-
-            {/* Chips resumen por módulo */}
-            {Object.keys(allModules).length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                    {Object.entries(allModules).map(([mod, count]) => (
-                        <button key={mod} onClick={() => setSearch(mod)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold uppercase tracking-wider transition-all ${search === mod
-                                ? 'bg-brand-gold border-brand-gold text-white'
-                                : 'bg-white dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800 text-zinc-500 hover:border-brand-gold/40'
-                                }`}>
-                            {mod}
-                            <span className={`size-4 rounded-md text-[12px] font-black flex items-center justify-center ${search === mod ? 'bg-white/20 text-white' : 'bg-brand-gold/10 text-brand-gold'
-                                }`}>{count}</span>
-                        </button>
-                    ))}
-                    {search && (
-                        <button onClick={() => setSearch('')}
-                            className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[12px] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all">
-                            × Limpiar
-                        </button>
-                    )}
-                </div>
-            )}
 
             <Card title={`Permisos${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable columns={columns} data={permisos} loading={loading}

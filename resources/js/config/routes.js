@@ -44,7 +44,7 @@ export const SIDEBAR_SECTIONS = [
     {
         label: 'Principal',
         links: [
-            { path: ROUTES.DASHBOARD, label: 'Dashboard', iconKey: 'LayoutDashboard', permission: null },
+            { path: ROUTES.DASHBOARD, label: 'Dashboard', iconKey: 'LayoutDashboard', permission: 'ver_dashboard' },
             { path: ROUTES.MI_VESTUARIO, label: 'Mi Vestuario', iconKey: 'Shirt', permission: 'ver_selecciones' },
             { path: ROUTES.MI_DELEGACION, label: 'Mi Delegación', iconKey: 'Building2', permission: 'ver_mi_delegacion' },
             { path: ROUTES.MI_CUENTA, label: 'Mi Cuenta', iconKey: 'User', permission: null },
@@ -72,7 +72,7 @@ export const SIDEBAR_SECTIONS = [
             { path: ROUTES.PERIODOS, label: 'Periodos', iconKey: 'Calendar', permission: 'gestionar_periodos' },
             { path: ROUTES.USUARIOS, label: 'Usuarios', iconKey: 'Users', permission: 'gestionar_usuarios' },
             { path: ROUTES.ROLES, label: 'Roles', iconKey: 'Shield', permission: 'gestionar_roles' },
-            { path: ROUTES.PERMISOS, label: 'Permisos', iconKey: 'Lock', permission: 'gestionar_roles' },
+            { path: ROUTES.PERMISOS, label: 'Permisos', iconKey: 'Lock', permission: 'gestionar_permisos' },
         ],
     },
 ];

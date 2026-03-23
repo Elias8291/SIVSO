@@ -90,7 +90,15 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
     Route::middleware('permission:gestionar_roles')->group(function () {
         Route::apiResource('roles', RoleController::class);
-        Route::apiResource('permisos', PermissionController::class);
+    });
+    Route::middleware('permission:gestionar_roles|gestionar_permisos')->group(function () {
+        Route::get('permisos', [PermissionController::class, 'index']);
+        Route::get('permisos/{permission}', [PermissionController::class, 'show']);
+    });
+    Route::middleware('permission:gestionar_permisos')->group(function () {
+        Route::post('permisos', [PermissionController::class, 'store']);
+        Route::put('permisos/{permission}', [PermissionController::class, 'update']);
+        Route::delete('permisos/{permission}', [PermissionController::class, 'destroy']);
     });
 
     // Dependencias (lectura también para filtros de empleados)
@@ -127,8 +135,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::delete('delegaciones/{id}', [DelegacionController::class, 'destroy']);
     });
 
-    // Vista Organización (legacy): lectura amplia
-    Route::middleware('permission:ver_empleados|ver_dependencias|ver_delegaciones|ver_delegados')->group(function () {
+    // Vista Organización (legacy): lectura amplia o permiso dedicado
+    Route::middleware('permission:ver_organizacion|ver_empleados|ver_dependencias|ver_delegaciones|ver_delegados')->group(function () {
         Route::get('trabajadores', [DelegacionController::class, 'index']);
         Route::get('programas', [ProgramasController::class, 'index']);
     });
@@ -152,12 +160,14 @@ Route::middleware('auth')->prefix('api')->group(function () {
         [PeriodoController::class, 'activo']
     );
 
-    // Notificaciones (cualquier usuario autenticado)
-    Route::get('notificaciones', [NotificacionController::class, 'index']);
-    Route::get('notificaciones/conteo', [NotificacionController::class, 'conteo']);
-    Route::patch('notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
-    Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
-    Route::delete('notificaciones/{id}', [NotificacionController::class, 'destroy']);
+    // Notificaciones
+    Route::middleware('permission:ver_notificaciones')->group(function () {
+        Route::get('notificaciones', [NotificacionController::class, 'index']);
+        Route::get('notificaciones/conteo', [NotificacionController::class, 'conteo']);
+        Route::patch('notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
+        Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
+        Route::delete('notificaciones/{id}', [NotificacionController::class, 'destroy']);
+    });
 });
 
 Route::middleware('auth')->group(function () {

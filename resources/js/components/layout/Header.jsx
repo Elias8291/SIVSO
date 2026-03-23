@@ -3,8 +3,11 @@ import { Sun, Moon, Bell, Menu } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getRouteLabel } from '../../config/routes';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Header = ({ onMenuClick }) => {
+    const { can } = useAuth();
+    const showNotificaciones = can('ver_notificaciones');
     const { isDarkMode, toggleTheme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
@@ -14,6 +17,10 @@ const Header = ({ onMenuClick }) => {
     const pageLabel = getRouteLabel(currentPath);
 
     useEffect(() => {
+        if (!showNotificaciones) {
+            setNoLeidas(0);
+            return undefined;
+        }
         let active = true;
         const check = () =>
             fetch('/api/notificaciones/conteo', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
@@ -24,7 +31,7 @@ const Header = ({ onMenuClick }) => {
         check();
         const id = setInterval(check, 30000);
         return () => { active = false; clearInterval(id); };
-    }, []);
+    }, [showNotificaciones]);
 
     return (
         <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-3 sm:px-8 xl:px-14">
@@ -51,18 +58,21 @@ const Header = ({ onMenuClick }) => {
             {/* Acciones */}
             <div className="flex items-center gap-1.5">
                 {/* Notificaciones */}
-                <button
-                    onClick={() => navigate('/dashboard/notificaciones')}
-                    className="relative p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
-                    aria-label="Notificaciones"
-                >
-                    <Bell size={16} strokeWidth={1.8} />
-                    {noLeidas > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
-                            {noLeidas > 9 ? '9+' : noLeidas}
-                        </span>
-                    )}
-                </button>
+                {showNotificaciones && (
+                    <button
+                        type="button"
+                        onClick={() => navigate('/dashboard/notificaciones')}
+                        className="relative p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
+                        aria-label="Notificaciones"
+                    >
+                        <Bell size={16} strokeWidth={1.8} />
+                        {noLeidas > 0 && (
+                            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                                {noLeidas > 9 ? '9+' : noLeidas}
+                            </span>
+                        )}
+                    </button>
+                )}
 
                 {/* Toggle tema */}
                 <button

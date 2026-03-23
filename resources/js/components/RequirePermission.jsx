@@ -15,7 +15,7 @@ export default function RequirePermission({ permission, anyOf, allOf, children }
     if (allOf?.length) ok = ok && canAll(allOf);
 
     if (!ok) {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/dashboard/mi-cuenta" replace />;
     }
 
     return children;

@@ -23,12 +23,20 @@ const EMPTY_FORM = { name: '', guard_name: 'web', permissions: [] };
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
+function permissionGroupKey(name) {
+    const n = name || '';
+    if (n.includes('.')) return n.split('.')[0];
+    const parts = n.split('_');
+    if (parts.length >= 2) return parts.slice(1).join('_');
+    return n || 'otros';
+}
+
 function groupPermisos(permisos) {
     return permisos.reduce((acc, p) => {
-        const [module] = (p.name || '').split('.');
-        if (!module) return acc;
-        if (!acc[module]) acc[module] = [];
-        acc[module].push(p);
+        const key = permissionGroupKey(p.name);
+        if (!key) return acc;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(p);
         return acc;
     }, {});
 }

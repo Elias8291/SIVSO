@@ -13,17 +13,26 @@ class RolesPermissionsSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
+            // Principal / UI
+            'ver_dashboard',
+            'ver_notificaciones',
+            'ver_organizacion',
+            // Catálogo y empleados
             'ver_catalogo',
             'editar_catalogo',
             'ver_empleados',
             'editar_empleados',
+            // Vestuario / selecciones
             'ver_selecciones',
             'crear_seleccion',
             'editar_seleccion',
             'eliminar_seleccion',
             'ver_reportes',
+            'editar_reportes',
+            // Administración
             'gestionar_usuarios',
             'gestionar_roles',
+            'gestionar_permisos',
             'gestionar_periodos',
             // Estructura y partidas / mi delegación
             'ver_dependencias',
@@ -46,6 +55,8 @@ class RolesPermissionsSeeder extends Seeder
 
         $delegado = Role::firstOrCreate(['name' => 'delegado']);
         $delegado->syncPermissions([
+            'ver_dashboard',
+            'ver_notificaciones',
             'ver_catalogo',
             'ver_empleados',
             'ver_selecciones',
@@ -60,6 +71,8 @@ class RolesPermissionsSeeder extends Seeder
 
         $empleado = Role::firstOrCreate(['name' => 'empleado']);
         $empleado->syncPermissions([
+            'ver_dashboard',
+            'ver_notificaciones',
             'ver_catalogo',
             'ver_selecciones',
             'crear_seleccion',
@@ -67,6 +80,9 @@ class RolesPermissionsSeeder extends Seeder
 
         $consulta = Role::firstOrCreate(['name' => 'consulta']);
         $consulta->syncPermissions([
+            'ver_dashboard',
+            'ver_notificaciones',
+            'ver_organizacion',
             'ver_catalogo',
             'ver_empleados',
             'ver_selecciones',

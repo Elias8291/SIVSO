@@ -65,7 +65,14 @@ export default function App({ initialState }) {
                         <Route path="/cambiar-contrasena" element={<CambiarContrasenaPage />} />
 
                         <Route path="/dashboard" element={<AppLayout />}>
-                            <Route index element={<DashboardPage />} />
+                            <Route
+                                index
+                                element={
+                                    <RequirePermission permission="ver_dashboard">
+                                        <DashboardPage />
+                                    </RequirePermission>
+                                }
+                            />
                             <Route
                                 path="mi-vestuario"
                                 element={
@@ -138,7 +145,9 @@ export default function App({ initialState }) {
                             <Route
                                 path="organizacion"
                                 element={
-                                    <RequirePermission anyOf={['ver_dependencias', 'ver_delegaciones', 'ver_delegados']}>
+                                    <RequirePermission
+                                        anyOf={['ver_organizacion', 'ver_dependencias', 'ver_delegaciones', 'ver_delegados']}
+                                    >
                                         <OrganizacionPage />
                                     </RequirePermission>
                                 }
@@ -203,7 +212,14 @@ export default function App({ initialState }) {
                                 }
                             />
 
-                            <Route path="notificaciones" element={<NotificacionesPage />} />
+                            <Route
+                                path="notificaciones"
+                                element={
+                                    <RequirePermission permission="ver_notificaciones">
+                                        <NotificacionesPage />
+                                    </RequirePermission>
+                                }
+                            />
 
                             <Route
                                 path="periodos"
@@ -267,7 +283,7 @@ export default function App({ initialState }) {
                             <Route
                                 path="permisos"
                                 element={
-                                    <RequirePermission permission="gestionar_roles">
+                                    <RequirePermission permission="gestionar_permisos">
                                         <PermisosPage />
                                     </RequirePermission>
                                 }
@@ -275,7 +291,7 @@ export default function App({ initialState }) {
                             <Route
                                 path="permisos/nuevo"
                                 element={
-                                    <RequirePermission permission="gestionar_roles">
+                                    <RequirePermission permission="gestionar_permisos">
                                         <PermisoFormPage />
                                     </RequirePermission>
                                 }
@@ -283,7 +299,7 @@ export default function App({ initialState }) {
                             <Route
                                 path="permisos/:id/editar"
                                 element={
-                                    <RequirePermission permission="gestionar_roles">
+                                    <RequirePermission permission="gestionar_permisos">
                                         <PermisoFormPage />
                                     </RequirePermission>
                                 }
