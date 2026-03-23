@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Empleado;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,10 +78,15 @@ class EmpleadoController extends Controller
             'apellido_materno'  => 'nullable|string|max:255',
             'dependencia_clave' => 'required|string|exists:dependencias,clave',
             'delegacion_clave'  => 'required|string|exists:delegaciones,clave',
+            'user_id'           => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         $depId = DB::table('dependencias')->where('clave', $data['dependencia_clave'])->value('id');
         $delId = DB::table('delegaciones')->where('clave', $data['delegacion_clave'])->value('id');
+
+        if (! empty($data['user_id'])) {
+            Empleado::where('user_id', $data['user_id'])->update(['user_id' => null]);
+        }
 
         $empleado = Empleado::create([
             'nue'              => $data['nue'],
@@ -89,6 +95,7 @@ class EmpleadoController extends Controller
             'apellido_materno' => strtoupper(trim($data['apellido_materno'] ?? '')),
             'dependencia_id'   => $depId,
             'delegacion_id'    => $delId,
+            'user_id'          => $data['user_id'] ?? null,
         ]);
 
         return response()->json(['message' => 'Trabajador creado correctamente.', 'id' => $empleado->id], 201);
@@ -96,7 +103,8 @@ class EmpleadoController extends Controller
 
     public function show(int $empleado): JsonResponse
     {
-        $e = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);
+        $e = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave', 'user:id,name,rfc,email'])
+            ->find($empleado);
         if (! $e) {
             return response()->json(['message' => 'No encontrado.'], 404);
         }
@@ -110,7 +118,72 @@ class EmpleadoController extends Controller
             'dependencia_clave'  => $e->dependencia?->clave,
             'dependencia_nombre' => $e->dependencia?->nombre,
             'delegacion_clave'   => $e->delegacion?->clave,
+            'user_id'            => $e->user_id,
+            'usuario'            => $e->user ? [
+                'id'    => $e->user->id,
+                'name'  => $e->user->name,
+                'rfc'   => $e->user->rfc,
+                'email' => $e->user->email,
+            ] : null,
         ]);
+    }
+
+    /**
+     * Crea un usuario (RFC, contraseña, etc.) y lo vincula a este empleado con rol empleado.
+     */
+    public function crearUsuario(Request $request, int $empleado): JsonResponse
+    {
+        $e = Empleado::find($empleado);
+        if (! $e) {
+            return response()->json(['message' => 'Trabajador no encontrado.'], 404);
+        }
+
+        if ($e->user_id) {
+            return response()->json(['message' => 'Este empleado ya tiene un usuario vinculado.'], 422);
+        }
+
+        $data = $request->validate([
+            'rfc'                 => ['required', 'string', 'max:20', 'unique:users,rfc'],
+            'email'               => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'password'            => 'required|string|min:8|confirmed',
+            'name'                => 'nullable|string|max:255',
+        ]);
+
+        $nombreCompleto = trim(implode(' ', array_filter([
+            $e->nombre,
+            $e->apellido_paterno,
+            $e->apellido_materno,
+        ])));
+
+        $name = ! empty($data['name'])
+            ? trim($data['name'])
+            : ($nombreCompleto !== '' ? $nombreCompleto : 'Usuario');
+
+        $user = User::create([
+            'name'     => $name,
+            'rfc'      => strtoupper(trim($data['rfc'])),
+            'email'    => $data['email'] ?? null,
+            'password' => $data['password'],
+            'nue'      => $e->nue,
+            'activo'   => true,
+        ]);
+
+        $user->assignRole('empleado');
+
+        Empleado::where('user_id', $user->id)->where('id', '!=', $e->id)->update(['user_id' => null]);
+
+        $e->user_id = $user->id;
+        $e->save();
+
+        return response()->json([
+            'message' => 'Usuario creado y vinculado correctamente.',
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'rfc'   => $user->rfc,
+                'email' => $user->email,
+            ],
+        ], 201);
     }
 
     public function update(Request $request, int $empleado): JsonResponse
@@ -127,10 +200,15 @@ class EmpleadoController extends Controller
             'apellido_materno'  => 'nullable|string|max:255',
             'dependencia_clave' => 'required|string|exists:dependencias,clave',
             'delegacion_clave'  => 'required|string|exists:delegaciones,clave',
+            'user_id'           => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         $depId = DB::table('dependencias')->where('clave', $data['dependencia_clave'])->value('id');
         $delId = DB::table('delegaciones')->where('clave', $data['delegacion_clave'])->value('id');
+
+        if (! empty($data['user_id'])) {
+            Empleado::where('user_id', $data['user_id'])->where('id', '!=', $e->id)->update(['user_id' => null]);
+        }
 
         $e->update([
             'nue'              => $data['nue'],
@@ -139,6 +217,7 @@ class EmpleadoController extends Controller
             'apellido_materno' => strtoupper(trim($data['apellido_materno'] ?? '')),
             'dependencia_id'   => $depId,
             'delegacion_id'    => $delId,
+            'user_id'          => $data['user_id'] ?? null,
         ]);
 
         return response()->json(['message' => 'Trabajador actualizado correctamente.']);

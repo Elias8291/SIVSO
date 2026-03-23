@@ -2,10 +2,11 @@
  * Vista para crear o editar un Empleado.
  * Diseño formal, adaptable a móvil.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, X, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search, X, ChevronDown, UserPlus } from 'lucide-react';
 import { api } from '../lib/api';
+import { Modal } from '../components/ui';
 
 function Field({ label, error, children }) {
     return (
@@ -22,6 +23,14 @@ function Field({ label, error, children }) {
 const EMPTY_FORM = {
     nue: '', nombre: '', apellido_paterno: '', apellido_materno: '',
     dependencia_clave: '', delegacion_clave: '', activo: true, user_id: '',
+};
+
+const EMPTY_CREAR_USUARIO = {
+    name: '',
+    rfc: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
 };
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
@@ -42,6 +51,15 @@ export default function EmpleadoFormPage() {
     const [userResults, setUserResults] = useState([]);
     const [userLinked, setUserLinked] = useState(null);
     const userSearchTimer = useRef(null);
+
+    const [modalCrearUsuario, setModalCrearUsuario] = useState(false);
+    const [crearUsuarioForm, setCrearUsuarioForm] = useState(EMPTY_CREAR_USUARIO);
+    const [errorsCrearUsuario, setErrorsCrearUsuario] = useState({});
+    const [savingCrearUsuario, setSavingCrearUsuario] = useState(false);
+
+    const nombreCompleto = useMemo(() =>
+        [form.nombre, form.apellido_paterno, form.apellido_materno].filter(Boolean).join(' ').trim(),
+    [form.nombre, form.apellido_paterno, form.apellido_materno]);
 
     useEffect(() => {
         api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => { });
@@ -79,6 +97,15 @@ export default function EmpleadoFormPage() {
                         activo: true,
                         user_id: e.user_id ?? '',
                     });
+                    if (e.usuario) {
+                        setUserLinked({
+                            id: e.usuario.id,
+                            name: e.usuario.name,
+                            rfc: e.usuario.rfc,
+                        });
+                    } else {
+                        setUserLinked(null);
+                    }
                 } else {
                     navigate('/dashboard/empleados', { replace: true });
                 }
@@ -88,6 +115,37 @@ export default function EmpleadoFormPage() {
     }, [id, isEdit, navigate]);
 
     const resetUserSearch = () => { setUserSearch(''); setUserResults([]); };
+
+    const abrirModalCrearUsuario = () => {
+        setCrearUsuarioForm({
+            ...EMPTY_CREAR_USUARIO,
+            name: nombreCompleto || '',
+            rfc: '',
+        });
+        setErrorsCrearUsuario({});
+        setModalCrearUsuario(true);
+    };
+
+    const handleCrearUsuario = async (e) => {
+        e.preventDefault();
+        if (!isEdit) return;
+        setSavingCrearUsuario(true);
+        setErrorsCrearUsuario({});
+        try {
+            const res = await api.post(`/api/empleados/${id}/crear-usuario`, crearUsuarioForm);
+            const u = res.user ?? res;
+            if (u?.id) {
+                setUserLinked({ id: u.id, name: u.name, rfc: u.rfc });
+                setForm((p) => ({ ...p, user_id: u.id }));
+            }
+            setModalCrearUsuario(false);
+            setCrearUsuarioForm(EMPTY_CREAR_USUARIO);
+        } catch (err) {
+            setErrorsCrearUsuario(err.errors ?? { general: [err.message] });
+        } finally {
+            setSavingCrearUsuario(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -119,7 +177,7 @@ export default function EmpleadoFormPage() {
     }
 
     return (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
             <Link
                 to="/dashboard/empleados"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
@@ -157,7 +215,7 @@ export default function EmpleadoFormPage() {
                         />
                     </Field>
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Apellido Paterno" error={errors.apellido_paterno?.[0]}>
                             <input
                                 type="text"
@@ -178,18 +236,18 @@ export default function EmpleadoFormPage() {
                                 className={inputClass}
                             />
                         </Field>
-                        <Field label="Nombre(s)" error={errors.nombre?.[0]}>
-                            <input
-                                type="text"
-                                value={form.nombre}
-                                onChange={f('nombre')}
-                                placeholder="Nombre(s)"
-                                maxLength={80}
-                                required
-                                className={inputClass}
-                            />
-                        </Field>
                     </div>
+                    <Field label="Nombre(s)" error={errors.nombre?.[0]}>
+                        <input
+                            type="text"
+                            value={form.nombre}
+                            onChange={f('nombre')}
+                            placeholder="Nombre(s)"
+                            maxLength={80}
+                            required
+                            className={inputClass}
+                        />
+                    </Field>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Dependencia" error={errors.dependencia_clave?.[0]}>
@@ -277,6 +335,28 @@ export default function EmpleadoFormPage() {
                         )}
                     </Field>
 
+                    {isEdit && !userLinked && (
+                        <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50/50 dark:bg-zinc-800/20">
+                            <p className="text-[12px] text-zinc-600 dark:text-zinc-400 mb-3">
+                                Cree una cuenta nueva con el RFC del colaborador; se asignará el rol <strong className="text-zinc-800 dark:text-zinc-200">empleado</strong> y quedará vinculada a este registro.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={abrirModalCrearUsuario}
+                                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 text-[13px] font-bold hover:bg-white dark:hover:bg-zinc-800 transition-all"
+                            >
+                                <UserPlus size={16} strokeWidth={2} />
+                                Crear usuario desde datos del empleado
+                            </button>
+                        </div>
+                    )}
+
+                    {!isEdit && (
+                        <p className="text-[12px] text-zinc-500 dark:text-zinc-400 px-1">
+                            Guarde el empleado primero; luego podrá crear una cuenta desde la edición o vincular un usuario existente.
+                        </p>
+                    )}
+
                     <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all min-h-[44px]">
                         <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Empleado activo</span>
                         <div
@@ -304,6 +384,99 @@ export default function EmpleadoFormPage() {
                     </div>
                 </form>
             </div>
+
+            <Modal
+                open={modalCrearUsuario}
+                onClose={() => !savingCrearUsuario && setModalCrearUsuario(false)}
+                title="Nueva cuenta de usuario"
+                size="2xl"
+                footer={
+                    <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end w-full">
+                        <button
+                            type="button"
+                            disabled={savingCrearUsuario}
+                            onClick={() => setModalCrearUsuario(false)}
+                            className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            form="form-crear-usuario-empleado"
+                            disabled={savingCrearUsuario}
+                            className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50"
+                        >
+                            {savingCrearUsuario ? 'Creando…' : 'Crear y vincular'}
+                        </button>
+                    </div>
+                }
+            >
+                <form id="form-crear-usuario-empleado" onSubmit={handleCrearUsuario} className="space-y-4">
+                    {errorsCrearUsuario.general && (
+                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">
+                            {Array.isArray(errorsCrearUsuario.general) ? errorsCrearUsuario.general[0] : errorsCrearUsuario.general}
+                        </p>
+                    )}
+                    <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        Los datos del empleado se usan como referencia. Indique el <strong>RFC</strong> para el inicio de sesión y una contraseña segura.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="Nombre para la cuenta" error={errorsCrearUsuario.name?.[0]}>
+                            <input
+                                type="text"
+                                value={crearUsuarioForm.name}
+                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, name: e.target.value }))}
+                                placeholder="Nombre completo"
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="RFC (usuario de acceso)" error={errorsCrearUsuario.rfc?.[0]}>
+                            <input
+                                type="text"
+                                value={crearUsuarioForm.rfc}
+                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, rfc: e.target.value.toUpperCase() }))}
+                                placeholder="Ej. ABCD123456EF7"
+                                maxLength={20}
+                                required
+                                className={inputClass}
+                            />
+                        </Field>
+                    </div>
+                    <Field label="Correo electrónico (opcional)" error={errorsCrearUsuario.email?.[0]}>
+                        <input
+                            type="email"
+                            value={crearUsuarioForm.email}
+                            onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, email: e.target.value }))}
+                            placeholder="correo@institucion.gob.mx"
+                            className={inputClass}
+                        />
+                    </Field>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Field label="Contraseña" error={errorsCrearUsuario.password?.[0]}>
+                            <input
+                                type="password"
+                                value={crearUsuarioForm.password}
+                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password: e.target.value }))}
+                                placeholder="Mínimo 8 caracteres"
+                                autoComplete="new-password"
+                                required
+                                className={inputClass}
+                            />
+                        </Field>
+                        <Field label="Confirmar contraseña" error={errorsCrearUsuario.password_confirmation?.[0]}>
+                            <input
+                                type="password"
+                                value={crearUsuarioForm.password_confirmation}
+                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password_confirmation: e.target.value }))}
+                                placeholder="Repetir contraseña"
+                                autoComplete="new-password"
+                                required
+                                className={inputClass}
+                            />
+                        </Field>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }

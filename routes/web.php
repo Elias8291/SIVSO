@@ -62,6 +62,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
     Route::middleware('permission:editar_empleados')->group(function () {
         Route::post('empleados', [EmpleadoController::class, 'store']);
+        Route::post('empleados/{empleado}/crear-usuario', [EmpleadoController::class, 'crearUsuario']);
         Route::put('empleados/{empleado}', [EmpleadoController::class, 'update']);
         Route::delete('empleados/{empleado}', [EmpleadoController::class, 'destroy']);
         Route::patch('empleados/{empleado}/toggle', [EmpleadoController::class, 'toggle']);
