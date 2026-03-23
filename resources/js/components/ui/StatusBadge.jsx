@@ -1,17 +1,17 @@
 const VARIANTS = {
-    entregado: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20',
-    activo:    'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20',
-    pendiente: 'bg-amber-50   dark:bg-amber-500/10  text-amber-600  dark:text-amber-400  border-amber-100  dark:border-amber-500/20',
-    inactivo:  'bg-zinc-50    dark:bg-zinc-800       text-zinc-500   dark:text-zinc-400   border-zinc-100  dark:border-zinc-700',
-    cancelado: 'bg-red-50     dark:bg-red-500/10    text-red-600    dark:text-red-400    border-red-100    dark:border-red-500/20',
+    entregado: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700',
+    activo:    'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700',
+    pendiente: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700',
+    inactivo:  'bg-zinc-50  dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border-zinc-100 dark:border-zinc-700',
+    cancelado: 'bg-zinc-50  dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border-zinc-100 dark:border-zinc-700',
 };
 
 const DOTS = {
-    entregado: 'bg-emerald-500',
-    activo:    'bg-emerald-500',
-    pendiente: 'bg-amber-500',
-    inactivo:  'bg-zinc-400',
-    cancelado: 'bg-red-500',
+    entregado: 'bg-zinc-800 dark:bg-zinc-200',
+    activo:    'bg-zinc-800 dark:bg-zinc-200',
+    pendiente: 'bg-zinc-400 dark:bg-zinc-500',
+    inactivo:  'bg-zinc-300 dark:bg-zinc-600',
+    cancelado: 'bg-zinc-300 dark:bg-zinc-600',
 };
 
 export default function StatusBadge({ status }) {
