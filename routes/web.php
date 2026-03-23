@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\PresupuestoController;
 use App\Http\Controllers\Api\ProgramasController;
 use App\Http\Controllers\Api\MiDelegacionController;
 use App\Http\Controllers\Api\NotificacionController;
+use App\Http\Controllers\Api\PeriodoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -104,6 +105,14 @@ Route::middleware('auth')->prefix('api')->group(function () {
     // Partidas presupuestales: gasto por UR × partida
     Route::get('partidas',                        [PresupuestoController::class, 'index']);
     Route::put('partidas/limite',                 [PresupuestoController::class, 'setLimite']);
+
+    // Periodos
+    Route::get   ('periodos',                  [PeriodoController::class, 'index']);
+    Route::get   ('periodos/activo',           [PeriodoController::class, 'activo']);
+    Route::post  ('periodos',                  [PeriodoController::class, 'store']);
+    Route::put   ('periodos/{id}',             [PeriodoController::class, 'update']);
+    Route::patch ('periodos/{id}/estado',      [PeriodoController::class, 'cambiarEstado']);
+    Route::delete('periodos/{id}',             [PeriodoController::class, 'destroy']);
 
     // Notificaciones
     Route::get   ('notificaciones',                [NotificacionController::class, 'index']);

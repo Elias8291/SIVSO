@@ -32,6 +32,7 @@ export const ROUTES = {
     PERMISOS_NUEVO:      '/dashboard/permisos/nuevo',
     PERMISOS_EDITAR:     '/dashboard/permisos/:id/editar',
     NOTIFICACIONES: '/dashboard/notificaciones',
+    PERIODOS: '/dashboard/periodos',
 };
 
 /**
@@ -67,6 +68,7 @@ export const SIDEBAR_SECTIONS = [
     {
         label: 'Administración',
         links: [
+            { path: ROUTES.PERIODOS, label: 'Periodos', iconKey: 'Calendar' },
             { path: ROUTES.USUARIOS, label: 'Usuarios', iconKey: 'Users' },
             { path: ROUTES.ROLES,    label: 'Roles',    iconKey: 'Shield' },
             { path: ROUTES.PERMISOS, label: 'Permisos', iconKey: 'Lock' },
@@ -115,4 +117,5 @@ export const ROUTE_LABELS = {
     '/dashboard/roles':         'Roles',
     '/dashboard/permisos':      'Permisos',
     '/dashboard/notificaciones': 'Notificaciones',
+    '/dashboard/periodos':      'Periodos',
 };

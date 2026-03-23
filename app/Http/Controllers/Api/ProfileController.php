@@ -108,13 +108,13 @@ class ProfileController extends Controller
             );
         }
 
+        Empleado::where('user_id', $user->id)->update(['user_id' => null]);
+
         $user->nue = $nue;
         $user->save();
 
-        if (! $empleado->user_id) {
-            $empleado->user_id = $user->id;
-            $empleado->save();
-        }
+        $empleado->user_id = $user->id;
+        $empleado->save();
 
         return response()->json(['message' => 'NUE actualizado correctamente.']);
     }

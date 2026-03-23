@@ -20,3 +20,4 @@ export { default as DelegadosPage }    from './DelegadosPage';
 export { default as PartidasPage }     from './PartidasPage';
 export { default as PartidasLimitePage } from './PartidasLimitePage';
 export { default as NotificacionesPage } from './NotificacionesPage';
+export { default as PeriodosPage } from './PeriodosPage';
