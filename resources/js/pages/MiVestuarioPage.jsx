@@ -279,6 +279,7 @@ export default function MiVestuarioPage() {
     const [filterSearch, setFilterSearch] = useState('');
     const debouncedFilter = useDebounce(filterSearch, 250);
     const [periodoActivo, setPeriodoActivo] = useState(null);
+    const [alertVisible, setAlertVisible] = useState(true);
 
     const load = useCallback((anioParam) => {
         setLoading(true);
@@ -408,17 +409,6 @@ export default function MiVestuarioPage() {
 
     return (
         <div>
-            {/* Banner periodo */}
-            {periodoActivo ? (
-                <p className="mb-5 text-xs text-zinc-500 dark:text-zinc-400">
-                    Periodo activo · Puedes actualizar tus tallas y artículos
-                </p>
-            ) : (
-                <p className="mb-5 text-xs text-zinc-400 dark:text-zinc-500">
-                    Edición no disponible — no hay periodo activo
-                </p>
-            )}
-
             {/* Encabezado */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -476,6 +466,28 @@ export default function MiVestuarioPage() {
                         className="w-full pl-9 pr-4 py-3 text-base sm:text-sm rounded-xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all touch-manipulation"
                     />
                 </div>
+
+                {/* Alerta periodo */}
+                {alertVisible && (
+                    <div className="mt-3 relative flex w-full items-center p-3 text-sm text-white bg-zinc-800 dark:bg-zinc-700 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2 shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                        </svg>
+                        {periodoActivo
+                            ? 'Periodo activo — puedes actualizar tus tallas y artículos.'
+                            : 'No hay periodo activo — la edición no está disponible por el momento.'
+                        }
+                        <button
+                            onClick={() => setAlertVisible(false)}
+                            className="flex items-center justify-center transition-all px-2 h-8 rounded-md text-white hover:bg-white/10 active:bg-white/10 absolute top-1.5 right-1.5"
+                            type="button"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Grid de prendas */}
