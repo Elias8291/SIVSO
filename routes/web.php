@@ -49,6 +49,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::middleware('permission:editar_seleccion')->group(function () {
         Route::put('mi-vestuario/{id}/talla', [VestuarioController::class, 'updateTalla']);
         Route::put('mi-vestuario/{id}/producto', [VestuarioController::class, 'updateProducto']);
+        Route::put('mi-vestuario/{id}/cantidad', [VestuarioController::class, 'updateCantidad']);
     });
 
     // Mi delegación
@@ -70,6 +71,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::middleware('permission:editar_seleccion')->group(function () {
         Route::put('empleados/{empleado}/vestuario/{id}/talla', [VestuarioController::class, 'empleadoUpdateTalla']);
         Route::put('empleados/{empleado}/vestuario/{id}/producto', [VestuarioController::class, 'empleadoUpdateProducto']);
+        Route::put('empleados/{empleado}/vestuario/{id}/cantidad', [VestuarioController::class, 'empleadoUpdateCantidad']);
     });
 
     // Productos (catálogo o consulta desde Mi vestuario — sin menú de productos)

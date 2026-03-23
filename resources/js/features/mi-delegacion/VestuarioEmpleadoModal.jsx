@@ -17,7 +17,7 @@ const catStyle = (partida) => CATEGORY_STYLE[partida] ?? CATEGORY_STYLE.default;
 
 const TALLAS_COMUNES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '36', '38', '40', '42', '44', '16', '17', '18', '19', '20', '21'];
 
-function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
+function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
     const st = catStyle(item.partida);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden flex flex-col">
@@ -32,12 +32,24 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                 <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex flex-col">
                         <span className="text-[8px] font-bold uppercase text-zinc-400">Cant</span>
-                        <span className="text-xs font-bold">{item.cantidad}</span>
+                        {editable ? (
+                            <button onClick={() => onEditCantidad(item)} className="text-xs font-bold text-brand-gold hover:underline">
+                                {item.cantidad}
+                            </button>
+                        ) : (
+                            <span className="text-xs font-bold">{item.cantidad}</span>
+                        )}
                     </div>
-                    <button onClick={() => onEditTalla(item)} className="flex flex-col items-start">
+                    <div className="flex flex-col items-start">
                         <span className="text-[8px] font-bold uppercase text-zinc-400">Talla</span>
-                        <span className="text-xs font-bold text-brand-gold">{item.talla || '—'}</span>
-                    </button>
+                        {editable ? (
+                            <button onClick={() => onEditTalla(item)} className="text-xs font-bold text-brand-gold hover:underline">
+                                {item.talla || '—'}
+                            </button>
+                        ) : (
+                            <span className="text-xs font-bold">{item.talla || '—'}</span>
+                        )}
+                    </div>
                     {item.precio_unitario && (
                         <div className="flex flex-col ml-auto">
                             <span className="text-[8px] font-bold uppercase text-zinc-400">P.Unit</span>
@@ -48,14 +60,16 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                     )}
                 </div>
             </div>
-            <div className="px-3 pb-3 flex gap-2">
-                <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
-                    <Ruler size={10} /> Talla
-                </button>
-                <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
-                    <RefreshCw size={10} /> Artículo
-                </button>
-            </div>
+            {editable && (
+                <div className="px-3 pb-3 flex gap-2">
+                    <button onClick={() => onEditTalla(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
+                        <Ruler size={10} /> Talla
+                    </button>
+                    <button onClick={() => onCambiarProducto(item)} className="flex-1 flex items-center justify-center gap-1 min-h-[40px] py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] touch-manipulation">
+                        <RefreshCw size={10} /> Artículo
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -154,21 +168,53 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     );
 }
 
+function ModalCantidad({ item, onClose, onSave, saving }) {
+    const [cantidad, setCantidad] = useState(item?.cantidad ?? 1);
+    useEffect(() => { if (item) setCantidad(item.cantidad ?? 1); }, [item]);
+    return (
+        <Modal open={!!item} onClose={onClose} title="Cambiar cantidad" size="sm"
+            footer={
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
+                    <button onClick={() => onSave(cantidad)} disabled={saving || cantidad < 1} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
+                        {saving ? 'Guardando…' : 'Guardar'}
+                    </button>
+                </div>
+            }
+        >
+            {item && (
+                <div className="space-y-4">
+                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300">{item.descripcion}</p>
+                    <input type="number" min="1" max="100" value={cantidad} onChange={(e) => setCantidad(parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
+                </div>
+            )}
+        </Modal>
+    );
+}
+
 export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
     const [data, setData] = useState(null);
+    const [anio, setAnio] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editTalla, setEditTalla] = useState(null);
     const [cambiarProd, setCambiarProd] = useState(null);
+    const [editCantidad, setEditCantidad] = useState(null);
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState(null);
 
-    const load = useCallback(() => {
+    const load = useCallback((anioParam) => {
         if (!empleado?.id) return;
         setLoading(true);
         setError(null);
-        api.get(`/api/empleados/${empleado.id}/vestuario`)
-            .then(res => { setData(res); setLoading(false); })
+        const url = anioParam ? `/api/empleados/${empleado.id}/vestuario?anio=${anioParam}` : `/api/empleados/${empleado.id}/vestuario`;
+        api.get(url)
+            .then(res => { 
+                setData(res); 
+                if (!anioParam && res.anio) setAnio(res.anio);
+                setLoading(false); 
+            })
             .catch(err => { setError(err.message || 'Error al cargar'); setLoading(false); });
     }, [empleado?.id]);
 
@@ -183,7 +229,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             await api.put(`/api/empleados/${empleado.id}/vestuario/${editTalla.id}/talla`, { talla });
             setToast('Talla actualizada.');
             setEditTalla(null);
-            load();
+            load(anio);
             onSaved?.();
         } catch (err) { setToast(err.message || 'Error'); }
         finally { setSaving(false); }
@@ -196,22 +242,63 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             await api.put(`/api/empleados/${empleado.id}/vestuario/${cambiarProd.id}/producto`, { producto_id: productoId, talla });
             setToast('Artículo actualizado.');
             setCambiarProd(null);
-            load();
+            load(anio);
             onSaved?.();
         } catch (err) { setToast(err.message || 'Error'); }
         finally { setSaving(false); }
     };
 
+    const handleSaveCantidad = async (cantidad) => {
+        if (!empleado?.id || !editCantidad) return;
+        setSaving(true);
+        try {
+            await api.put(`/api/empleados/${empleado.id}/vestuario/${editCantidad.id}/cantidad`, { cantidad });
+            setToast('Cantidad actualizada.');
+            setEditCantidad(null);
+            load(anio);
+            onSaved?.();
+        } catch (err) { setToast(err.message || 'Error'); }
+        finally { setSaving(false); }
+    };
+
+    const handleAnioChange = (newAnio) => {
+        setAnio(newAnio);
+        load(newAnio);
+    };
+
     if (!empleado) return null;
+
+    // Check if editable based on active period (if anio matches max available year or active period year)
+    // Actually, let's just assume it's editable if the backend doesn't block it, but to disable UI:
+    const isLatestYear = data?.anios_disponibles && anio === Math.max(...data.anios_disponibles);
+    const editable = isLatestYear; // Simple heuristic for frontend, backend enforces strictly
 
     return (
         <>
             <Modal open={!!empleado} onClose={onClose} title="Vestuario" size="xl">
                 <div className="space-y-4">
-                    <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{empleado.nombre_completo || 'Empleado'}</p>
-                    {empleado.nue && (
-                        <p className="text-[11px] text-zinc-500">NUE {empleado.nue} · {empleado.delegacion || ''}</p>
-                    )}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{empleado.nombre_completo || 'Empleado'}</p>
+                            {empleado.nue && (
+                                <p className="text-[11px] text-zinc-500">NUE {empleado.nue} · {empleado.delegacion || ''}</p>
+                            )}
+                        </div>
+                        {data?.anios_disponibles?.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Ejercicio</span>
+                                <select
+                                    value={anio ?? data.anio}
+                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                    className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer"
+                                >
+                                    {data.anios_disponibles.map(a => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
                     {loading ? (
                         <div className="py-12 flex justify-center"><span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                     ) : error ? (
@@ -221,7 +308,14 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {data.asignaciones.map(item => (
-                                <PrendaCard key={item.id} item={item} onEditTalla={setEditTalla} onCambiarProducto={setCambiarProd} />
+                                <PrendaCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    editable={editable}
+                                    onEditTalla={setEditTalla} 
+                                    onCambiarProducto={setCambiarProd} 
+                                    onEditCantidad={setEditCantidad}
+                                />
                             ))}
                         </div>
                     )}
@@ -230,6 +324,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
             <ModalCambiarProducto item={cambiarProd} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
+            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onSave={handleSaveCantidad} saving={saving} />
 
             {toast && (
                 <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-semibold shadow-lg">

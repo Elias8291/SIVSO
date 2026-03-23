@@ -29,8 +29,33 @@ function Toast({ message, onDone }) {
     );
 }
 
+function ModalCantidad({ item, onClose, onSave, saving }) {
+    const [cantidad, setCantidad] = useState(item?.cantidad ?? 1);
+    useEffect(() => { if (item) setCantidad(item.cantidad ?? 1); }, [item]);
+    return (
+        <Modal open={!!item} onClose={onClose} title="Cambiar cantidad" size="sm"
+            footer={
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
+                    <button onClick={() => onSave(cantidad)} disabled={saving || cantidad < 1} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
+                        {saving ? 'Guardando…' : 'Guardar'}
+                    </button>
+                </div>
+            }
+        >
+            {item && (
+                <div className="space-y-4">
+                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300">{item.descripcion}</p>
+                    <input type="number" min="1" max="100" value={cantidad} onChange={(e) => setCantidad(parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
+                </div>
+            )}
+        </Modal>
+    );
+}
+
 /* ── Tarjeta de prenda ────────────────────────────────────────────────────── */
-function PrendaCard({ item, onEditTalla, onCambiarProducto, editable }) {
+function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
     const st = catStyle(item.partida);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden flex flex-col">
@@ -54,7 +79,16 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, editable }) {
                     {/* Cantidad */}
                     <div className="flex flex-col items-center">
                         <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Cantidad</span>
-                        <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{item.cantidad}</span>
+                        {editable ? (
+                            <button
+                                onClick={() => onEditCantidad(item)}
+                                className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline"
+                            >
+                                {item.cantidad}
+                            </button>
+                        ) : (
+                            <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{item.cantidad}</span>
+                        )}
                     </div>
 
                     {/* Talla */}
@@ -264,6 +298,7 @@ export default function MiVestuarioPage() {
 
     const [editTalla, setEditTalla] = useState(null);
     const [cambiarProd, setCambiarProd] = useState(null);
+    const [editCantidad, setEditCantidad] = useState(null);
     const [filterSearch, setFilterSearch] = useState('');
     const debouncedFilter = useDebounce(filterSearch, 250);
     const [periodoActivo, setPeriodoActivo] = useState(null);
@@ -310,7 +345,7 @@ export default function MiVestuarioPage() {
             await api.put(`/api/mi-vestuario/${editTalla.id}/talla`, { talla });
             showToast('Talla actualizada.');
             setEditTalla(null);
-            load();
+            load(anio);
         } catch (err) { alert(err.message); }
         finally { setSaving(false); }
     };
@@ -321,7 +356,18 @@ export default function MiVestuarioPage() {
             await api.put(`/api/mi-vestuario/${cambiarProd.id}/producto`, { producto_id: productoId, talla });
             showToast('Artículo actualizado.');
             setCambiarProd(null);
-            load();
+            load(anio);
+        } catch (err) { alert(err.message); }
+        finally { setSaving(false); }
+    };
+
+    const handleSaveCantidad = async (cantidad) => {
+        setSaving(true);
+        try {
+            await api.put(`/api/mi-vestuario/${editCantidad.id}/cantidad`, { cantidad });
+            showToast('Cantidad actualizada.');
+            setEditCantidad(null);
+            load(anio);
         } catch (err) { alert(err.message); }
         finally { setSaving(false); }
     };
@@ -472,6 +518,7 @@ export default function MiVestuarioPage() {
                             editable={editable}
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
+                            onEditCantidad={setEditCantidad}
                         />
                     ))}
                 </div>
@@ -479,6 +526,7 @@ export default function MiVestuarioPage() {
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
             <ModalCambiarProducto item={cambiarProd} anio={anio ?? data?.anio} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
+            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onSave={handleSaveCantidad} saving={saving} />
 
             {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </div>

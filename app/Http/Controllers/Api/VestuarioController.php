@@ -189,6 +189,34 @@ class VestuarioController extends Controller
         return response()->json(['message' => 'Artículo actualizado correctamente.']);
     }
 
+    public function updateCantidad(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user->nue) {
+            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
+        }
+
+        $empleado = Empleado::where('nue', $user->nue)->first();
+        if (! $empleado) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
+
+        $seleccion = Seleccion::where('id', $id)->where('empleado_id', $empleado->id)->first();
+        if (! $seleccion) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+            return $blocked;
+        }
+
+        $request->validate(['cantidad' => 'required|integer|min:1|max:100']);
+
+        $seleccion->update(['cantidad' => $request->cantidad]);
+
+        return response()->json(['message' => 'Cantidad actualizada correctamente.']);
+    }
+
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
     {
         $emp = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);
@@ -306,6 +334,24 @@ class VestuarioController extends Controller
         $seleccion->update(['producto_talla_id' => $ptId]);
 
         return response()->json(['message' => 'Artículo actualizado correctamente.']);
+    }
+
+    public function empleadoUpdateCantidad(Request $request, int $empleado, int $id): JsonResponse
+    {
+        $seleccion = Seleccion::where('id', $id)->where('empleado_id', $empleado)->first();
+        if (! $seleccion) {
+            return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+            return $blocked;
+        }
+
+        $request->validate(['cantidad' => 'required|integer|min:1|max:100']);
+
+        $seleccion->update(['cantidad' => $request->cantidad]);
+
+        return response()->json(['message' => 'Cantidad actualizada correctamente.']);
     }
 
     private function getSelecciones(int $empleadoId, int $anio): \Illuminate\Support\Collection
