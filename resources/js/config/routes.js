@@ -31,6 +31,7 @@ export const ROUTES = {
     PERMISOS:      '/dashboard/permisos',
     PERMISOS_NUEVO:      '/dashboard/permisos/nuevo',
     PERMISOS_EDITAR:     '/dashboard/permisos/:id/editar',
+    NOTIFICACIONES: '/dashboard/notificaciones',
 };
 
 /**
@@ -91,6 +92,7 @@ export function getRouteLabel(path) {
     if (path.startsWith('/dashboard/permisos/nuevo')) return 'Nuevo Permiso';
     if (path.match(/^\/dashboard\/permisos\/\d+\/editar/)) return 'Editar Permiso';
     if (path.startsWith('/dashboard/partidas/limites/editar')) return 'Editar Límites';
+    if (path.startsWith('/dashboard/notificaciones')) return 'Notificaciones';
     return ROUTE_LABELS[path] ?? 'Dashboard';
 }
 
@@ -112,4 +114,5 @@ export const ROUTE_LABELS = {
     '/dashboard/usuarios':      'Usuarios',
     '/dashboard/roles':         'Roles',
     '/dashboard/permisos':      'Permisos',
+    '/dashboard/notificaciones': 'Notificaciones',
 };

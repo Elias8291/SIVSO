@@ -1,14 +1,30 @@
+import { useState, useEffect } from 'react';
 import { Sun, Moon, Bell, Menu } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getRouteLabel } from '../../config/routes';
 
 const Header = ({ onMenuClick }) => {
     const { isDarkMode, toggleTheme } = useTheme();
     const location = useLocation();
+    const navigate = useNavigate();
+    const [noLeidas, setNoLeidas] = useState(0);
 
     const currentPath = location.pathname;
     const pageLabel = getRouteLabel(currentPath);
+
+    useEffect(() => {
+        let active = true;
+        const check = () =>
+            fetch('/api/notificaciones/conteo', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(r => r.json())
+                .then(d => { if (active) setNoLeidas(d.no_leidas ?? 0); })
+                .catch(() => {});
+
+        check();
+        const id = setInterval(check, 30000);
+        return () => { active = false; clearInterval(id); };
+    }, []);
 
     return (
         <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-3 sm:px-8 xl:px-14">
@@ -36,11 +52,16 @@ const Header = ({ onMenuClick }) => {
             <div className="flex items-center gap-1.5">
                 {/* Notificaciones */}
                 <button
+                    onClick={() => navigate('/dashboard/notificaciones')}
                     className="relative p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
                     aria-label="Notificaciones"
                 >
                     <Bell size={16} strokeWidth={1.8} />
-                    <span className="absolute top-1.5 right-1.5 size-1.5 bg-brand-gold rounded-full" />
+                    {noLeidas > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold text-white bg-red-500 rounded-full leading-none">
+                            {noLeidas > 9 ? '9+' : noLeidas}
+                        </span>
+                    )}
                 </button>
 
                 {/* Toggle tema */}

@@ -27,6 +27,7 @@ import {
     DelegadosPage,
     PartidasPage,
     PartidasLimitePage,
+    NotificacionesPage,
 } from './pages';
 import { DependenciaFormPage, DelegadoFormPage } from './pages/organizacion';
 
@@ -69,6 +70,7 @@ export default function App({ initialState }) {
                             <Route path="delegados"          element={<DelegadosPage />} />
                             <Route path="partidas"        element={<PartidasPage />} />
                             <Route path="partidas/limites/editar" element={<PartidasLimitePage />} />
+                            <Route path="notificaciones" element={<NotificacionesPage />} />
                             <Route path="usuarios"        element={<UsuariosPage />} />
                             <Route path="usuarios/nuevo"  element={<UsuarioFormPage />} />
                             <Route path="usuarios/:id/editar" element={<UsuarioFormPage />} />

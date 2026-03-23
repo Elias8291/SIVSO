@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\VestuarioController;
 use App\Http\Controllers\Api\PresupuestoController;
 use App\Http\Controllers\Api\ProgramasController;
 use App\Http\Controllers\Api\MiDelegacionController;
+use App\Http\Controllers\Api\NotificacionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -103,6 +104,13 @@ Route::middleware('auth')->prefix('api')->group(function () {
     // Partidas presupuestales: gasto por UR × partida
     Route::get('partidas',                        [PresupuestoController::class, 'index']);
     Route::put('partidas/limite',                 [PresupuestoController::class, 'setLimite']);
+
+    // Notificaciones
+    Route::get   ('notificaciones',                [NotificacionController::class, 'index']);
+    Route::get   ('notificaciones/conteo',         [NotificacionController::class, 'conteo']);
+    Route::patch ('notificaciones/{id}/leida',     [NotificacionController::class, 'marcarLeida']);
+    Route::post  ('notificaciones/leer-todas',     [NotificacionController::class, 'marcarTodasLeidas']);
+    Route::delete('notificaciones/{id}',           [NotificacionController::class, 'destroy']);
 });
 
 Route::middleware('auth')->group(function () {
