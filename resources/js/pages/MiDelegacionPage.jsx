@@ -36,7 +36,7 @@ export default function MiDelegacionPage() {
         setEmpleadosPorDelegacion({});
         Promise.all(
             delegaciones.map((del) =>
-                api.get(`/api/trabajadores?delegado_id=${del.id}`)
+                api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(del.clave)}&per_page=100`)
                     .then((res) => ({ id: del.id, data: res.data ?? [] }))
                     .catch(() => ({ id: del.id, data: [] }))
             )
@@ -130,9 +130,14 @@ export default function MiDelegacionPage() {
                                     >
                                         <div className="flex items-center gap-2.5">
                                             <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
-                                            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
-                                                Delegación: {del.clave}
-                                            </h3>
+                                            <div>
+                                                <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
+                                                    Delegación: {del.clave}
+                                                </h3>
+                                                {del.delegado_nombre && (
+                                                    <p className="text-[11px] text-zinc-400 mt-0.5">Delegado: {del.delegado_nombre}</p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">

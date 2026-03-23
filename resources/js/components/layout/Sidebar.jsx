@@ -32,13 +32,6 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
         return () => { document.body.style.overflow = ''; };
     }, [isOpen]);
 
-    const initials = user?.name
-        ?.split(' ')
-        .map((n) => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || 'AD';
-
     return (
         <>
             {/* Overlay móvil */}
@@ -128,20 +121,11 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
                 <div className={`shrink-0 pb-5 pt-2 transition-all duration-300 ${collapsed ? 'lg:px-2' : 'px-3'}`}>
                 <div className="h-px bg-zinc-100 dark:bg-zinc-800/80 mb-3" />
 
-                {/* Info usuario - ocultar texto cuando colapsado */}
-                <div className={`flex items-center gap-3 py-3 mb-1 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 transition-all duration-300 ${
-                    collapsed ? 'lg:justify-center lg:px-2' : 'px-4'
-                }`}>
-                    <div className="size-8 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                        <span className="text-[13px] font-bold text-brand-gold">{initials}</span>
-                    </div>
-                    {!collapsed && (
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 leading-none truncate">{user?.name ?? 'Usuario'}</p>
-                            <p className="text-[12px] text-zinc-400 leading-none mt-0.5 truncate">{user?.email ?? ''}</p>
-                        </div>
-                    )}
-                </div>
+                {!collapsed && (
+                    <p className="px-4 py-2 mb-1 text-[13px] font-semibold text-zinc-600 dark:text-zinc-400 truncate">
+                        {user?.name ?? 'Usuario'}
+                    </p>
+                )}
 
                 <form id="logout-form" method="POST" action={logoutUrl || '/logout'}>
                     <input type="hidden" name="_token" value={csrfToken || ''} />

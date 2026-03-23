@@ -57,9 +57,9 @@ class MiDelegacionController extends Controller
             ->pluck('cnt', 'delegacion_id');
 
         $data = $delegaciones->map(fn ($d) => [
-            'id'                 => $d->delegado_id,
+            'id'                 => $d->delegacion_id,
             'clave'              => $d->clave,
-            'nombre'             => $d->nombre,
+            'delegado_nombre'    => $d->nombre,
             'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
         ])->values()->all();
 
