@@ -166,7 +166,7 @@ function ModalTalla({ item, onClose, onSave, saving }) {
 }
 
 /* ── Modal cambiar producto ───────────────────────────────────────────────── */
-function ModalCambiarProducto({ item, onClose, onSave, saving }) {
+function ModalCambiarProducto({ item, anio, onClose, onSave, saving }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -180,7 +180,7 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
         if (!item) return;
         setLoadingP(true);
         const ctrl = new AbortController();
-        fetch(`/api/productos?all=1&partida=${item.partida}&search=${encodeURIComponent(debouncedSearch)}`, {
+        fetch(`/api/productos?all=1&partida=${item.partida}&anio=${anio || ''}&search=${encodeURIComponent(debouncedSearch)}`, {
             signal: ctrl.signal, headers: { Accept: 'application/json' }, credentials: 'same-origin',
         })
             .then(r => r.json()).then(j => { setProductos(j.data ?? []); setLoadingP(false); })
@@ -507,7 +507,7 @@ export default function MiVestuarioPage() {
             )}
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
-            <ModalCambiarProducto item={cambiarProd} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
+            <ModalCambiarProducto item={cambiarProd} anio={anio ?? data?.anio} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
 
             {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </div>

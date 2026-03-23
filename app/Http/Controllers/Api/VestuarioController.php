@@ -67,6 +67,18 @@ class VestuarioController extends Controller
         ]);
     }
 
+    private function verificarPeriodoActivo(int $anio): ?JsonResponse
+    {
+        $periodo = Periodo::where('estado', 'abierto')->where('anio', $anio)->first();
+        if (! $periodo) {
+            return response()->json(['message' => 'No hay un periodo de actualización activo. No se pueden hacer cambios.'], 403);
+        }
+        if ($periodo->fecha_fin->isPast()) {
+            return response()->json(['message' => 'El periodo de actualización ya venció.'], 403);
+        }
+        return null;
+    }
+
     public function updateTalla(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -82,6 +94,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+            return $blocked;
         }
 
         $request->validate(['talla' => 'required|string|max:30']);
@@ -131,6 +147,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+            return $blocked;
         }
 
         $request->validate([
