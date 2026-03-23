@@ -4,9 +4,12 @@ export default function Card({ title, action, children, className = '' }) {
             {(title || action) && (
                 <div className="px-6 py-4 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center justify-between">
                     {title && (
-                        <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight border-l-2 border-brand-gold/35 pl-3">
-                            {title}
-                        </h3>
+                        <div className="flex items-center gap-2.5">
+                            <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
+                            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
+                                {title}
+                            </h3>
+                        </div>
                     )}
                     {action && <div className="ml-auto">{action}</div>}
                 </div>

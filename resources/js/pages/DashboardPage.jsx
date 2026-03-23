@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    TrendingUp, Clock, CheckCircle, Users,
+    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Sparkles,
 } from 'lucide-react';
 import { StatCard, PageHeader, Card } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,25 +24,27 @@ function esVistaColaboradorVestuario(roles) {
 }
 
 function MiniPrendaRow({ item }) {
-    const meta = [
-        item.clave_vestuario || item.codigo || null,
-        item.talla ? `Talla ${item.talla}` : null,
-    ].filter(Boolean);
-
     return (
-        <div className="flex items-baseline justify-between gap-6 py-3.5 border-b border-zinc-100 dark:border-zinc-800/70 last:border-0">
-            <div className="min-w-0 flex-1">
-                <p className="text-[14px] text-zinc-800 dark:text-zinc-100 leading-snug">
+        <div className="flex items-center gap-4 py-3 border-b border-zinc-100 dark:border-zinc-800/60 last:border-0">
+            <div className="size-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-800">
+                <Shirt size={16} strokeWidth={2} className="text-zinc-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
                     {item.descripcion || 'Artículo'}
                 </p>
-                {meta.length > 0 && (
-                    <p className="text-[12px] text-zinc-500 mt-1">
-                        {meta.join(', ')}
-                    </p>
-                )}
+                <p className="text-xs text-zinc-500 mt-0.5 flex gap-2">
+                    <span>{item.clave_vestuario || item.codigo || '—'}</span>
+                    {item.talla && (
+                        <>
+                            <span className="text-zinc-300 dark:text-zinc-600">|</span>
+                            <span>Talla {item.talla}</span>
+                        </>
+                    )}
+                </p>
             </div>
-            <span className="text-[13px] text-zinc-500 tabular-nums shrink-0">
-                ×{item.cantidad ?? 1}
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 shrink-0">
+                {item.cantidad ?? 1} pza
             </span>
         </div>
     );
@@ -69,111 +71,106 @@ function DashboardEmpleado() {
     const totalPiezas = asignaciones.reduce((acc, a) => acc + (Number(a.cantidad) || 0), 0);
     const periodo = data?.periodo_activo;
 
-    const nombreMostrar = empleado?.nombre || user?.name || 'Colaborador';
-    const lineaUbicacion = [
-        empleado?.dependencia_clave,
-        empleado?.delegacion_clave ? `Delegación ${empleado.delegacion_clave}` : null,
-    ].filter(Boolean);
-
     if (loading) {
         return (
             <div className="flex items-center justify-center py-28">
-                <span className="size-6 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-500 dark:border-t-zinc-400 rounded-full animate-spin" />
+                <span className="size-6 border-2 border-zinc-200 dark:border-zinc-700 border-t-zinc-800 dark:border-t-zinc-200 rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="max-w-xl mx-auto space-y-10">
-            <header className="space-y-3">
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                    Hola,
-                </p>
-                <h1 className="text-[26px] sm:text-[28px] font-medium text-zinc-900 dark:text-white tracking-tight leading-tight">
-                    {nombreMostrar}
+        <div className="max-w-3xl mx-auto space-y-6">
+            {/* Encabezado minimalista */}
+            <header className="mb-2">
+                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white tracking-tight">
+                    Hola, {empleado?.nombre || user?.name || 'Colaborador'}
                 </h1>
-                {lineaUbicacion.length > 0 && (
-                    <p className="text-[14px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        {lineaUbicacion.join(', ')}
+                {empleado?.dependencia_clave && (
+                    <p className="text-sm text-zinc-500 mt-1">
+                        {empleado.dependencia_clave}
+                        {empleado.delegacion_clave ? ` — Delegación ${empleado.delegacion_clave}` : ''}
                     </p>
                 )}
             </header>
 
+            {/* Periodo */}
             {periodo && (
-                <div className="pl-4 border-l border-zinc-200 dark:border-zinc-700">
-                    <p className="text-[12px] text-zinc-400 dark:text-zinc-500 mb-1">
-                        Periodo de actualización
-                    </p>
-                    <p className="text-[14px] text-zinc-700 dark:text-zinc-300 leading-snug">
-                        {periodo.nombre}
-                        {periodo.fecha_fin ? (
-                            <span className="text-zinc-500">
-                                {`, vigente hasta ${periodo.fecha_fin}`}
-                            </span>
-                        ) : null}
-                    </p>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800">
+                    <Calendar size={16} className="text-zinc-400 shrink-0" strokeWidth={2} />
+                    <div className="flex-1">
+                        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                            Periodo activo: <span className="font-medium">{periodo.nombre}</span>
+                        </p>
+                    </div>
+                    {periodo.fecha_fin && (
+                        <div className="text-xs text-zinc-500">
+                            Hasta {periodo.fecha_fin}
+                        </div>
+                    )}
                 </div>
             )}
 
-            <section className="rounded-xl border border-zinc-200/90 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/30 px-5 py-6 sm:px-7 sm:py-7">
-                <h2 className="text-[15px] font-medium text-zinc-900 dark:text-zinc-100">
-                    Mi vestuario
-                </h2>
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed">
-                    Aquí puede revisar lo asignado y, cuando el periodo lo permita, ajustar tallas o cambiar artículo.
-                </p>
+            {/* CTA principal */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+                <div>
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+                        Mi vestuario
+                    </h2>
+                    <p className="text-sm text-zinc-500 mt-1 max-w-md">
+                        Consulte sus prendas asignadas, ajuste tallas o cambie de artículo según el periodo actual.
+                    </p>
+                </div>
                 <Link
                     to={ROUTES.MI_VESTUARIO}
-                    className="inline-flex mt-5 text-[13px] font-medium text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-600 rounded-lg px-4 py-2.5 hover:bg-white dark:hover:bg-zinc-800/80 transition-colors"
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shrink-0"
                 >
-                    Ir a mi vestuario
+                    Gestionar vestuario
                 </Link>
-            </section>
+            </div>
 
+            {/* Resumen prendas */}
             {!empleado ? (
-                <div className="rounded-xl border border-zinc-200/90 dark:border-zinc-800 px-5 py-8 text-center">
-                    <p className="text-[14px] text-zinc-700 dark:text-zinc-300">
-                        Aún no hay vestuario vinculado a su cuenta.
+                <div className="p-6 text-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                        Aún no hay vestuario vinculado
                     </p>
-                    <p className="text-[13px] text-zinc-500 mt-2 leading-relaxed">
-                        Indique su NUE en{' '}
-                        <Link to={ROUTES.MI_CUENTA} className="font-medium text-zinc-800 dark:text-zinc-200 underline underline-offset-2 decoration-zinc-300 dark:decoration-zinc-600 hover:decoration-brand-gold">
-                            Mi cuenta
-                        </Link>
-                        {' '}para ver sus asignaciones.
+                    <p className="text-sm text-zinc-500 mt-1 max-w-sm mx-auto">
+                        Vincule su NUE en <Link to={ROUTES.MI_CUENTA} className="text-zinc-800 dark:text-zinc-200 font-medium underline underline-offset-2 hover:text-zinc-600">Mi cuenta</Link> para ver sus asignaciones.
                     </p>
                 </div>
             ) : (
-                <Card title={totalPiezas ? `Prendas asignadas (${totalPiezas} piezas)` : 'Prendas asignadas'}>
-                    <div className="px-5 sm:px-6 pb-6">
+                <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-800/20">
+                        <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                            {totalPiezas ? `Sus prendas (${totalPiezas})` : 'Sus prendas'}
+                        </h3>
+                    </div>
+                    <div className="px-5">
                         {preview.length === 0 ? (
-                            <p className="text-[13px] text-zinc-500 text-center py-10">
-                                No hay artículos en su vestuario en este ejercicio.
+                            <p className="text-sm text-zinc-500 text-center py-8">
+                                No hay artículos en su vestuario para el ejercicio mostrado.
                             </p>
                         ) : (
-                            <div>
+                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                                 {preview.map((item) => (
                                     <MiniPrendaRow key={item.id} item={item} />
                                 ))}
                             </div>
                         )}
                         {asignaciones.length > 5 && (
-                            <div className="pt-5 mt-1 border-t border-zinc-100 dark:border-zinc-800/80">
+                            <div className="py-3 mt-1 border-t border-zinc-100 dark:border-zinc-800/60">
                                 <Link
                                     to={ROUTES.MI_VESTUARIO}
-                                    className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white underline underline-offset-2 decoration-zinc-300 dark:decoration-zinc-600"
+                                    className="text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                                 >
-                                    Ver listado completo
+                                    Ver todo el vestuario →
                                 </Link>
                             </div>
                         )}
                     </div>
-                </Card>
+                </div>
             )}
-
-            <p className="text-[11px] text-zinc-400 text-center pt-2">
-                Sistema Integral de Vestuario
-            </p>
         </div>
     );
 }
