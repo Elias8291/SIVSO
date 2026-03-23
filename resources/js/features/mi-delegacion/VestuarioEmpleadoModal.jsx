@@ -1,7 +1,7 @@
 /**
  * Modal para ver y editar vestuario de un empleado (desde Mi Delegación).
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Ruler, RefreshCw, CheckCircle, Search } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Modal } from '../../components/ui';
@@ -107,7 +107,7 @@ function ModalTalla({ item, onClose, onSave, saving }) {
     );
 }
 
-function ModalCambiarProducto({ item, onClose, onSave, saving }) {
+function ModalCambiarProducto({ item, anio, onClose, onSave, saving }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -120,9 +120,9 @@ function ModalCambiarProducto({ item, onClose, onSave, saving }) {
     useEffect(() => {
         if (!item) return;
         setLoadingP(true);
-        const url = `/api/productos?all=1&partida=${item.partida}&search=${encodeURIComponent(debouncedSearch)}`;
+        const url = `/api/productos?all=1&partida=${item.partida}&anio=${anio || ''}&search=${encodeURIComponent(debouncedSearch)}`;
         api.get(url).then(j => { setProductos(j.data ?? []); setLoadingP(false); }).catch(() => setLoadingP(false));
-    }, [debouncedSearch, item]);
+    }, [debouncedSearch, item, anio]);
 
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg"
@@ -195,7 +195,8 @@ function ModalCantidad({ item, onClose, onSave, saving }) {
 
 export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
     const [data, setData] = useState(null);
-    const [anio, setAnio] = useState(null);
+    const [anio, setAnio] = useState(() => new Date().getFullYear());
+    const [anioCalendario, setAnioCalendario] = useState(() => new Date().getFullYear());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editTalla, setEditTalla] = useState(null);
@@ -206,19 +207,32 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
 
     const load = useCallback((anioParam) => {
         if (!empleado?.id) return;
+        const y = typeof anioParam === 'number' ? anioParam : new Date().getFullYear();
         setLoading(true);
         setError(null);
-        const url = anioParam ? `/api/empleados/${empleado.id}/vestuario?anio=${anioParam}` : `/api/empleados/${empleado.id}/vestuario`;
-        api.get(url)
-            .then(res => { 
-                setData(res); 
-                if (!anioParam && res.anio) setAnio(res.anio);
-                setLoading(false); 
+        api.get(`/api/empleados/${empleado.id}/vestuario?anio=${y}`)
+            .then((res) => {
+                setData(res);
+                setAnio(res.anio ?? y);
+                if (res.anio_calendario != null) {
+                    setAnioCalendario(Number(res.anio_calendario));
+                }
+                setLoading(false);
             })
-            .catch(err => { setError(err.message || 'Error al cargar'); setLoading(false); });
+            .catch((err) => { setError(err.message || 'Error al cargar'); setLoading(false); });
     }, [empleado?.id]);
 
-    useEffect(() => { if (empleado?.id) load(); }, [empleado?.id, load]);
+    useEffect(() => {
+        if (!empleado?.id) return;
+        const def = new Date().getFullYear();
+        setAnio(def);
+        setAnioCalendario(def);
+        setEditTalla(null);
+        setCambiarProd(null);
+        setEditCantidad(null);
+        setData(null);
+        load(def);
+    }, [empleado?.id, load]);
 
     useEffect(() => { const t = toast && setTimeout(() => setToast(null), 2500); return () => clearTimeout(t); }, [toast]);
 
@@ -266,12 +280,15 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
         load(newAnio);
     };
 
-    if (!empleado) return null;
+    /** Solo el año en curso (calendario del servidor) admite cambios; años anteriores = solo consulta. */
+    const editable = Number(anio) === Number(anioCalendario);
 
-    // Check if editable based on active period (if anio matches max available year or active period year)
-    // Actually, let's just assume it's editable if the backend doesn't block it, but to disable UI:
-    const isLatestYear = data?.anios_disponibles && anio === Math.max(...data.anios_disponibles);
-    const editable = isLatestYear; // Simple heuristic for frontend, backend enforces strictly
+    const aniosOpciones = useMemo(() => {
+        const hist = data?.anios_disponibles ?? [];
+        return [...new Set([anioCalendario, ...hist])].sort((a, b) => b - a);
+    }, [data?.anios_disponibles, anioCalendario]);
+
+    if (!empleado) return null;
 
     return (
         <>
@@ -284,27 +301,34 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                                 <p className="text-[11px] text-zinc-500">NUE {empleado.nue} · {empleado.delegacion || ''}</p>
                             )}
                         </div>
-                        {data?.anios_disponibles?.length > 0 && (
+                        <div className="flex flex-col items-end gap-1">
                             <div className="flex items-center gap-2">
                                 <span className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Ejercicio</span>
                                 <select
-                                    value={anio ?? data.anio}
+                                    value={anio ?? anioCalendario}
                                     onChange={(e) => handleAnioChange(Number(e.target.value))}
                                     className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer"
                                 >
-                                    {data.anios_disponibles.map(a => (
-                                        <option key={a} value={a}>{a}</option>
+                                    {aniosOpciones.map((a) => (
+                                        <option key={a} value={a}>{a}{a === anioCalendario ? ' (actual)' : ''}</option>
                                     ))}
                                 </select>
                             </div>
-                        )}
+                            {!editable && (
+                                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium max-w-[220px] text-right leading-snug">
+                                    Solo consulta. Para modificar talla, artículo o cantidad elija el ejercicio {anioCalendario}.
+                                </p>
+                            )}
+                        </div>
                     </div>
                     {loading ? (
                         <div className="py-12 flex justify-center"><span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                     ) : error ? (
                         <p className="py-8 text-center text-sm text-red-500">{error}</p>
                     ) : !data?.asignaciones?.length ? (
-                        <p className="py-8 text-center text-sm text-zinc-500">Sin asignaciones de vestuario.</p>
+                        <p className="py-8 text-center text-sm text-zinc-500">
+                            Sin asignaciones de vestuario para el ejercicio {anio ?? anioCalendario}.
+                        </p>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {data.asignaciones.map(item => (
@@ -323,7 +347,13 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             </Modal>
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
-            <ModalCambiarProducto item={cambiarProd} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
+            <ModalCambiarProducto
+                item={cambiarProd}
+                anio={anio ?? data?.anio}
+                onClose={() => setCambiarProd(null)}
+                onSave={handleSaveProducto}
+                saving={saving}
+            />
             <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onSave={handleSaveCantidad} saving={saving} />
 
             {toast && (

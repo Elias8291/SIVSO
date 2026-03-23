@@ -77,6 +77,17 @@ class VestuarioController extends Controller
         return null;
     }
 
+    /** Solo permitir cambios sobre selecciones del año calendario en curso (histórico = consulta). */
+    private function soloSeleccionEjercicioActual(Seleccion $seleccion): ?JsonResponse
+    {
+        $anioActual = (int) date('Y');
+        if ((int) $seleccion->anio !== $anioActual) {
+            return response()->json(['message' => 'Solo se pueden modificar las selecciones del año en curso.'], 403);
+        }
+
+        return null;
+    }
+
     public function updateTalla(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
@@ -232,9 +243,10 @@ class VestuarioController extends Controller
             ->values()
             ->toArray();
 
+        // Por defecto: año calendario actual (Mi delegación muestra primero el ejercicio en curso).
         $anio = $request->has('anio')
             ? (int) $request->get('anio')
-            : (count($aniosDisponibles) ? max($aniosDisponibles) : (int) date('Y'));
+            : (int) date('Y');
 
         $empleadoData = [
             'nue'                => $emp->nue,
@@ -251,6 +263,7 @@ class VestuarioController extends Controller
             'asignaciones'      => $asignaciones,
             'anio'              => $anio,
             'anios_disponibles' => $aniosDisponibles,
+            'anio_calendario'   => (int) date('Y'),
         ]);
     }
 
@@ -259,6 +272,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
+            return $blocked;
         }
 
         $request->validate(['talla' => 'required|string|max:30']);
@@ -296,6 +313,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
+            return $blocked;
         }
 
         $request->validate([
@@ -341,6 +362,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::where('id', $id)->where('empleado_id', $empleado)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
+            return $blocked;
         }
 
         if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
