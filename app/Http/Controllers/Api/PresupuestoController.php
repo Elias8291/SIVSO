@@ -11,10 +11,20 @@ class PresupuestoController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $anio = (int) ($request->query('anio', date('Y')));
+        $aniosDisponibles = DB::table('selecciones')
+            ->distinct()
+            ->pluck('anio')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $anio = $request->has('anio')
+            ? (int) $request->query('anio')
+            : (count($aniosDisponibles) ? max($aniosDisponibles) : (int) date('Y'));
 
         $dependencias = DB::table('dependencias')->orderBy('clave')->get(['id', 'clave', 'nombre']);
 
+        // Gasto por dependencia + partida: SUM(cantidad * precio_unitario)
         $gastados = DB::table('selecciones AS s')
             ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
             ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
@@ -28,69 +38,90 @@ class PresupuestoController extends Controller
                 'e.dependencia_id',
                 'pa.numero AS partida',
                 DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS gastado'),
-                DB::raw('COUNT(DISTINCT e.id) AS trabajadores'),
+                DB::raw('SUM(s.cantidad) AS total_cantidad'),
                 DB::raw('COUNT(s.id) AS registros'),
             ])
             ->groupBy('e.dependencia_id', 'pa.numero')
             ->get();
 
+        // Trabajadores únicos por dependencia (sin doble-conteo entre partidas)
+        $trabPorDep = DB::table('selecciones AS s')
+            ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
+            ->where('s.anio', $anio)
+            ->select(['e.dependencia_id', DB::raw('COUNT(DISTINCT e.id) AS trabajadores')])
+            ->groupBy('e.dependencia_id')
+            ->pluck('trabajadores', 'dependencia_id');
+
         $partidas = $gastados->pluck('partida')->unique()->sort()->values();
 
-        $gastadoMap = [];
-        $trabajadoresMap = [];
+        $gastadoMap   = [];
+        $cantidadMap  = [];
+        $registrosMap = [];
         foreach ($gastados as $g) {
             $key = "{$g->dependencia_id}_{$g->partida}";
-            $gastadoMap[$key] = (float) $g->gastado;
-            $trabajadoresMap[$g->dependencia_id] = ($trabajadoresMap[$g->dependencia_id] ?? 0) + (int) $g->trabajadores;
+            $gastadoMap[$key]   = (float) $g->gastado;
+            $cantidadMap[$key]  = (int) $g->total_cantidad;
+            $registrosMap[$key] = (int) $g->registros;
         }
 
-        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $trabajadoresMap) {
+        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $cantidadMap, $registrosMap, $trabPorDep) {
             $columnas = [];
-            $totalGastado = 0;
+            $totalGastado  = 0;
+            $totalPiezas   = 0;
 
             foreach ($partidas as $pa) {
-                $key     = "{$dep->id}_{$pa}";
-                $gastado = $gastadoMap[$key] ?? 0;
+                $key      = "{$dep->id}_{$pa}";
+                $gastado  = $gastadoMap[$key] ?? 0;
+                $cantidad = $cantidadMap[$key] ?? 0;
 
                 $columnas[] = [
                     'partida_especifica' => $pa,
-                    'gastado'            => $gastado,
+                    'gastado'            => round($gastado, 2),
+                    'cantidad'           => $cantidad,
+                    'registros'          => $registrosMap[$key] ?? 0,
                     'limite'             => 0,
                     'porcentaje'         => null,
                 ];
 
                 $totalGastado += $gastado;
+                $totalPiezas  += $cantidad;
             }
 
             return [
                 'ur'            => $dep->clave,
                 'nombre'        => $dep->nombre,
-                'trabajadores'  => $trabajadoresMap[$dep->id] ?? 0,
+                'trabajadores'  => (int) ($trabPorDep[$dep->id] ?? 0),
                 'columnas'      => $columnas,
-                'total_gastado' => $totalGastado,
+                'total_gastado' => round($totalGastado, 2),
+                'total_piezas'  => $totalPiezas,
                 'total_limite'  => 0,
                 'total_pct'     => null,
             ];
-        });
+        })->filter(fn ($r) => $r['total_gastado'] > 0)->values();
 
-        $totalesGlobales = $partidas->map(function ($pa) use ($gastadoMap, $dependencias) {
-            $gastado = 0;
+        $totalesGlobales = $partidas->map(function ($pa) use ($gastadoMap, $cantidadMap, $dependencias) {
+            $gastado  = 0;
+            $cantidad = 0;
             foreach ($dependencias as $dep) {
-                $gastado += $gastadoMap["{$dep->id}_{$pa}"] ?? 0;
+                $key = "{$dep->id}_{$pa}";
+                $gastado  += $gastadoMap[$key] ?? 0;
+                $cantidad += $cantidadMap[$key] ?? 0;
             }
             return [
                 'partida_especifica' => $pa,
-                'gastado'            => $gastado,
+                'gastado'            => round($gastado, 2),
+                'cantidad'           => $cantidad,
                 'limite'             => 0,
                 'porcentaje'         => null,
             ];
         });
 
         return response()->json([
-            'anio'             => $anio,
-            'partidas'         => $partidas,
-            'rows'             => $rows->values(),
-            'totales_globales' => $totalesGlobales->values(),
+            'anio'              => $anio,
+            'anios_disponibles' => $aniosDisponibles,
+            'partidas'          => $partidas,
+            'rows'              => $rows->values(),
+            'totales_globales'  => $totalesGlobales->values(),
         ]);
     }
 

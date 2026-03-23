@@ -1,4 +1,4 @@
-id,producto_id,talla_id,anio,medidas,cantidad_disponible
+﻿id,producto_id,talla_id,anio,medidas,cantidad_disponible
 1,117,46,2025,,0
 2,137,48,2025,,0
 3,137,47,2025,,0

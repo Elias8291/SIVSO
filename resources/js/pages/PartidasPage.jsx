@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
 import { PageHeader } from '../components/ui';
@@ -6,11 +6,14 @@ import { PageHeader } from '../components/ui';
 const fmt = (n) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 }).format(n ?? 0);
 
+const fmtNum = (n) =>
+    new Intl.NumberFormat('es-MX').format(n ?? 0);
+
 const fmtCompact = (n) => {
     if (!n) return '$0';
-    if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-    return `$${n}`;
+    if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+    if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+    return fmt(n);
 };
 
 function ProgressBar({ pct, alerta }) {
@@ -44,7 +47,7 @@ function nivelAlerta(pct) {
     return 'ok';
 }
 
-function StatSummary({ label, gastado, limite, pct, icon }) {
+function StatSummary({ label, gastado, cantidad, limite, pct, icon }) {
     const nivel = nivelAlerta(pct);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 flex items-start gap-4">
@@ -54,6 +57,9 @@ function StatSummary({ label, gastado, limite, pct, icon }) {
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-1">{label}</p>
                 <p className="text-[18px] font-extrabold text-zinc-800 dark:text-zinc-100 leading-none">{fmtCompact(gastado)}</p>
+                {cantidad > 0 && (
+                    <p className="text-[11px] text-zinc-400 mt-1">{fmtNum(cantidad)} piezas</p>
+                )}
                 {limite > 0 && (
                     <>
                         <p className="text-[12px] text-zinc-400 mt-1">Límite: {fmtCompact(limite)}</p>
@@ -82,6 +88,10 @@ function CeldaPartida({ col }) {
                         : 'text-zinc-700 dark:text-zinc-300'
                     }`}>{fmt(col.gastado)}</p>
 
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                    {fmtNum(col.cantidad)} pzas
+                </p>
+
                 {col.limite > 0 ? (
                     <>
                         <p className="text-[12px] text-zinc-400 mt-0.5">
@@ -92,36 +102,40 @@ function CeldaPartida({ col }) {
                             <AlertaBadge pct={col.porcentaje} />
                         </div>
                     </>
-                ) : (
-                    <p className="text-[12px] text-zinc-400 mt-0.5">sin límite</p>
-                )}
+                ) : null}
             </div>
         </td>
     );
 }
 
 export default function PartidasPage() {
-    const anioActual = new Date().getFullYear();
-    const [anio, setAnio] = useState(anioActual);
+    const [anio, setAnio] = useState(null);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const navigate = useNavigate();
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (anioParam) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/partidas?anio=${anio}`, { credentials: 'include' });
+            const url = anioParam ? `/api/partidas?anio=${anioParam}` : '/api/partidas';
+            const res = await fetch(url, { credentials: 'include' });
             const json = await res.json();
             setData(json);
+            if (!anioParam && json.anio) setAnio(json.anio);
         } catch {
             setData(null);
         } finally {
             setLoading(false);
         }
-    }, [anio]);
+    }, []);
 
     useEffect(() => { load(); }, [load]);
+
+    const handleAnioChange = (newAnio) => {
+        setAnio(newAnio);
+        load(newAnio);
+    };
 
     const rows = (data?.rows ?? []).filter((r) =>
         r.ur.toLowerCase().includes(search.toLowerCase()) ||
@@ -131,15 +145,39 @@ export default function PartidasPage() {
     const partidas = data?.partidas ?? [];
 
     const openEdit = (row) => {
-        navigate('/dashboard/partidas/limites/editar', { state: { row, anio } });
+        navigate('/dashboard/partidas/limites/editar', { state: { row, anio: anio ?? data?.anio } });
     };
 
-    const totalesGlobales = data?.totales_globales ?? [];
-    const totalGastado = totalesGlobales.reduce((s, t) => s + t.gastado, 0);
-    const totalLimite = totalesGlobales.reduce((s, t) => s + t.limite, 0);
+    // Totales calculados desde las filas visibles (filtra correctamente con búsqueda)
+    const { sumByPartida, totalGastado, totalPiezas, totalLimite } = useMemo(() => {
+        const byPart = {};
+        let tGastado = 0;
+        let tPiezas = 0;
+        let tLimite = 0;
+
+        for (const row of rows) {
+            for (const col of row.columnas) {
+                const pa = col.partida_especifica;
+                if (!byPart[pa]) byPart[pa] = { gastado: 0, cantidad: 0, limite: 0 };
+                byPart[pa].gastado += col.gastado;
+                byPart[pa].cantidad += col.cantidad;
+                byPart[pa].limite += col.limite;
+            }
+            tGastado += row.total_gastado;
+            tPiezas += row.total_piezas ?? 0;
+            tLimite += row.total_limite;
+        }
+
+        return { sumByPartida: byPart, totalGastado: tGastado, totalPiezas: tPiezas, totalLimite: tLimite };
+    }, [rows]);
+
     const totalPct = totalLimite > 0 ? Math.min(Math.round((totalGastado / totalLimite) * 100), 999) : null;
 
-    const anosOpts = [anioActual - 1, anioActual, anioActual + 1];
+    const aniosDisponibles = data?.anios_disponibles ?? [];
+    const anioActual = new Date().getFullYear();
+    const anosOpts = aniosDisponibles.length > 0
+        ? [...new Set([...aniosDisponibles, anioActual])].sort()
+        : [anioActual - 1, anioActual, anioActual + 1];
 
     const getGridColsClass = () => {
         if (partidas.length === 0) return 'grid-cols-1 sm:grid-cols-3';
@@ -154,12 +192,12 @@ export default function PartidasPage() {
         <div>
             <PageHeader
                 title="Partidas Presupuestales"
-                description="Gasto real vs. límite por unidad receptora y partida específica"
+                description={`Gasto por partida · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
                 actions={
                     <div className="flex items-center gap-2">
                         <select
-                            value={anio}
-                            onChange={(e) => setAnio(Number(e.target.value))}
+                            value={anio ?? data?.anio ?? anioActual}
+                            onChange={(e) => handleAnioChange(Number(e.target.value))}
                             className="text-[14px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-none"
                         >
                             {anosOpts.map((y) => (
@@ -168,7 +206,7 @@ export default function PartidasPage() {
                         </select>
                         <button
                             type="button"
-                            onClick={load}
+                            onClick={() => load(anio)}
                             disabled={loading}
                             className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all disabled:opacity-50"
                         >
@@ -184,24 +222,30 @@ export default function PartidasPage() {
                 <StatSummary
                     label="Total General"
                     gastado={totalGastado}
+                    cantidad={totalPiezas}
                     limite={totalLimite}
                     pct={totalPct}
                     icon={<DollarSign size={18} strokeWidth={1.8} />}
                 />
-                {totalesGlobales.map((t) => (
-                    <StatSummary
-                        key={t.partida_especifica}
-                        label={`Partida Esp. ${t.partida_especifica}`}
-                        gastado={t.gastado}
-                        limite={t.limite}
-                        pct={t.porcentaje}
-                        icon={<TrendingUp size={18} strokeWidth={1.8} />}
-                    />
-                ))}
+                {partidas.map((pa) => {
+                    const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0, limite: 0 };
+                    return (
+                        <StatSummary
+                            key={pa}
+                            label={`Partida ${pa}`}
+                            gastado={s.gastado}
+                            cantidad={s.cantidad}
+                            limite={s.limite}
+                            pct={s.limite > 0 ? Math.round((s.gastado / s.limite) * 100) : null}
+                            icon={<TrendingUp size={18} strokeWidth={1.8} />}
+                        />
+                    );
+                })}
                 {!loading && data && partidas.length === 0 && (
                     <StatSummary
                         label="Sin registros"
                         gastado={0}
+                        cantidad={0}
                         limite={0}
                         pct={null}
                         icon={<CheckCircle size={18} strokeWidth={1.8} />}
@@ -236,11 +280,11 @@ export default function PartidasPage() {
                     <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
                         <DollarSign size={28} strokeWidth={1.2} className="mb-3 opacity-30" />
                         <p className="text-[14px] font-semibold">Sin datos de partidas</p>
-                        <p className="text-[13px] mt-1">Asegúrate de que concentrado y propuesta tengan registros.</p>
+                        <p className="text-[13px] mt-1">No hay selecciones registradas para este ejercicio.</p>
                     </div>
                 ) : (
                     <>
-                        {/* 💻 VISTA ESCRITORIO (Tabla) */}
+                        {/* VISTA ESCRITORIO */}
                         <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[65vh] relative">
                             <table className="w-full text-left min-w-[600px] border-collapse">
                                 <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-800">
@@ -250,19 +294,14 @@ export default function PartidasPage() {
                                         </th>
                                         {partidas.map((pe) => (
                                             <th key={pe} className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                                Partida Esp. {pe}
+                                                Partida {pe}
                                             </th>
                                         ))}
-                                        {partidas.length === 0 && (
-                                            <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                                                Importe
-                                            </th>
-                                        )}
                                         <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                             Total
                                         </th>
                                         <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
-                                            Límites
+                                            Acciones
                                         </th>
                                     </tr>
                                 </thead>
@@ -281,11 +320,9 @@ export default function PartidasPage() {
                                                     <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-0.5 leading-snug max-w-[180px]">
                                                         {row.nombre}
                                                     </p>
-                                                    {row.trabajadores > 0 && (
-                                                        <p className="text-[12px] text-zinc-400 mt-0.5">
-                                                            {row.trabajadores} trabajador{row.trabajadores !== 1 ? 'es' : ''}
-                                                        </p>
-                                                    )}
+                                                    <p className="text-[12px] text-zinc-400 mt-0.5">
+                                                        {row.trabajadores} trab. · {fmtNum(row.total_piezas ?? 0)} pzas
+                                                    </p>
                                                 </td>
                                                 {row.columnas.map((col) => (
                                                     <CeldaPartida key={col.partida_especifica} col={col} />
@@ -296,6 +333,9 @@ export default function PartidasPage() {
                                                 <td className="px-4 py-3 align-top">
                                                     <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
                                                         {fmt(row.total_gastado)}
+                                                    </p>
+                                                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                                                        {fmtNum(row.total_piezas ?? 0)} pzas
                                                     </p>
                                                     {row.total_limite > 0 && (
                                                         <>
@@ -324,17 +364,21 @@ export default function PartidasPage() {
                                     <tfoot className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] outline outline-1 outline-zinc-100 dark:outline-zinc-700">
                                         <tr>
                                             <td className="px-4 py-4">
-                                                <p className="text-[14px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total general</p>
+                                                <p className="text-[14px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">Total</p>
+                                                <p className="text-[11px] text-zinc-400 mt-0.5">{rows.length} dependencias</p>
                                             </td>
-                                            {totalesGlobales.map((t) => (
-                                                <td key={t.partida_especifica} className="px-4 py-4">
-                                                    <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(t.gastado)}</p>
-                                                    {t.limite > 0 && <p className="text-[12px] text-zinc-400">/ {fmt(t.limite)}</p>}
-                                                </td>
-                                            ))}
-                                            {totalesGlobales.length === 0 && <td />}
+                                            {partidas.map((pa) => {
+                                                const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0 };
+                                                return (
+                                                    <td key={pa} className="px-4 py-4">
+                                                        <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(s.gastado)}</p>
+                                                        <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(s.cantidad)} pzas</p>
+                                                    </td>
+                                                );
+                                            })}
                                             <td className="px-4 py-4">
                                                 <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
+                                                <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(totalPiezas)} pzas</p>
                                             </td>
                                             <td />
                                         </tr>
@@ -343,7 +387,7 @@ export default function PartidasPage() {
                             </table>
                         </div>
 
-                        {/* 📱 VISTA MÓVIL (Tarjetas apiladas) */}
+                        {/* VISTA MOVIL */}
                         <div className="sm:hidden flex flex-col max-h-[75vh] overflow-y-auto relative">
                             <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                                 {rows.map((row) => (
@@ -352,6 +396,7 @@ export default function PartidasPage() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[14px] font-extrabold text-brand-gold uppercase tracking-wide leading-none">UR {row.ur}</p>
                                                 <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-1 leading-snug">{row.nombre}</p>
+                                                <p className="text-[11px] text-zinc-400 mt-0.5">{row.trabajadores} trab. · {fmtNum(row.total_piezas ?? 0)} pzas</p>
                                             </div>
                                             <button
                                                 type="button"
@@ -372,25 +417,24 @@ export default function PartidasPage() {
                                                             <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400' : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}`}>
                                                                 {fmt(col.gastado)}
                                                             </p>
-                                                            {col.limite > 0 ? (
+                                                            <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(col.cantidad)} pzas</p>
+                                                            {col.limite > 0 && (
                                                                 <>
                                                                     <p className="text-[11px] font-medium text-zinc-400 mt-0.5">/ {fmt(col.limite)}</p>
                                                                     <ProgressBar pct={col.porcentaje} alerta={nivel} />
                                                                 </>
-                                                            ) : (
-                                                                <p className="text-[11px] font-medium text-zinc-400 mt-0.5">Sin límite</p>
                                                             )}
                                                         </div>
                                                     </div>
                                                 );
                                             })}
 
-                                            {/* Subtotal UR */}
                                             <div className="col-span-2 mt-1 pt-3 border-t border-zinc-200 dark:border-zinc-700/60">
                                                 <div className="flex justify-between items-end">
                                                     <div>
                                                         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">Total Gastado</p>
                                                         <p className="text-[16px] font-black text-zinc-800 dark:text-zinc-100 leading-none">{fmt(row.total_gastado)}</p>
+                                                        <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(row.total_piezas ?? 0)} piezas</p>
                                                     </div>
                                                     {row.total_limite > 0 && (
                                                         <p className="text-[12px] font-medium text-zinc-400">/ {fmt(row.total_limite)}</p>
@@ -407,20 +451,26 @@ export default function PartidasPage() {
                                 ))}
                             </div>
 
-                            {/* Fila totales Móvil */}
                             {rows.length > 1 && (
                                 <div className="sticky bottom-0 z-20 bg-zinc-50 dark:bg-zinc-800 p-5 shadow-[0_-4px_15px_rgba(0,0,0,0.08)] outline outline-1 outline-zinc-100 dark:outline-zinc-700 space-y-4">
-                                    <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 text-center">Total General (Todas las UR)</p>
+                                    <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 text-center">Total General ({rows.length} UR)</p>
                                     <div className="flex flex-wrap gap-4 justify-between">
-                                        {totalesGlobales.map((t) => (
-                                            <div key={t.partida_especifica}>
-                                                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">P. Esp {t.partida_especifica}</p>
-                                                <p className="text-[15px] font-bold text-zinc-700 dark:text-zinc-200 mt-0.5">{fmt(t.gastado)}</p>
-                                            </div>
-                                        ))}
+                                        {partidas.map((pa) => {
+                                            const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0 };
+                                            return (
+                                                <div key={pa}>
+                                                    <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Partida {pa}</p>
+                                                    <p className="text-[15px] font-bold text-zinc-700 dark:text-zinc-200 mt-0.5">{fmt(s.gastado)}</p>
+                                                    <p className="text-[10px] text-zinc-400">{fmtNum(s.cantidad)} pzas</p>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                     <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
-                                        <span className="text-[13px] font-black uppercase tracking-widest text-zinc-500">GRAN TOTAL</span>
+                                        <div>
+                                            <span className="text-[13px] font-black uppercase tracking-widest text-zinc-500">GRAN TOTAL</span>
+                                            <p className="text-[10px] text-zinc-400">{fmtNum(totalPiezas)} piezas</p>
+                                        </div>
                                         <span className="font-black text-brand-gold text-[18px]">{fmt(totalGastado)}</span>
                                     </div>
                                 </div>
