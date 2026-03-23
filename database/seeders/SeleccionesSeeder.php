@@ -11,6 +11,6 @@ class SeleccionesSeeder extends Seeder
 
     public function run(): void
     {
-        $this->importCsv('selecciones', 'selecciones');
+        $this->importCsv('selecciones', 'selecciones', ['dependencia_id', 'importe', 'iva', 'total']);
     }
 }
