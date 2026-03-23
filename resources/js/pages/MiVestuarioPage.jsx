@@ -413,7 +413,7 @@ export default function MiVestuarioPage() {
                 <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
                     <CalendarClock size={16} className="text-green-600 dark:text-green-400 shrink-0" strokeWidth={2} />
                     <p className="text-sm text-green-700 dark:text-green-300">
-                        <span className="font-semibold">{periodoActivo.nombre}</span> — Periodo abierto hasta el {new Date(periodoActivo.fecha_fin + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}. Puedes actualizar tus tallas y artículos.
+                        <span className="font-semibold">{periodoActivo.nombre}</span> — Periodo abierto hasta el {(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()}. Puedes actualizar tus tallas y artículos.
                     </p>
                 </div>
             ) : (

@@ -51,7 +51,8 @@ class VestuarioController extends Controller
         $asignaciones = $this->getSelecciones($empleado->id, $anio);
 
         $periodoActivo = Periodo::where('estado', 'abierto')
-            ->where('anio', $anio)
+            ->where('fecha_fin', '>=', now()->toDateString())
+            ->orderByDesc('anio')
             ->first();
 
         return response()->json([
@@ -69,12 +70,12 @@ class VestuarioController extends Controller
 
     private function verificarPeriodoActivo(int $anio): ?JsonResponse
     {
-        $periodo = Periodo::where('estado', 'abierto')->where('anio', $anio)->first();
+        $periodo = Periodo::where('estado', 'abierto')
+            ->where('fecha_fin', '>=', now()->toDateString())
+            ->first();
+
         if (! $periodo) {
             return response()->json(['message' => 'No hay un periodo de actualización activo. No se pueden hacer cambios.'], 403);
-        }
-        if ($periodo->fecha_fin->isPast()) {
-            return response()->json(['message' => 'El periodo de actualización ya venció.'], 403);
         }
         return null;
     }

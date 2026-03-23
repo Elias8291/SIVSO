@@ -8,7 +8,11 @@ const ESTADO_LABEL = {
     pendiente: { text: 'Pendiente', dot: 'bg-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
 };
 
-const fmtFecha = (f) => f ? new Date(f + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmtFecha = (f) => {
+    if (!f) return '—';
+    const d = new Date(f.length === 10 ? f + 'T00:00:00' : f);
+    return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 const emptyForm = { anio: new Date().getFullYear(), nombre: '', fecha_inicio: '', fecha_fin: '', estado: 'pendiente', descripcion: '' };
 
