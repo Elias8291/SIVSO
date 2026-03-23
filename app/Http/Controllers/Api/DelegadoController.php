@@ -66,7 +66,12 @@ class DelegadoController extends Controller
         $delegados = DB::table('delegados AS d')
             ->join('delegado_delegacion AS dd', 'dd.delegado_id', '=', 'd.id')
             ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
-            ->select(['d.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id'])
+            ->leftJoin('users AS u', 'u.id', '=', 'd.user_id')
+            ->select([
+                'd.id', 'd.nombre', 'd.user_id',
+                'u.name AS user_name', 'u.rfc AS user_rfc',
+                'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id'
+            ])
             ->orderBy('d.nombre')
             ->get();
 
@@ -76,12 +81,18 @@ class DelegadoController extends Controller
             ->groupBy('delegacion_id')
             ->pluck('cnt', 'delegacion_id');
 
-        $byNombre = [];
+        $byId = [];
         foreach ($delegados as $d) {
-            $key = trim($d->nombre);
-            if (! isset($byNombre[$key])) {
-                $byNombre[$key] = [
+            if (! isset($byId[$d->id])) {
+                $byId[$d->id] = [
+                    'id'                 => $d->id,
                     'nombre'             => $d->nombre,
+                    'user_id'            => $d->user_id,
+                    'user'               => $d->user_id ? [
+                        'id'   => $d->user_id,
+                        'name' => $d->user_name,
+                        'rfc'  => $d->user_rfc,
+                    ] : null,
                     'delegaciones_count' => 0,
                     'delegaciones'       => [],
                     'trabajadores_total' => 0,
@@ -89,23 +100,24 @@ class DelegadoController extends Controller
             }
 
             $cnt = (int) ($trabCounts[$d->delegacion_id] ?? 0);
-            $byNombre[$key]['delegaciones_count']++;
-            $byNombre[$key]['delegaciones'][] = [
-                'id'                 => $d->id,
+            $byId[$d->id]['delegaciones_count']++;
+            $byId[$d->id]['delegaciones'][] = [
+                'id'                 => $d->delegacion_id,
                 'clave'              => $d->delegacion_clave,
                 'trabajadores_count' => $cnt,
             ];
-            $byNombre[$key]['trabajadores_total'] += $cnt;
+            $byId[$d->id]['trabajadores_total'] += $cnt;
         }
 
         if ($search) {
-            $byNombre = array_filter($byNombre, fn ($v) =>
+            $byId = array_filter($byId, fn ($v) =>
                 stripos($v['nombre'], $search) !== false ||
+                ($v['user'] && stripos($v['user']['rfc'], $search) !== false) ||
                 collect($v['delegaciones'])->contains(fn ($del) => stripos($del['clave'], $search) !== false)
             );
         }
 
-        return response()->json(['data' => array_values($byNombre)]);
+        return response()->json(['data' => array_values($byId)]);
     }
 
     public function store(Request $request): JsonResponse
@@ -113,10 +125,16 @@ class DelegadoController extends Controller
         $data = $request->validate([
             'nombre'        => 'required|string|max:120',
             'delegacion_id' => 'required|integer|exists:delegaciones,id',
+            'user_id'       => 'nullable|integer|exists:users,id',
         ]);
 
+        if (! empty($data['user_id'])) {
+            Delegado::where('user_id', $data['user_id'])->update(['user_id' => null]);
+        }
+
         $delegado = Delegado::create([
-            'nombre' => strtoupper(trim($data['nombre'])),
+            'nombre'  => strtoupper(trim($data['nombre'])),
+            'user_id' => $data['user_id'] ?? null,
         ]);
 
         $delegado->delegaciones()->attach($data['delegacion_id']);
@@ -132,12 +150,68 @@ class DelegadoController extends Controller
         }
 
         $data = $request->validate([
-            'nombre' => 'required|string|max:120',
+            'nombre'  => 'required|string|max:120',
+            'user_id' => 'nullable|integer|exists:users,id',
         ]);
 
-        $delegado->update(['nombre' => strtoupper(trim($data['nombre']))]);
+        if (! empty($data['user_id'])) {
+            Delegado::where('user_id', $data['user_id'])->where('id', '!=', $delegado->id)->update(['user_id' => null]);
+        }
+
+        $delegado->update([
+            'nombre'  => strtoupper(trim($data['nombre'])),
+            'user_id' => $data['user_id'] ?? null,
+        ]);
 
         return response()->json(['message' => 'Delegado actualizado correctamente.']);
+    }
+
+    public function crearUsuario(Request $request, int $id): JsonResponse
+    {
+        $delegado = Delegado::find($id);
+        if (! $delegado) {
+            return response()->json(['message' => 'Delegado no encontrado.'], 404);
+        }
+
+        if ($delegado->user_id) {
+            return response()->json(['message' => 'Este delegado ya tiene un usuario vinculado.'], 422);
+        }
+
+        $data = $request->validate([
+            'rfc'                 => ['required', 'string', 'max:20', 'unique:users,rfc'],
+            'email'               => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'password'            => 'required|string|min:8|confirmed',
+            'name'                => 'nullable|string|max:255',
+        ]);
+
+        $name = ! empty($data['name']) ? trim($data['name']) : ($delegado->nombre ?: 'Delegado');
+
+        $user = \App\Models\User::create([
+            'name'     => $name,
+            'rfc'      => strtoupper(trim($data['rfc'])),
+            'email'    => $data['email'] ?? null,
+            'password' => $data['password'],
+            'activo'   => true,
+        ]);
+
+        $user->assignRole('delegado');
+        // También le asignamos el rol de empleado ya que el delegado también es un empleado con vestuario
+        $user->assignRole('empleado');
+
+        Delegado::where('user_id', $user->id)->where('id', '!=', $delegado->id)->update(['user_id' => null]);
+
+        $delegado->user_id = $user->id;
+        $delegado->save();
+
+        return response()->json([
+            'message' => 'Usuario creado y vinculado correctamente.',
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'rfc'   => $user->rfc,
+                'email' => $user->email,
+            ],
+        ], 201);
     }
 
     public function destroy(int $id): JsonResponse

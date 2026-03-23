@@ -119,6 +119,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
     Route::middleware('permission:editar_delegados')->group(function () {
         Route::post('delegados', [DelegadoController::class, 'store']);
+        Route::post('delegados/{id}/crear-usuario', [DelegadoController::class, 'crearUsuario']);
         Route::put('delegados/{id}', [DelegadoController::class, 'update']);
         Route::delete('delegados/{id}', [DelegadoController::class, 'destroy']);
     });
