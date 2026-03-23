@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Empleado;
+use App\Models\Periodo;
 use App\Models\Seleccion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,11 +50,20 @@ class VestuarioController extends Controller
 
         $asignaciones = $this->getSelecciones($empleado->id, $anio);
 
+        $periodoActivo = Periodo::where('estado', 'abierto')
+            ->where('anio', $anio)
+            ->first();
+
         return response()->json([
             'empleado'          => $empleadoData,
             'asignaciones'      => $asignaciones,
             'anio'              => $anio,
             'anios_disponibles' => $aniosDisponibles,
+            'periodo_activo'    => $periodoActivo ? [
+                'id'        => $periodoActivo->id,
+                'nombre'    => $periodoActivo->nombre,
+                'fecha_fin' => $periodoActivo->fecha_fin->toDateString(),
+            ] : null,
         ]);
     }
 

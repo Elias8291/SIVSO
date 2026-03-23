@@ -84,7 +84,7 @@ export default function PeriodosPage() {
     const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
 
     return (
-        <div className="max-w-3xl mx-auto">
+        <div>
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>

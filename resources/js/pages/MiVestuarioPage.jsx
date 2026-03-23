@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Shirt, Ruler, RefreshCw, CheckCircle, Search, ChevronRight } from 'lucide-react';
+import { Shirt, Ruler, RefreshCw, CheckCircle, Search, ChevronRight, CalendarClock, Lock } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
@@ -30,7 +30,7 @@ function Toast({ message, onDone }) {
 }
 
 /* ── Tarjeta de prenda ────────────────────────────────────────────────────── */
-function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
+function PrendaCard({ item, onEditTalla, onCambiarProducto, editable }) {
     const st = catStyle(item.partida);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden flex flex-col">
@@ -63,13 +63,17 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
                     {/* Talla */}
                     <div className="flex flex-col items-center">
                         <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Talla</span>
-                        <button
-                            onClick={() => onEditTalla(item)}
-                            className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline"
-                        >
-                            {item.talla || '—'}
-                            <Ruler size={10} strokeWidth={2} />
-                        </button>
+                        {editable ? (
+                            <button
+                                onClick={() => onEditTalla(item)}
+                                className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline"
+                            >
+                                {item.talla || '—'}
+                                <Ruler size={10} strokeWidth={2} />
+                            </button>
+                        ) : (
+                            <span className="text-sm font-black text-zinc-700 dark:text-zinc-300">{item.talla || '—'}</span>
+                        )}
                     </div>
 
                     {/* Precio */}
@@ -85,20 +89,22 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto }) {
             </div>
 
             {/* Pie */}
-            <div className="px-4 pb-4 flex gap-2">
-                <button
-                    onClick={() => onEditTalla(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
-                >
-                    <Ruler size={11} strokeWidth={2} /> Cambiar talla
-                </button>
-                <button
-                    onClick={() => onCambiarProducto(item)}
-                    className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
-                >
-                    <RefreshCw size={11} strokeWidth={2} /> Cambiar artículo
-                </button>
-            </div>
+            {editable && (
+                <div className="px-4 pb-4 flex gap-2">
+                    <button
+                        onClick={() => onEditTalla(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
+                    >
+                        <Ruler size={11} strokeWidth={2} /> Cambiar talla
+                    </button>
+                    <button
+                        onClick={() => onCambiarProducto(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation"
+                    >
+                        <RefreshCw size={11} strokeWidth={2} /> Cambiar artículo
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -272,6 +278,7 @@ export default function MiVestuarioPage() {
     const [cambiarProd, setCambiarProd] = useState(null);
     const [filterSearch, setFilterSearch] = useState('');
     const debouncedFilter = useDebounce(filterSearch, 250);
+    const [periodoActivo, setPeriodoActivo] = useState(null);
 
     const load = useCallback((anioParam) => {
         setLoading(true);
@@ -281,6 +288,7 @@ export default function MiVestuarioPage() {
             .then(res => {
                 if (res && typeof res === 'object' && 'empleado' in res) {
                     setData(res);
+                    setPeriodoActivo(res.periodo_activo ?? null);
                     if (!anioParam && res.anio) setAnio(res.anio);
                 } else {
                     setApiError('session');
@@ -396,8 +404,27 @@ export default function MiVestuarioPage() {
         </div>
     );
 
+    const editable = !!periodoActivo;
+
     return (
         <div>
+            {/* Banner periodo */}
+            {periodoActivo ? (
+                <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20">
+                    <CalendarClock size={16} className="text-green-600 dark:text-green-400 shrink-0" strokeWidth={2} />
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                        <span className="font-semibold">{periodoActivo.nombre}</span> — Periodo abierto hasta el {new Date(periodoActivo.fecha_fin + 'T00:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}. Puedes actualizar tus tallas y artículos.
+                    </p>
+                </div>
+            ) : (
+                <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
+                    <Lock size={16} className="text-zinc-400 shrink-0" strokeWidth={2} />
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        No hay un periodo de actualización activo. La edición está deshabilitada.
+                    </p>
+                </div>
+            )}
+
             {/* Encabezado */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -471,6 +498,7 @@ export default function MiVestuarioPage() {
                         <PrendaCard
                             key={item.id}
                             item={item}
+                            editable={editable}
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
                         />

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notificacion;
 use App\Models\Periodo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PeriodoController extends Controller
 {
@@ -69,7 +71,61 @@ class PeriodoController extends Controller
 
         $periodo->update(['estado' => $data['estado']]);
 
-        return response()->json(['message' => 'Estado actualizado.', 'data' => $periodo]);
+        $notificados = 0;
+        if ($data['estado'] === 'abierto') {
+            $notificados = $this->notificarEmpleados($periodo);
+        }
+
+        return response()->json([
+            'message'     => 'Estado actualizado.' . ($notificados > 0 ? " Se notificó a {$notificados} usuario(s)." : ''),
+            'data'        => $periodo,
+            'notificados' => $notificados,
+        ]);
+    }
+
+    private function notificarEmpleados(Periodo $periodo): int
+    {
+        $anio = $periodo->anio;
+
+        $usersConSeleccion = DB::table('empleados AS e')
+            ->join('selecciones AS s', function ($j) use ($anio) {
+                $j->on('s.empleado_id', '=', 'e.id')->where('s.anio', $anio);
+            })
+            ->whereNotNull('e.user_id')
+            ->select('e.user_id')
+            ->distinct()
+            ->pluck('e.user_id');
+
+        $yaActualizaron = DB::table('selecciones AS s')
+            ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
+            ->whereNotNull('e.user_id')
+            ->where('s.anio', $anio)
+            ->where('s.updated_at', '>=', $periodo->created_at)
+            ->select('e.user_id')
+            ->distinct()
+            ->pluck('e.user_id');
+
+        $pendientes = $usersConSeleccion->diff($yaActualizaron);
+
+        if ($pendientes->isEmpty()) {
+            return 0;
+        }
+
+        $ahora = now();
+        $rows = $pendientes->map(fn ($uid) => [
+            'user_id'    => $uid,
+            'titulo'     => "Periodo abierto: {$periodo->nombre}",
+            'mensaje'    => "Se abrió el periodo de actualización {$periodo->nombre} ({$anio}). Revisa y actualiza tu vestuario antes del " . $periodo->fecha_fin->format('d/m/Y') . '.',
+            'tipo'       => 'info',
+            'enlace'     => '/dashboard/mi-vestuario',
+            'leida_en'   => null,
+            'created_at' => $ahora,
+            'updated_at' => $ahora,
+        ])->all();
+
+        DB::table('notificaciones')->insert($rows);
+
+        return count($rows);
     }
 
     public function destroy(int $id): JsonResponse
