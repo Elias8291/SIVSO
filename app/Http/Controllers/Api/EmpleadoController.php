@@ -18,8 +18,14 @@ class EmpleadoController extends Controller
         $depClave = $request->get('dependencia_clave');
         $delClave = $request->get('delegacion_clave');
 
+        $anioActual = \App\Models\Periodo::where('estado', 'abierto')->value('anio') 
+            ?? (DB::table('selecciones')->max('anio') ?? date('Y'));
+
         $query = Empleado::query()
-            ->with(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
+            ->with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
+            ->withExists(['selecciones as actualizado' => function ($q) use ($anioActual) {
+                $q->where('anio', $anioActual);
+            }]);
 
         if ($depClave) {
             $query->whereHas('dependencia', fn ($q) => $q->where('clave', $depClave));
@@ -54,6 +60,7 @@ class EmpleadoController extends Controller
             'delegacion_nombre'   => null,
             'activa'              => true,
             'user_id'             => $e->user_id,
+            'actualizado'         => $e->actualizado,
         ]);
 
         return response()->json([

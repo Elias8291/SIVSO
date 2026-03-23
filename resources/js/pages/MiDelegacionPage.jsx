@@ -70,6 +70,23 @@ export default function MiDelegacionPage() {
             )
         },
         {
+            key: 'actualizado',
+            label: 'Estado',
+            render: (_, row) => (
+                row.actualizado ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="size-1.5 rounded-full bg-emerald-500" />
+                        Actualizado
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-bold uppercase tracking-wider">
+                        <span className="size-1.5 rounded-full bg-zinc-400" />
+                        Pendiente
+                    </span>
+                )
+            )
+        },
+        {
             key: 'actions',
             label: '',
             render: (_, row) => (
