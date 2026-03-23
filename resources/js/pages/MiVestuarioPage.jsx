@@ -42,9 +42,6 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, editable }) {
                         {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                     </span>
                 </div>
-                {item.marca && (
-                    <span className={`text-[9px] font-semibold ${st.text} opacity-70`}>{item.marca}</span>
-                )}
             </div>
 
             {/* Cuerpo */}
