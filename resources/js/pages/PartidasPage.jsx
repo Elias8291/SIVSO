@@ -59,7 +59,7 @@ function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon }
                 <p className="text-[18px] font-extrabold text-zinc-800 dark:text-zinc-100 leading-none">
                     {fmtCompact(gastado)} <span className="text-[11px] font-medium text-zinc-400">s/IVA</span>
                 </p>
-                <p className="text-[15px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 leading-none">
+                <p className="text-[15px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 leading-none">
                     {fmtCompact(gastadoIva)} <span className="text-[10px] font-medium opacity-70">c/IVA</span>
                 </p>
                 {cantidad > 0 && (
@@ -92,7 +92,7 @@ function CeldaPartida({ col }) {
                     : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400'
                         : 'text-zinc-700 dark:text-zinc-300'
                     }`}>{fmt(col.gastado)}</p>
-                <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <p className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 mt-0.5">
                     {fmt(col.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
                 </p>
 
@@ -347,7 +347,7 @@ export default function PartidasPage() {
                                                     <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
                                                         {fmt(row.total_gastado)}
                                                     </p>
-                                                    <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                    <p className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 mt-0.5">
                                                         {fmt(row.total_gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
                                                     </p>
                                                     <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -388,14 +388,14 @@ export default function PartidasPage() {
                                                 return (
                                                     <td key={pa} className="px-4 py-4">
                                                         <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(s.gastado)}</p>
-                                                        <p className="text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(s.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
+                                                        <p className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 mt-0.5">{fmt(s.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(s.cantidad)} pzas</p>
                                                     </td>
                                                 );
                                             })}
                                             <td className="px-4 py-4">
                                                 <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
-                                                <p className="text-[14px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
+                                                <p className="text-[14px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(totalPiezas)} pzas</p>
                                             </td>
                                             <td />
@@ -435,7 +435,7 @@ export default function PartidasPage() {
                                                             <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400' : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}`}>
                                                                 {fmt(col.gastado)}
                                                             </p>
-                                                            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                            <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 mt-0.5">
                                                                 {fmt(col.gastado_iva)} <span className="text-[9px] font-normal opacity-70">c/IVA</span>
                                                             </p>
                                                             <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(col.cantidad)} pzas</p>
@@ -455,7 +455,7 @@ export default function PartidasPage() {
                                                     <div>
                                                         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">Total Gastado</p>
                                                         <p className="text-[16px] font-black text-zinc-800 dark:text-zinc-100 leading-none">{fmt(row.total_gastado)}</p>
-                                                        <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                        <p className="text-[13px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">
                                                             {fmt(row.total_gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
                                                         </p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(row.total_piezas ?? 0)} piezas</p>
@@ -485,7 +485,7 @@ export default function PartidasPage() {
                                                 <div key={pa}>
                                                     <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Partida {pa}</p>
                                                     <p className="text-[15px] font-bold text-zinc-700 dark:text-zinc-200 mt-0.5">{fmt(s.gastado)}</p>
-                                                    <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">{fmt(s.gastado_iva)} <span className="text-[9px] opacity-70">c/IVA</span></p>
+                                                    <p className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400">{fmt(s.gastado_iva)} <span className="text-[9px] opacity-70">c/IVA</span></p>
                                                     <p className="text-[10px] text-zinc-400">{fmtNum(s.cantidad)} pzas</p>
                                                 </div>
                                             );
@@ -498,7 +498,7 @@ export default function PartidasPage() {
                                         </div>
                                         <div className="text-right">
                                             <span className="font-black text-brand-gold text-[18px]">{fmt(totalGastado)}</span>
-                                            <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
+                                            <p className="text-[13px] font-bold text-zinc-500 dark:text-zinc-400">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                         </div>
                                     </div>
                                 </div>

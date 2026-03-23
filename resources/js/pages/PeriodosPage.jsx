@@ -3,9 +3,9 @@ import { Plus, Calendar, X } from 'lucide-react';
 import { api } from '../lib/api';
 
 const ESTADO_LABEL = {
-    abierto:   { text: 'Abierto',   dot: 'bg-green-500', bg: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400' },
-    cerrado:   { text: 'Cerrado',   dot: 'bg-red-500',   bg: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400' },
-    pendiente: { text: 'Pendiente', dot: 'bg-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400' },
+    abierto:   { text: 'Abierto',   dot: 'bg-zinc-800 dark:bg-zinc-200', bg: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' },
+    cerrado:   { text: 'Cerrado',   dot: 'bg-zinc-400 dark:bg-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400' },
+    pendiente: { text: 'Pendiente', dot: 'bg-zinc-400 dark:bg-zinc-500', bg: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400' },
 };
 
 const fmtFecha = (f) => {
