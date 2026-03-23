@@ -38,7 +38,7 @@ export default function MiDelegacionPage() {
             delegaciones.map((del) =>
                 api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(del.clave)}&per_page=100`)
                     .then((res) => ({ id: del.id, data: res.data ?? [] }))
-                    .catch(() => ({ id: del.id, data: [] }))
+                    .catch((err) => { console.error("Error fetching empleados for", del.clave, err); return { id: del.id, data: [] }; })
             )
         ).then((results) => {
             const map = {};
