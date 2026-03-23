@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Building2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog } from '../components/ui';
 import { api } from '../lib/api';
 
 export default function DependenciasPage() {
     const navigate = useNavigate();
+    const { can } = useAuth();
+    const canEdit = can('editar_dependencias');
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -70,16 +73,18 @@ export default function DependenciasPage() {
                 title="Dependencias"
                 description="Unidades Receptoras (UR) del sistema."
                 actions={
-                    <>
-                        <button onClick={() => navigate('/dashboard/dependencias/nueva')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                            <Plus size={13} strokeWidth={2.5} /> Nueva Dependencia
-                        </button>
-                        <button onClick={() => navigate('/dashboard/dependencias/nueva')}
-                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                            <Plus size={18} strokeWidth={2.5} />
-                        </button>
-                    </>
+                    canEdit ? (
+                        <>
+                            <button onClick={() => navigate('/dashboard/dependencias/nueva')}
+                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                                <Plus size={13} strokeWidth={2.5} /> Nueva Dependencia
+                            </button>
+                            <button onClick={() => navigate('/dashboard/dependencias/nueva')}
+                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
+                                <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                        </>
+                    ) : null
                 }
                 search={
                     <SearchInput placeholder="Buscar por clave o nombre..." value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -91,8 +96,8 @@ export default function DependenciasPage() {
                     columns={columns}
                     data={data}
                     loading={loading}
-                    onEdit={(row) => navigate(`/dashboard/dependencias/${row.id}/editar`)}
-                    onDelete={(row) => setConfirm(row)}
+                    onEdit={canEdit ? ((row) => navigate(`/dashboard/dependencias/${row.id}/editar`)) : undefined}
+                    onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                     emptyMessage="Sin dependencias registradas."
                 />
             </Card>

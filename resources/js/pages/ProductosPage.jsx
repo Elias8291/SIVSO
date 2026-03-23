@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, StatusBadge, ConfirmDialog, Pagination } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
 export default function ProductosPage() {
     const navigate = useNavigate();
+    const { can } = useAuth();
+    const canEdit = can('editar_catalogo');
     const { data: productos, meta, loading, search, setSearch, page, setPage, reload } =
         usePaginatedApi('/api/productos', { perPage: 20 });
 
@@ -70,16 +73,18 @@ export default function ProductosPage() {
                 title="Productos"
                 description="Catálogo de artículos de vestuario y calzado."
                 actions={
-                    <>
-                        <button onClick={() => navigate('/dashboard/productos/nuevo')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                            <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
-                        </button>
-                        <button onClick={() => navigate('/dashboard/productos/nuevo')}
-                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                            <Plus size={18} strokeWidth={2.5} />
-                        </button>
-                    </>
+                    canEdit ? (
+                        <>
+                            <button onClick={() => navigate('/dashboard/productos/nuevo')}
+                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                                <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
+                            </button>
+                            <button onClick={() => navigate('/dashboard/productos/nuevo')}
+                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
+                                <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                        </>
+                    ) : null
                 }
                 search={
                     <SearchInput
@@ -95,9 +100,9 @@ export default function ProductosPage() {
                     columns={columns}
                     data={productos}
                     loading={loading}
-                    onEdit={(row) => navigate(`/dashboard/productos/${row.id}/editar`)}
-                    onDelete={(row) => setConfirm(row)}
-                    extraActions={[
+                    onEdit={canEdit ? ((row) => navigate(`/dashboard/productos/${row.id}/editar`)) : undefined}
+                    onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
+                    extraActions={canEdit ? [
                         {
                             label: 'Activar / Desactivar',
                             icon: (row) => row?.activo
@@ -106,7 +111,7 @@ export default function ProductosPage() {
                             onClick: handleToggle,
                             variant: 'success',
                         },
-                    ]}
+                    ] : []}
                     emptyMessage="Sin productos registrados."
                 />
                 {meta.last_page > 1 && (

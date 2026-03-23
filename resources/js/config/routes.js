@@ -39,39 +39,40 @@ export const ROUTES = {
  * Secciones del sidebar con sus links agrupados.
  * iconKey debe existir en el ICON_MAP del Sidebar.
  */
+/** `permission: null` = cualquier usuario autenticado */
 export const SIDEBAR_SECTIONS = [
     {
         label: 'Principal',
         links: [
-            { path: ROUTES.DASHBOARD,    label: 'Dashboard',      iconKey: 'LayoutDashboard' },
-            { path: ROUTES.MI_VESTUARIO, label: 'Mi Vestuario',   iconKey: 'Shirt' },
-            { path: ROUTES.MI_DELEGACION, label: 'Mi Delegación', iconKey: 'Building2' },
-            { path: ROUTES.MI_CUENTA,    label: 'Mi Cuenta',      iconKey: 'User' },
+            { path: ROUTES.DASHBOARD, label: 'Dashboard', iconKey: 'LayoutDashboard', permission: null },
+            { path: ROUTES.MI_VESTUARIO, label: 'Mi Vestuario', iconKey: 'Shirt', permission: 'ver_selecciones' },
+            { path: ROUTES.MI_DELEGACION, label: 'Mi Delegación', iconKey: 'Building2', permission: 'ver_mi_delegacion' },
+            { path: ROUTES.MI_CUENTA, label: 'Mi Cuenta', iconKey: 'User', permission: null },
         ],
     },
     {
         label: 'Vestuario',
         links: [
-            { path: ROUTES.EMPLEADOS, label: 'Empleados', iconKey: 'UsersRound' },
-            { path: ROUTES.PRODUCTOS, label: 'Productos',  iconKey: 'Package' },
-            { path: ROUTES.PARTIDAS,  label: 'Partidas',   iconKey: 'BarChart2' },
+            { path: ROUTES.EMPLEADOS, label: 'Empleados', iconKey: 'UsersRound', permission: 'ver_empleados' },
+            { path: ROUTES.PRODUCTOS, label: 'Productos', iconKey: 'Package', permission: 'ver_catalogo' },
+            { path: ROUTES.PARTIDAS, label: 'Partidas', iconKey: 'BarChart2', permission: 'ver_partidas' },
         ],
     },
     {
         label: 'Estructura',
         links: [
-            { path: ROUTES.DEPENDENCIAS, label: 'Dependencias', iconKey: 'Building2' },
-            { path: ROUTES.DELEGACIONES, label: 'Delegaciones', iconKey: 'Network' },
-            { path: ROUTES.DELEGADOS,    label: 'Delegados',    iconKey: 'UserCheck' },
+            { path: ROUTES.DEPENDENCIAS, label: 'Dependencias', iconKey: 'Building2', permission: 'ver_dependencias' },
+            { path: ROUTES.DELEGACIONES, label: 'Delegaciones', iconKey: 'Network', permission: 'ver_delegaciones' },
+            { path: ROUTES.DELEGADOS, label: 'Delegados', iconKey: 'UserCheck', permission: 'ver_delegados' },
         ],
     },
     {
         label: 'Administración',
         links: [
-            { path: ROUTES.PERIODOS, label: 'Periodos', iconKey: 'Calendar' },
-            { path: ROUTES.USUARIOS, label: 'Usuarios', iconKey: 'Users' },
-            { path: ROUTES.ROLES,    label: 'Roles',    iconKey: 'Shield' },
-            { path: ROUTES.PERMISOS, label: 'Permisos', iconKey: 'Lock' },
+            { path: ROUTES.PERIODOS, label: 'Periodos', iconKey: 'Calendar', permission: 'gestionar_periodos' },
+            { path: ROUTES.USUARIOS, label: 'Usuarios', iconKey: 'Users', permission: 'gestionar_usuarios' },
+            { path: ROUTES.ROLES, label: 'Roles', iconKey: 'Shield', permission: 'gestionar_roles' },
+            { path: ROUTES.PERMISOS, label: 'Permisos', iconKey: 'Lock', permission: 'gestionar_roles' },
         ],
     },
 ];

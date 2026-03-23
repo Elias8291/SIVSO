@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
 import { PageHeader } from '../components/ui';
 
@@ -117,6 +118,8 @@ function CeldaPartida({ col }) {
 }
 
 export default function PartidasPage() {
+    const { can } = useAuth();
+    const canEditLimites = can('editar_partidas');
     const [anio, setAnio] = useState(null);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -313,9 +316,11 @@ export default function PartidasPage() {
                                         <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                                             Total
                                         </th>
-                                        <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
-                                            Acciones
-                                        </th>
+                                        {canEditLimites && (
+                                            <th className="px-4 py-3 text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 text-right">
+                                                Acciones
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -363,15 +368,17 @@ export default function PartidasPage() {
                                                         </>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-3 align-top text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEdit(row)}
-                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all"
-                                                    >
-                                                        <Edit2 size={11} strokeWidth={2} /> Límites
-                                                    </button>
-                                                </td>
+                                                {canEditLimites && (
+                                                    <td className="px-4 py-3 align-top text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEdit(row)}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all"
+                                                        >
+                                                            <Edit2 size={11} strokeWidth={2} /> Límites
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })}
@@ -398,7 +405,7 @@ export default function PartidasPage() {
                                                 <p className="text-[14px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(totalPiezas)} pzas</p>
                                             </td>
-                                            <td />
+                                            {canEditLimites && <td />}
                                         </tr>
                                     </tfoot>
                                 )}
@@ -416,13 +423,15 @@ export default function PartidasPage() {
                                                 <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 mt-1 leading-snug">{row.nombre}</p>
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{row.trabajadores} trab. · {fmtNum(row.total_piezas ?? 0)} pzas</p>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => openEdit(row)}
-                                                className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 active:scale-95 transition-all shadow-sm"
-                                            >
-                                                <Edit2 size={13} strokeWidth={2.5} /> Límites
-                                            </button>
+                                            {canEditLimites && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openEdit(row)}
+                                                    className="shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[12px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 active:scale-95 transition-all shadow-sm"
+                                                >
+                                                    <Edit2 size={13} strokeWidth={2.5} /> Límites
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-2xl p-3 border border-zinc-100 dark:border-zinc-800">

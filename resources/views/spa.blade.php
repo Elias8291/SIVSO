@@ -20,10 +20,13 @@
             'logoutUrl' => null,
         ];
         if (auth()->check()) {
+            $user = auth()->user();
             $appState['user'] = [
-                'name' => auth()->user()->name ?? 'Admin',
-                'email' => auth()->user()->email ?? (auth()->user()->rfc ? auth()->user()->rfc . '@sivso.gob' : 'admin@sivso.gob'),
+                'name' => $user->name ?? 'Admin',
+                'email' => $user->email ?? ($user->rfc ? $user->rfc . '@sivso.gob' : 'admin@sivso.gob'),
             ];
+            $appState['permissions'] = $user->getAllPermissions()->pluck('name')->values()->all();
+            $appState['roles'] = $user->getRoleNames()->values()->all();
             $appState['mustChangePassword'] = false;
             $appState['logoutUrl'] = route('logout');
         }

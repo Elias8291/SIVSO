@@ -24,6 +24,17 @@ class RolesPermissionsSeeder extends Seeder
             'ver_reportes',
             'gestionar_usuarios',
             'gestionar_roles',
+            'gestionar_periodos',
+            // Estructura y partidas / mi delegación
+            'ver_dependencias',
+            'editar_dependencias',
+            'ver_delegaciones',
+            'editar_delegaciones',
+            'ver_delegados',
+            'editar_delegados',
+            'ver_partidas',
+            'editar_partidas',
+            'ver_mi_delegacion',
         ];
 
         foreach ($permissions as $p) {
@@ -41,6 +52,10 @@ class RolesPermissionsSeeder extends Seeder
             'crear_seleccion',
             'editar_seleccion',
             'ver_reportes',
+            'ver_mi_delegacion',
+            'ver_partidas',
+            'ver_dependencias',
+            'ver_delegaciones',
         ]);
 
         $empleado = Role::firstOrCreate(['name' => 'empleado']);
@@ -56,6 +71,10 @@ class RolesPermissionsSeeder extends Seeder
             'ver_empleados',
             'ver_selecciones',
             'ver_reportes',
+            'ver_dependencias',
+            'ver_delegaciones',
+            'ver_delegados',
+            'ver_partidas',
         ]);
     }
 }

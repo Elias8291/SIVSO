@@ -22,7 +22,7 @@ const ICON_MAP = {
 };
 
 const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onToggleCollapse = () => {} }) => {
-    const { logout, logoutUrl, csrfToken, user } = useAuth();
+    const { logout, logoutUrl, csrfToken, user, can } = useAuth();
 
     useEffect(() => {
         if (isOpen) {
@@ -85,7 +85,12 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
             {/* Contenedor con scroll (nav + footer) para que en móvil se vea el logout */}
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
                 <nav className={`py-4 space-y-5 shrink-0 transition-all duration-300 ${collapsed ? 'lg:px-2' : 'px-3'}`} onClick={onClose}>
-                    {SIDEBAR_SECTIONS.map((section) => (
+                    {SIDEBAR_SECTIONS.map((section) => {
+                        const links = section.links.filter(
+                            (link) => link.permission == null || can(link.permission)
+                        );
+                        if (links.length === 0) return null;
+                        return (
                         <div key={section.label}>
                             {!collapsed && (
                                 <p className="px-4 mb-1.5 text-[13px] font-bold text-zinc-400 uppercase tracking-[0.25em]">
@@ -93,7 +98,7 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
                                 </p>
                             )}
                             <div className="space-y-0.5">
-                                {section.links.map(({ path, label, iconKey }) => {
+                                {links.map(({ path, label, iconKey }) => {
                                     const IconComponent = ICON_MAP[iconKey];
                                     return (
                                         <NavLink
@@ -115,7 +120,8 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
                                 })}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </nav>
 
                 {/* Usuario + Logout - siempre accesible al hacer scroll en móvil */}

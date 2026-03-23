@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
 import { api } from '../lib/api';
 
@@ -147,16 +148,18 @@ export default function DelegadosPage() {
                 title="Delegados"
                 description="Delegados y las delegaciones que representan."
                 actions={
-                    <>
-                        <button onClick={() => setEditing('new')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                            <Plus size={13} strokeWidth={2.5} /> Nuevo Delegado
-                        </button>
-                        <button onClick={() => setEditing('new')}
-                            className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                            <Plus size={18} strokeWidth={2.5} />
-                        </button>
-                    </>
+                    canEdit ? (
+                        <>
+                            <button onClick={() => setEditing('new')}
+                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
+                                <Plus size={13} strokeWidth={2.5} /> Nuevo Delegado
+                            </button>
+                            <button onClick={() => setEditing('new')}
+                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
+                                <Plus size={18} strokeWidth={2.5} />
+                            </button>
+                        </>
+                    ) : null
                 }
                 search={<SearchInput placeholder="Buscar por nombre o clave..." value={search} onChange={(e) => setSearch(e.target.value)} />}
             />
@@ -166,10 +169,10 @@ export default function DelegadosPage() {
                     columns={columns}
                     data={data}
                     loading={loading}
-                    onEdit={(row) => {
+                    onEdit={canEdit ? ((row) => {
                         if (row.delegaciones?.[0]) setEditing({ id: row.delegaciones[0].id, nombre: row.nombre });
-                    }}
-                    onDelete={(row) => setConfirm(row)}
+                    }) : undefined}
+                    onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                     emptyMessage="Sin delegados registrados."
                 />
             </Card>
