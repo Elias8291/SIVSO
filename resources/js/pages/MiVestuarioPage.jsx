@@ -76,15 +76,6 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, editable }) {
                         )}
                     </div>
 
-                    {/* Precio */}
-                    {item.precio_unitario && (
-                        <div className="flex flex-col items-center ml-auto">
-                            <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">P. Unit.</span>
-                            <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400">
-                                ${Number(item.precio_unitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -345,7 +336,6 @@ export default function MiVestuarioPage() {
             : true
     );
 
-    const total = asignaciones.reduce((s, a) => s + (Number(a.importe) || 0), 0);
 
     if (loading) return (
         <div className="flex items-center justify-center py-32">
@@ -437,21 +427,11 @@ export default function MiVestuarioPage() {
                     </div>
 
                     {/* Resumen */}
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
-                            <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Total asignado</p>
-                            <p className="text-xl font-black text-zinc-900 dark:text-white">
-                                {asignaciones.length} <span className="text-sm font-semibold text-zinc-400">artículos</span>
-                            </p>
-                        </div>
-                        {total > 0 && (
-                            <div className="text-right">
-                                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Importe</p>
-                                <p className="text-xl font-black text-brand-gold">
-                                    ${total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                                </p>
-                            </div>
-                        )}
+                    <div className="text-right shrink-0">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">Total asignado</p>
+                        <p className="text-xl font-black text-zinc-900 dark:text-white">
+                            {asignaciones.length} <span className="text-sm font-semibold text-zinc-400">artículos</span>
+                        </p>
                     </div>
                 </div>
 

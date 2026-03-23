@@ -37,6 +37,10 @@ export default function MiCuentaPage() {
     const [errInfo, setErrInfo] = useState({});
     const [savingInfo, setSavingInfo] = useState(false);
 
+    const [nue, setNue] = useState('');
+    const [errNue, setErrNue] = useState(null);
+    const [savingNue, setSavingNue] = useState(false);
+
     useEffect(() => {
         api.get('/api/perfil')
             .then((res) => {
@@ -46,10 +50,26 @@ export default function MiCuentaPage() {
                     rfc: res.user?.rfc ?? '',
                     email: res.user?.email ?? '',
                 });
+                setNue(res.empleado?.nue ?? res.user?.nue ?? '');
             })
             .catch(() => {})
             .finally(() => setLoading(false));
     }, []);
+
+    const saveNue = async () => {
+        setSavingNue(true);
+        setErrNue(null);
+        try {
+            await api.put('/api/perfil/nue', { nue });
+            setToast('NUE actualizado');
+            const res = await api.get('/api/perfil');
+            setProfile(res);
+        } catch (err) {
+            setErrNue(err.errors?.nue?.[0] ?? err.message);
+        } finally {
+            setSavingNue(false);
+        }
+    };
 
     const saveInfo = async (e) => {
         e.preventDefault();
@@ -96,19 +116,27 @@ export default function MiCuentaPage() {
                                     <Inp type="email" value={formInfo.email} onChange={(e) => setFormInfo({ ...formInfo, email: e.target.value })} placeholder="correo@ejemplo.com" />
                                 </Field>
                             </div>
-                            {profile?.empleado && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <Field label="NUE">
-                                        <Inp value={profile.empleado.nue ?? '—'} disabled className="opacity-60 cursor-not-allowed" />
-                                    </Field>
-                                    <Field label="Dependencia">
-                                        <Inp value={`${profile.empleado.dependencia_clave ?? ''} ${profile.empleado.dependencia_nombre ?? ''}`.trim() || '—'} disabled className="opacity-60 cursor-not-allowed" />
-                                    </Field>
-                                    <Field label="Delegación">
-                                        <Inp value={profile.empleado.delegacion_clave ?? '—'} disabled className="opacity-60 cursor-not-allowed" />
-                                    </Field>
-                                </div>
-                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                <Field label="NUE" error={errNue}>
+                                    <div className="flex gap-2">
+                                        <Inp value={nue} onChange={(e) => setNue(e.target.value)} placeholder="Ej. 00012345" maxLength={15} />
+                                        <button type="button" onClick={saveNue} disabled={savingNue}
+                                            className="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50">
+                                            {savingNue ? '…' : 'Cambiar'}
+                                        </button>
+                                    </div>
+                                </Field>
+                                {profile?.empleado && (
+                                    <>
+                                        <Field label="Dependencia">
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-300 py-2">{profile.empleado.dependencia_nombre || profile.empleado.dependencia_clave || '—'}</p>
+                                        </Field>
+                                        <Field label="Delegación">
+                                            <p className="text-sm text-zinc-600 dark:text-zinc-300 py-2">{profile.empleado.delegacion_clave ?? '—'}</p>
+                                        </Field>
+                                    </>
+                                )}
+                            </div>
                             <div className="pt-1">
                                 <button type="submit" disabled={savingInfo}
                                     className="px-4 py-2 text-sm font-semibold rounded-lg bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
