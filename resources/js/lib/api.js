@@ -7,6 +7,21 @@ const csrf = () =>
     ?? window.sivsoApp?.csrfToken
     ?? '';
 
+/**
+ * Si window.sivsoApp.apiBase viene de Laravel (url('/api')), las rutas /api/...
+ * apuntan al Laravel correcto aunque la app esté en un subdirectorio.
+ */
+function resolveApiUrl(url) {
+    const base =
+        typeof window !== 'undefined' && window.sivsoApp?.apiBase
+            ? String(window.sivsoApp.apiBase).replace(/\/$/, '')
+            : '';
+    if (!base || !url.startsWith('/api')) {
+        return url;
+    }
+    return `${base}${url.slice(4)}`;
+}
+
 async function request(method, url, body) {
     const opts = {
         method,
@@ -19,7 +34,7 @@ async function request(method, url, body) {
     };
     if (body !== undefined) opts.body = JSON.stringify(body);
 
-    const res = await fetch(url, opts);
+    const res = await fetch(resolveApiUrl(url), opts);
 
     let json;
     try { json = await res.json(); } catch { json = {}; }

@@ -13,6 +13,8 @@
     <div id="root"></div>
     @php
         $appState = [
+            /** Base absoluta de /api (evita 404 si la app corre en subcarpeta, ej. /public). */
+            'apiBase' => rtrim(url('/api'), '/'),
             'csrfToken' => csrf_token(),
             'authenticated' => auth()->check(),
             'user' => null,
