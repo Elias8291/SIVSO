@@ -1,9 +1,9 @@
 /**
  * Vista para crear o editar un Producto.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
 
 function Field({ label, error, children }) {
@@ -26,6 +26,11 @@ const EMPTY_FORM = {
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 const selectClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation appearance-none pr-10";
 
+function fmtPrecio(v) {
+    if (v == null || v === '') return '—';
+    return `$${Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export default function ProductoFormPage() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -35,64 +40,93 @@ export default function ProductoFormPage() {
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(isEdit);
-    const [proveedores, setProveedores] = useState([]);
-    const [partidas, setPartidas] = useState([]);
+    const [catalogBusy, setCatalogBusy] = useState(false);
+    const [anioCatalogo, setAnioCatalogo] = useState(() => new Date().getFullYear());
+    const [aniosSelector, setAniosSelector] = useState([]);
+    const [ejClave, setEjClave] = useState('');
+    const [ejPrecio, setEjPrecio] = useState('');
+    const [tallasEj, setTallasEj] = useState([]);
+    const [nuevaTalla, setNuevaTalla] = useState('');
+    const [catalogMsg, setCatalogMsg] = useState('');
+    const [catalogErr, setCatalogErr] = useState('');
+    const [savingPrecio, setSavingPrecio] = useState(false);
+    const [tallaBusyId, setTallaBusyId] = useState(null);
+
+    const firstLoadForId = useRef(true);
+    const prevIdRef = useRef(id);
 
     useEffect(() => {
-        Promise.all([
-            api.get('/api/productos?all=1&per_page=1').catch(() => ({ data: [] })),
-            fetch('/api/partidas?anio=' + new Date().getFullYear(), { credentials: 'include' })
-                .then(r => r.json()).catch(() => ({})),
-        ]).then(() => {});
+        if (prevIdRef.current !== id) {
+            prevIdRef.current = id;
+            firstLoadForId.current = true;
+            setAnioCatalogo(new Date().getFullYear());
+        }
+    }, [id]);
 
-        fetch('/api/dependencias', { credentials: 'include' }).catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        api.get('/api/delegados?ur=0').catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        const loadCatalogs = async () => {
-            try {
-                const [provRes] = await Promise.all([
-                    api.get('/api/productos?all=1'),
-                ]);
-                const uniqueProvs = [];
-                const seen = new Set();
-                (provRes.data ?? []).forEach(p => {
-                    if (p.proveedor && !seen.has(p.proveedor)) {
-                        seen.add(p.proveedor);
-                    }
-                });
-            } catch {}
-        };
-        loadCatalogs();
-    }, []);
+    const applyProductoPayload = (p) => {
+        if (!p) return;
+        setForm({
+            descripcion: p.descripcion ?? '',
+            marca: p.marca ?? '',
+            unidad: p.unidad ?? '',
+            medida: p.medida ?? '',
+            codigo: p.codigo ?? '',
+            lote: p.lote ?? '',
+            proveedor_id: p.proveedor_id ?? '',
+            partida_id: p.partida_id ?? '',
+        });
+        const cat = p.catalogo_ejercicio ?? {};
+        setEjClave(cat.clave ?? '');
+        setEjPrecio(cat.precio_unitario != null ? String(cat.precio_unitario) : '');
+        setTallasEj(Array.isArray(cat.tallas) ? cat.tallas : []);
+        const cur = new Date().getFullYear();
+        const raw = Array.isArray(p.anios_selector) ? p.anios_selector : [];
+        setAniosSelector([...new Set([cur, ...raw])].sort((a, b) => b - a));
+    };
 
     useEffect(() => {
-        if (!isEdit) return;
-        api.get(`/api/productos/${id}`)
+        if (!isEdit) {
+            setLoading(false);
+            return;
+        }
+
+        const onlyAnio = !firstLoadForId.current;
+        if (onlyAnio) setCatalogBusy(true);
+        else setLoading(true);
+
+        let cancelled = false;
+        api.get(`/api/productos/${id}?anio=${anioCatalogo}`)
             .then((res) => {
-                const p = res.data ?? res;
-                if (p) {
-                    setForm({
-                        descripcion: p.descripcion ?? '',
-                        marca: p.marca ?? '',
-                        unidad: p.unidad ?? '',
-                        medida: p.medida ?? '',
-                        codigo: p.codigo ?? '',
-                        lote: p.lote ?? '',
-                        proveedor_id: p.proveedor_id ?? '',
-                        partida_id: p.partida_id ?? '',
-                    });
-                } else {
-                    navigate('/dashboard/productos', { replace: true });
-                }
+                const p = res?.data ?? res;
+                if (cancelled || !p) return;
+                applyProductoPayload(p);
             })
-            .catch(() => navigate('/dashboard/productos', { replace: true }))
-            .finally(() => setLoading(false));
-    }, [id, isEdit, navigate]);
+            .catch(() => {
+                if (!cancelled) navigate('/dashboard/productos', { replace: true });
+            })
+            .finally(() => {
+                if (cancelled) return;
+                setLoading(false);
+                setCatalogBusy(false);
+                firstLoadForId.current = false;
+            });
+
+        return () => { cancelled = true; };
+    }, [id, isEdit, navigate, anioCatalogo]);
+
+    const reloadCatalogo = async () => {
+        setCatalogBusy(true);
+        setCatalogErr('');
+        try {
+            const res = await api.get(`/api/productos/${id}?anio=${anioCatalogo}`);
+            const p = res?.data ?? res;
+            applyProductoPayload(p);
+        } catch (e) {
+            setCatalogErr(e.message || 'No se pudo actualizar el catálogo.');
+        } finally {
+            setCatalogBusy(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -113,6 +147,58 @@ export default function ProductoFormPage() {
         }
     };
 
+    const handleGuardarPrecio = async () => {
+        setCatalogErr('');
+        setCatalogMsg('');
+        setSavingPrecio(true);
+        try {
+            await api.put(`/api/productos/${id}/precio-ejercicio`, {
+                anio: anioCatalogo,
+                clave: ejClave.trim(),
+                precio_unitario: Number(String(ejPrecio).replace(',', '.')),
+            });
+            setCatalogMsg('Precio guardado para el ejercicio ' + anioCatalogo + '.');
+            await reloadCatalogo();
+        } catch (err) {
+            setCatalogErr(err.message || 'Error al guardar precio.');
+        } finally {
+            setSavingPrecio(false);
+        }
+    };
+
+    const handleAgregarTalla = async () => {
+        const t = nuevaTalla.trim();
+        if (!t) return;
+        setCatalogErr('');
+        setCatalogMsg('');
+        setTallaBusyId('new');
+        try {
+            await api.post(`/api/productos/${id}/talla-ejercicio`, { anio: anioCatalogo, talla: t });
+            setNuevaTalla('');
+            setCatalogMsg('Talla agregada.');
+            await reloadCatalogo();
+        } catch (err) {
+            setCatalogErr(err.message || 'No se pudo agregar la talla.');
+        } finally {
+            setTallaBusyId(null);
+        }
+    };
+
+    const handleQuitarTalla = async (productoTallaId) => {
+        setCatalogErr('');
+        setCatalogMsg('');
+        setTallaBusyId(productoTallaId);
+        try {
+            await api.delete(`/api/productos/${id}/talla-ejercicio/${productoTallaId}`);
+            setCatalogMsg('Talla eliminada del ejercicio.');
+            await reloadCatalogo();
+        } catch (err) {
+            setCatalogErr(err.message || 'No se pudo quitar la talla.');
+        } finally {
+            setTallaBusyId(null);
+        }
+    };
+
     const f = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
     if (loading) {
@@ -124,7 +210,7 @@ export default function ProductoFormPage() {
     }
 
     return (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
             <Link
                 to="/dashboard/productos"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
@@ -212,6 +298,122 @@ export default function ProductoFormPage() {
                         </Field>
                     </div>
 
+                    {isEdit && (
+                        <div className={`rounded-xl border border-zinc-200 dark:border-zinc-700/80 p-4 space-y-4 ${catalogBusy ? 'opacity-60 pointer-events-none' : ''}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
+                                    Precio y tallas por ejercicio
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-[11px] font-bold uppercase text-zinc-500">Año</label>
+                                    <select
+                                        value={anioCatalogo}
+                                        onChange={(e) => setAnioCatalogo(Number(e.target.value))}
+                                        className={`${selectClass} py-2 max-w-[120px]`}
+                                    >
+                                        {(aniosSelector.length ? aniosSelector : [new Date().getFullYear()]).map((a) => (
+                                            <option key={a} value={a}>{a}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            {catalogMsg && (
+                                <p className="text-[12px] text-emerald-600 dark:text-emerald-400 font-medium">{catalogMsg}</p>
+                            )}
+                            {catalogErr && (
+                                <p className="text-[12px] text-red-500">{catalogErr}</p>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                                <Field label="Clave (catálogo / vestuario)">
+                                    <input
+                                        type="text"
+                                        value={ejClave}
+                                        onChange={(e) => setEjClave(e.target.value)}
+                                        maxLength={30}
+                                        className={inputClass}
+                                        placeholder="Clave del ejercicio"
+                                    />
+                                </Field>
+                                <Field label={`Precio unitario (${anioCatalogo})`}>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={ejPrecio}
+                                        onChange={(e) => setEjPrecio(e.target.value)}
+                                        className={inputClass}
+                                        placeholder="0.00"
+                                    />
+                                </Field>
+                                <div className="sm:col-span-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleGuardarPrecio()}
+                                        disabled={savingPrecio || catalogBusy}
+                                        className="min-h-[44px] px-4 py-2.5 rounded-xl bg-brand-gold text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50"
+                                    >
+                                        {savingPrecio ? 'Guardando precio…' : 'Guardar precio del ejercicio'}
+                                    </button>
+                                    <p className="text-[11px] text-zinc-500 mt-2">
+                                        Vista previa: {fmtPrecio(ejPrecio === '' ? null : Number(String(ejPrecio).replace(',', '.')))}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 space-y-3">
+                                <h4 className="text-[12px] font-bold uppercase tracking-wide text-zinc-500">Tallas para {anioCatalogo}</h4>
+                                {tallasEj.length === 0 ? (
+                                    <p className="text-[13px] text-zinc-500">Sin tallas para este ejercicio. Agrega una abajo.</p>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {tallasEj.map((t) => (
+                                            <li
+                                                key={t.id}
+                                                className="flex items-center justify-between gap-2 rounded-lg border border-zinc-100 dark:border-zinc-800 px-3 py-2"
+                                            >
+                                                <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t.talla}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleQuitarTalla(t.id)}
+                                                    disabled={tallaBusyId != null || catalogBusy}
+                                                    className="text-[11px] font-bold text-red-600 hover:underline disabled:opacity-40"
+                                                >
+                                                    {tallaBusyId === t.id ? '…' : 'Quitar'}
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                                    <div className="flex-1">
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Nueva talla</label>
+                                        <input
+                                            type="text"
+                                            value={nuevaTalla}
+                                            onChange={(e) => setNuevaTalla(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAgregarTalla();
+                                                }
+                                            }}
+                                            className={inputClass}
+                                            placeholder="Ej. 28, M, GDE…"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAgregarTalla()}
+                                        disabled={tallaBusyId != null || catalogBusy}
+                                        className="min-h-[44px] px-4 py-2.5 rounded-xl border border-zinc-300 dark:border-zinc-600 text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                    >
+                                        {tallaBusyId === 'new' ? 'Agregando…' : 'Agregar talla'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                         <Link
                             to="/dashboard/productos"
@@ -224,7 +426,7 @@ export default function ProductoFormPage() {
                             disabled={saving}
                             className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all touch-manipulation"
                         >
-                            {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+                            {saving ? 'Guardando…' : isEdit ? 'Guardar datos del producto' : 'Crear'}
                         </button>
                     </div>
                 </form>

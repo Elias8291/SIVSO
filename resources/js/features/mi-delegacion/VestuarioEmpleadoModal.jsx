@@ -17,15 +17,27 @@ const catStyle = (partida) => CATEGORY_STYLE[partida] ?? CATEGORY_STYLE.default;
 
 const TALLAS_COMUNES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '36', '38', '40', '42', '44', '16', '17', '18', '19', '20', '21'];
 
+function fmtMx(n) {
+    if (n == null || Number.isNaN(Number(n))) return '—';
+    return `$${Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
     const st = catStyle(item.partida);
     return (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-xl overflow-hidden flex flex-col">
-            <div className={`${st.bg} px-3 py-2 flex items-center justify-between`}>
+        <div className={`bg-white dark:bg-zinc-900 border rounded-xl overflow-hidden flex flex-col ${item.heredado_preview ? 'border-amber-300/80 dark:border-amber-700/50 ring-1 ring-amber-200/50 dark:ring-amber-900/40' : 'border-zinc-100 dark:border-zinc-800/80'}`}>
+            <div className={`${st.bg} px-3 py-2 flex items-center justify-between gap-2 flex-wrap`}>
                 <span className={`text-[9px] font-bold uppercase tracking-wider ${st.text}`}>
                     {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                 </span>
-                {item.marca && <span className={`text-[9px] ${st.text} opacity-70`}>{item.marca}</span>}
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {item.heredado_preview && item.anio != null && (
+                        <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-200/90 text-amber-900 dark:bg-amber-900/50 dark:text-amber-200">
+                            Ref. {item.anio}
+                        </span>
+                    )}
+                    {item.marca && <span className={`text-[9px] ${st.text} opacity-70`}>{item.marca}</span>}
+                </div>
             </div>
             <div className="px-3 py-3 flex flex-col gap-2">
                 <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-2">{item.descripcion}</p>
@@ -50,15 +62,20 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, edit
                             <span className="text-xs font-bold">{item.talla || '—'}</span>
                         )}
                     </div>
-                    {item.precio_unitario && (
+                    {item.precio_unitario != null && (
                         <div className="flex flex-col ml-auto">
                             <span className="text-[8px] font-bold uppercase text-zinc-400">P.Unit</span>
                             <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400">
-                                ${Number(item.precio_unitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                {fmtMx(item.precio_unitario)}
                             </span>
                         </div>
                     )}
                 </div>
+                {item.importe != null && (
+                    <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                        Importe línea: <span className="font-bold text-zinc-700 dark:text-zinc-300">{fmtMx(item.importe)}</span>
+                    </p>
+                )}
             </div>
             {editable && (
                 <div className="px-3 pb-3 flex gap-2">
@@ -288,7 +305,15 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
         return [...new Set([anioCalendario, ...hist])].sort((a, b) => b - a);
     }, [data?.anios_disponibles, anioCalendario]);
 
+    const catalogAnio = useMemo(() => {
+        if (Number(anio) === Number(anioCalendario)) return anioCalendario;
+        return anio ?? data?.anio ?? anioCalendario;
+    }, [anio, anioCalendario, data?.anio]);
+
     if (!empleado) return null;
+
+    const estadoEj = data?.estado_actualizacion_ejercicio;
+    const pc = data?.presupuesto_comparativo;
 
     return (
         <>
@@ -314,20 +339,71 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                                     ))}
                                 </select>
                             </div>
-                            {!editable && (
+                            {!editable && estadoEj !== 'historico' && (
                                 <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium max-w-[220px] text-right leading-snug">
                                     Solo consulta. Para modificar talla, artículo o cantidad elija el ejercicio {anioCalendario}.
                                 </p>
                             )}
                         </div>
                     </div>
+
+                    {!loading && !error && data && (
+                        <div className="space-y-3">
+                            {estadoEj === 'pendiente_actualizar' && data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
+                                <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/30 px-4 py-3 text-[12px] text-amber-950 dark:text-amber-100 leading-relaxed">
+                                    <p className="font-bold uppercase tracking-wide text-[10px] text-amber-800 dark:text-amber-300 mb-1.5">Falta actualizar al ejercicio {anioCalendario}</p>
+                                    <p>
+                                        Se muestran las prendas del ejercicio <strong>{data.anio_referencia_vista}</strong> (precios de ese catálogo).
+                                        Cualquier cambio de talla, artículo o cantidad se registra en el ejercicio <strong>{anioCalendario}</strong>.
+                                    </p>
+                                </div>
+                            )}
+                            {estadoEj === 'actualizado' && Number(anio) === Number(anioCalendario) && (
+                                <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/25 px-4 py-2.5 text-[11px] text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                                    Ya hay vestuario registrado en <strong>{anioCalendario}</strong>. Como delegado puede seguir modificando tallas, artículos o cantidades.
+                                </div>
+                            )}
+                            {estadoEj === 'historico' && (
+                                <div className="rounded-xl border border-sky-200/80 dark:border-sky-900/40 bg-sky-50/70 dark:bg-sky-950/20 px-4 py-2.5 text-[11px] text-sky-900 dark:text-sky-200">
+                                    Consulta histórica del ejercicio <strong>{anio}</strong>. No se pueden aplicar cambios en años anteriores.
+                                </div>
+                            )}
+
+                            {pc?.ur && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="rounded-xl border border-zinc-200 dark:border-zinc-700/60 px-3 py-2.5 bg-white dark:bg-zinc-900/60">
+                                        <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Presupuesto UR — ejercicio actual ({pc.ur.ejercicio_actual?.anio})</p>
+                                        <p className="text-[13px] font-black text-zinc-900 dark:text-zinc-100">{fmtMx(pc.ur.ejercicio_actual?.total)}</p>
+                                        <p className="text-[10px] text-zinc-500 mt-0.5">IVA incl. {fmtMx(pc.ur.ejercicio_actual?.total_iva)}</p>
+                                    </div>
+                                    {pc.ur.ejercicio_anterior && (
+                                        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700/60 px-3 py-2.5 bg-zinc-50/80 dark:bg-zinc-800/40">
+                                            <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Presupuesto UR — ejercicio anterior ({pc.ur.ejercicio_anterior.anio})</p>
+                                            <p className="text-[13px] font-black text-zinc-800 dark:text-zinc-200">{fmtMx(pc.ur.ejercicio_anterior.total)}</p>
+                                            <p className="text-[10px] text-zinc-500 mt-0.5">IVA incl. {fmtMx(pc.ur.ejercicio_anterior.total_iva)}</p>
+                                            <p className="text-[9px] text-zinc-400 mt-1 leading-snug">Los importes pueden variar por cambios de precio y catálogo entre ejercicios.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {pc?.filas_en_pantalla && Number(pc.filas_en_pantalla.importe_estimado) > 0 && (
+                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                    Suma del listado (precios ejercicio {pc.filas_en_pantalla.anio_precios_aplicados}):{' '}
+                                    <span className="font-bold text-zinc-700 dark:text-zinc-300">{fmtMx(pc.filas_en_pantalla.importe_estimado)}</span>
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {loading ? (
                         <div className="py-12 flex justify-center"><span className="size-6 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" /></div>
                     ) : error ? (
                         <p className="py-8 text-center text-sm text-red-500">{error}</p>
                     ) : !data?.asignaciones?.length ? (
                         <p className="py-8 text-center text-sm text-zinc-500">
-                            Sin asignaciones de vestuario para el ejercicio {anio ?? anioCalendario}.
+                            {data?.estado_actualizacion_ejercicio === 'sin_historial'
+                                ? 'Sin historial de vestuario: no hay registros en el ejercicio actual ni en años anteriores.'
+                                : `Sin asignaciones de vestuario para el ejercicio ${anio ?? anioCalendario}.`}
                         </p>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -349,7 +425,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
             <ModalCambiarProducto
                 item={cambiarProd}
-                anio={anio ?? data?.anio}
+                anio={catalogAnio}
                 onClose={() => setCambiarProd(null)}
                 onSave={handleSaveProducto}
                 saving={saving}

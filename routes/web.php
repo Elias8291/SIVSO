@@ -81,6 +81,9 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
     Route::middleware('permission:editar_catalogo')->group(function () {
         Route::post('productos', [ProductoController::class, 'store']);
+        Route::put('productos/{id}/precio-ejercicio', [ProductoController::class, 'upsertPrecioEjercicio']);
+        Route::post('productos/{id}/talla-ejercicio', [ProductoController::class, 'agregarTallaEjercicio']);
+        Route::delete('productos/{id}/talla-ejercicio/{productoTalla}', [ProductoController::class, 'quitarTallaEjercicio']);
         Route::put('productos/{id}', [ProductoController::class, 'update']);
         Route::delete('productos/{id}', [ProductoController::class, 'destroy']);
         Route::patch('productos/{id}/toggle', [ProductoController::class, 'toggle']);

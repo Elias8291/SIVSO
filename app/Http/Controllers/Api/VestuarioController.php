@@ -77,15 +77,90 @@ class VestuarioController extends Controller
         return null;
     }
 
-    /** Solo permitir cambios sobre selecciones del año calendario en curso (histórico = consulta). */
-    private function soloSeleccionEjercicioActual(Seleccion $seleccion): ?JsonResponse
+    /**
+     * Si la selección es de un año anterior, crea (o reutiliza) la fila equivalente en el año calendario actual
+     * para que el delegado pueda actualizar vestuario arrastrando el ejercicio anterior.
+     */
+    private function materializarSeleccionAlAnioCalendario(Seleccion $seleccion, int $empleadoId): Seleccion
     {
         $anioActual = (int) date('Y');
-        if ((int) $seleccion->anio !== $anioActual) {
-            return response()->json(['message' => 'Solo se pueden modificar las selecciones del año en curso.'], 403);
+        $seleccion->loadMissing('productoTalla');
+        if ((int) $seleccion->empleado_id !== $empleadoId) {
+            return $seleccion;
+        }
+        if ((int) $seleccion->anio === $anioActual) {
+            return $seleccion;
         }
 
-        return null;
+        $ptOld = $seleccion->productoTalla;
+        if (! $ptOld) {
+            return $seleccion;
+        }
+
+        $ptRow = DB::table('producto_tallas')
+            ->where('producto_id', $ptOld->producto_id)
+            ->where('talla_id', $ptOld->talla_id)
+            ->where('anio', $anioActual)
+            ->first();
+
+        if (! $ptRow) {
+            $ptNewId = DB::table('producto_tallas')->insertGetId([
+                'producto_id'         => $ptOld->producto_id,
+                'talla_id'            => $ptOld->talla_id,
+                'anio'                => $anioActual,
+                'medidas'             => null,
+                'cantidad_disponible' => 0,
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ]);
+        } else {
+            $ptNewId = $ptRow->id;
+        }
+
+        $existing = Seleccion::where('empleado_id', $empleadoId)
+            ->where('anio', $anioActual)
+            ->where('producto_talla_id', $ptNewId)
+            ->first();
+
+        if ($existing) {
+            return $existing->load('productoTalla');
+        }
+
+        $nueva = Seleccion::create([
+            'empleado_id'       => $empleadoId,
+            'producto_talla_id' => $ptNewId,
+            'anio'              => $anioActual,
+            'cantidad'          => $seleccion->cantidad,
+        ]);
+
+        return $nueva->load('productoTalla');
+    }
+
+    /** Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio. */
+    private function totalGastoDependenciaAnio(?int $dependenciaId, int $anio): array
+    {
+        if (! $dependenciaId) {
+            return ['total' => 0.0, 'total_iva' => 0.0];
+        }
+
+        $raw = DB::table('selecciones AS s')
+            ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
+            ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
+            ->join('productos AS p', 'p.id', '=', 'pt.producto_id')
+            ->leftJoin('producto_precios AS pp', function ($j) {
+                $j->on('pp.producto_id', '=', 'p.id')->on('pp.anio', '=', 's.anio');
+            })
+            ->where('e.dependencia_id', $dependenciaId)
+            ->where('s.anio', $anio)
+            ->selectRaw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS t')
+            ->value('t');
+
+        $total = round((float) $raw, 2);
+
+        return [
+            'total'     => $total,
+            'total_iva' => round($total * 1.16, 2),
+        ];
     }
 
     public function updateTalla(Request $request, int $id): JsonResponse
@@ -256,14 +331,66 @@ class VestuarioController extends Controller
             'dependencia_nombre' => $emp->dependencia?->nombre ?? '',
         ];
 
+        $anioCalendario = (int) date('Y');
         $asignaciones = $this->getSelecciones($emp->id, $anio);
 
+        $anioReferenciaVista = null;
+        $vistaHeredaAnioAnterior = false;
+        $estadoActualizacionEjercicio = 'actualizado';
+
+        if ($anio === $anioCalendario && $asignaciones->isEmpty()) {
+            $prevYears = array_values(array_filter($aniosDisponibles, fn ($y) => (int) $y < $anioCalendario));
+            if (count($prevYears) > 0) {
+                $anioReferenciaVista = max($prevYears);
+                $asignaciones = $this->getSelecciones($emp->id, $anioReferenciaVista)
+                    ->map(fn (array $row) => array_merge($row, ['heredado_preview' => true]));
+                $vistaHeredaAnioAnterior = true;
+                $estadoActualizacionEjercicio = 'pendiente_actualizar';
+            } else {
+                $estadoActualizacionEjercicio = 'sin_historial';
+            }
+        } elseif ($anio !== $anioCalendario) {
+            $estadoActualizacionEjercicio = $asignaciones->isEmpty() ? 'sin_historial' : 'historico';
+        } elseif ($anio === $anioCalendario && $asignaciones->isNotEmpty()) {
+            $estadoActualizacionEjercicio = 'actualizado';
+        }
+
+        $depId = $emp->dependencia_id;
+        $prevYearsAll = array_values(array_filter($aniosDisponibles, fn ($y) => (int) $y < $anioCalendario));
+        $anioPresupuestoAnterior = count($prevYearsAll) ? max($prevYearsAll) : null;
+
+        $presupuestoComparativo = [
+            'ur' => [
+                'ejercicio_actual' => array_merge(
+                    ['anio' => $anioCalendario],
+                    $this->totalGastoDependenciaAnio($depId, $anioCalendario)
+                ),
+                'ejercicio_anterior' => $anioPresupuestoAnterior !== null
+                    ? array_merge(
+                        ['anio' => $anioPresupuestoAnterior],
+                        $this->totalGastoDependenciaAnio($depId, $anioPresupuestoAnterior)
+                    )
+                    : null,
+            ],
+            'filas_en_pantalla' => [
+                'importe_estimado' => round(
+                    (float) $asignaciones->sum(fn ($r) => (float) ($r['importe'] ?? 0)),
+                    2
+                ),
+                'anio_precios_aplicados' => $vistaHeredaAnioAnterior ? $anioReferenciaVista : $anio,
+            ],
+        ];
+
         return response()->json([
-            'empleado'          => $empleadoData,
-            'asignaciones'      => $asignaciones,
-            'anio'              => $anio,
-            'anios_disponibles' => $aniosDisponibles,
-            'anio_calendario'   => (int) date('Y'),
+            'empleado'                       => $empleadoData,
+            'asignaciones'                   => $asignaciones,
+            'anio'                           => $anio,
+            'anios_disponibles'              => $aniosDisponibles,
+            'anio_calendario'                => $anioCalendario,
+            'vista_hereda_anio_anterior'     => $vistaHeredaAnioAnterior,
+            'anio_referencia_vista'          => $anioReferenciaVista,
+            'estado_actualizacion_ejercicio' => $estadoActualizacionEjercicio,
+            'presupuesto_comparativo'        => $presupuestoComparativo,
         ]);
     }
 
@@ -274,9 +401,7 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
-            return $blocked;
-        }
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado);
 
         $request->validate(['talla' => 'required|string|max:30']);
 
@@ -315,9 +440,7 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
-            return $blocked;
-        }
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado);
 
         $request->validate([
             'producto_id' => 'required|integer|exists:productos,id',
@@ -364,9 +487,7 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->soloSeleccionEjercicioActual($seleccion)) {
-            return $blocked;
-        }
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado);
 
         if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
             return $blocked;
@@ -404,6 +525,7 @@ class VestuarioController extends Controller
             ->map(fn ($c) => [
                 'id'              => $c->id,
                 'producto_id'     => $c->producto_id,
+                'anio'            => (int) $c->anio,
                 'cantidad'        => (int) $c->cantidad,
                 'talla'           => $c->talla,
                 'talla_id'        => $c->talla_id,

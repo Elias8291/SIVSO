@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ToggleLeft, ToggleRight, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +13,11 @@ const CATEGORY_STYLE = {
     2721: { bg: 'bg-violet-50 dark:bg-violet-900/20', text: 'text-violet-700 dark:text-violet-400', dot: 'bg-violet-400' },
 };
 const catStyle = (partida) => CATEGORY_STYLE[partida] ?? CATEGORY_STYLE.default;
+
+function fmtPrecio(v) {
+    if (v == null || v === '') return '—';
+    return `$${Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 function ProductoCard({ item }) {
     const st = catStyle(item.partida);
@@ -32,6 +37,10 @@ function ProductoCard({ item }) {
                     {item.descripcion}
                 </p>
                 <div className="flex items-center gap-4 flex-wrap mt-auto pt-3 border-t border-zinc-50 dark:border-zinc-800/50">
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Precio</span>
+                        <span className="text-xs font-black text-brand-gold">{fmtPrecio(item.precio_unitario)}</span>
+                    </div>
                     <div className="flex flex-col">
                         <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Unidad</span>
                         <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{item.unidad || '—'}</span>
@@ -57,9 +66,21 @@ export default function ProductosPage() {
     const { can } = useAuth();
     const canEdit = can('editar_catalogo');
     const [viewMode, setViewMode] = useState(canEdit ? 'table' : 'grid');
-    
+    const [anioFiltro, setAnioFiltro] = useState(() => new Date().getFullYear());
+
     const { data: productos, meta, loading, search, setSearch, page, setPage, reload } =
-        usePaginatedApi('/api/productos', { perPage: viewMode === 'grid' ? 24 : 20 });
+        usePaginatedApi('/api/productos', {
+            perPage: viewMode === 'grid' ? 24 : 20,
+            extra: { anio: anioFiltro },
+            extraKey: String(anioFiltro),
+        });
+
+    const aniosOpciones = useMemo(() => {
+        const fromApi = meta?.anios_precios;
+        const cur = new Date().getFullYear();
+        if (fromApi?.length) return [...new Set([cur, ...fromApi])].sort((a, b) => b - a);
+        return [cur, cur - 1, cur - 2];
+    }, [meta?.anios_precios]);
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
@@ -109,6 +130,13 @@ export default function ProductosPage() {
             ),
         },
         {
+            key: 'precio_unitario',
+            label: 'Precio',
+            render: (_, row) => (
+                <span className="text-[13px] font-bold text-brand-gold tabular-nums">{fmtPrecio(row.precio_unitario)}</span>
+            ),
+        },
+        {
             key: 'activo',
             label: 'Estado',
             render: (v) => <StatusBadge status={v ? 'activo' : 'inactivo'} />,
@@ -119,7 +147,7 @@ export default function ProductosPage() {
         <div>
             <PageHeader
                 title="Productos"
-                description="Catálogo de artículos de vestuario y calzado."
+                description={`Catálogo de artículos — precios y claves del ejercicio ${anioFiltro}.`}
                 actions={
                     canEdit ? (
                         <>
@@ -141,6 +169,19 @@ export default function ProductosPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <label className="sr-only">Año</label>
+                            <select
+                                value={anioFiltro}
+                                onChange={(e) => setAnioFiltro(Number(e.target.value))}
+                                className="px-2.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-900 text-[12px] font-bold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/25"
+                                title="Filtrar precios por ejercicio"
+                            >
+                                {aniosOpciones.map((a) => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/60 rounded-xl p-1 shrink-0">
                             <button
                                 onClick={() => setViewMode('grid')}
@@ -162,7 +203,7 @@ export default function ProductosPage() {
             />
 
             {viewMode === 'table' ? (
-                <Card title={`Productos${meta.total ? ` (${meta.total})` : ''}`}>
+                <Card title={`Productos${meta.total ? ` (${meta.total})` : ''} · ${anioFiltro}`}>
                     <DataTable
                         columns={columns}
                         data={productos}
