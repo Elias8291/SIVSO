@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Shirt, Ruler, RefreshCw, CheckCircle, Search, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Shirt, Ruler, RefreshCw, CheckCircle, Search, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
@@ -18,6 +18,35 @@ const TALLAS_COMUNES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL',
     '31', '32', '33', '34', '36', '38', '40', '42', '44',
     '16', '17', '18', '19', '20', '21'];
 
+/** Fila base + parche pendiente (sin mutar servidor). */
+function mergedRow(orig, patch) {
+    if (!patch) return orig;
+    const o = { ...orig };
+    if (patch.producto_id != null) o.producto_id = patch.producto_id;
+    if (patch.talla !== undefined && patch.talla !== null) o.talla = patch.talla;
+    if (patch.cantidad != null) o.cantidad = patch.cantidad;
+    if (patch.descripcion) o.descripcion = patch.descripcion;
+    if (patch.clave_vestuario != null && patch.clave_vestuario !== '') {
+        o.clave_vestuario = patch.clave_vestuario;
+        o.codigo = patch.clave_vestuario;
+    }
+    return o;
+}
+
+function rowsEquivalent(orig, patch) {
+    if (!patch || Object.keys(patch).length === 0) return true;
+    const m = mergedRow(orig, patch);
+    return m.producto_id === orig.producto_id
+        && String(m.talla ?? '') === String(orig.talla ?? '')
+        && Number(m.cantidad) === Number(orig.cantidad);
+}
+
+function displayItem(orig, patch) {
+    const m = mergedRow(orig, patch);
+    const pendiente = patch && !rowsEquivalent(orig, patch);
+    return { ...m, _pendiente: !!pendiente };
+}
+
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 function Toast({ message, onDone }) {
     useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
@@ -29,7 +58,7 @@ function Toast({ message, onDone }) {
     );
 }
 
-function ModalCantidad({ item, onClose, onSave, saving }) {
+function ModalCantidad({ item, onClose, onApply }) {
     const [cantidad, setCantidad] = useState(item?.cantidad ?? 1);
     useEffect(() => { if (item) setCantidad(item.cantidad ?? 1); }, [item]);
     return (
@@ -37,8 +66,8 @@ function ModalCantidad({ item, onClose, onSave, saving }) {
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">Cancelar</button>
-                    <button onClick={() => onSave(cantidad)} disabled={saving || cantidad < 1} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
-                        {saving ? 'Guardando…' : 'Guardar'}
+                    <button type="button" onClick={() => onApply(cantidad)} disabled={cantidad < 1} className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-50 active:scale-[0.98] touch-manipulation">
+                        Aceptar
                     </button>
                 </div>
             }
@@ -58,15 +87,20 @@ function ModalCantidad({ item, onClose, onSave, saving }) {
 function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
     const st = catStyle(item.partida);
     return (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl overflow-hidden flex flex-col">
+        <div className={`bg-white dark:bg-zinc-900 border rounded-2xl overflow-hidden flex flex-col ${item._pendiente ? 'border-amber-300/80 dark:border-amber-600/50 ring-1 ring-amber-400/25' : 'border-zinc-100 dark:border-zinc-800/80'}`}>
             {/* Encabezado coloreado */}
-            <div className={`${st.bg} px-4 py-3 flex items-center justify-between`}>
-                <div className="flex items-center gap-2">
-                    <span className={`size-1.5 rounded-full ${st.dot}`} />
-                    <span className={`text-[9px] font-bold uppercase tracking-widest ${st.text}`}>
+            <div className={`${st.bg} px-4 py-3 flex items-center justify-between gap-2`}>
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className={`size-1.5 rounded-full shrink-0 ${st.dot}`} />
+                    <span className={`text-[9px] font-bold uppercase tracking-widest ${st.text} truncate`}>
                         {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                     </span>
                 </div>
+                {item._pendiente && (
+                    <span className="shrink-0 text-[8px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+                        Pendiente
+                    </span>
+                )}
             </div>
 
             {/* Cuerpo */}
@@ -132,7 +166,7 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, edit
 }
 
 /* ── Modal editar talla ───────────────────────────────────────────────────── */
-function ModalTalla({ item, onClose, onSave, saving }) {
+function ModalTalla({ item, onClose, onApply }) {
     const [talla, setTalla] = useState(item?.talla ?? '');
     useEffect(() => { if (item) setTalla(item.talla ?? ''); }, [item]);
 
@@ -144,9 +178,9 @@ function ModalTalla({ item, onClose, onSave, saving }) {
                         className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">
                         Cancelar
                     </button>
-                    <button onClick={() => onSave(talla)} disabled={saving || !talla}
+                    <button type="button" onClick={() => onApply(talla)} disabled={!talla}
                         className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] touch-manipulation">
-                        {saving ? 'Guardando…' : 'Guardar talla'}
+                        Aceptar
                     </button>
                 </div>
             }
@@ -188,7 +222,7 @@ function ModalTalla({ item, onClose, onSave, saving }) {
 }
 
 /* ── Modal cambiar producto ───────────────────────────────────────────────── */
-function ModalCambiarProducto({ item, anio, onClose, onSave, saving }) {
+function ModalCambiarProducto({ item, anio, onClose, onApply }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -218,9 +252,9 @@ function ModalCambiarProducto({ item, anio, onClose, onSave, saving }) {
                         className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">
                         Cancelar
                     </button>
-                    <button onClick={() => onSave(selected.id, talla)} disabled={saving || !selected}
+                    <button type="button" onClick={() => onApply(selected, talla)} disabled={!selected}
                         className="w-full sm:w-auto min-h-[44px] py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] touch-manipulation">
-                        {saving ? 'Guardando…' : 'Confirmar cambio'}
+                        Aceptar
                     </button>
                 </div>
             }
@@ -290,10 +324,12 @@ function ModalCambiarProducto({ item, anio, onClose, onSave, saving }) {
 /* ── Página principal ─────────────────────────────────────────────────────── */
 export default function MiVestuarioPage() {
     const [data, setData] = useState(null);
+    const [baseline, setBaseline] = useState([]);
+    const [pendingEdits, setPendingEdits] = useState({});
     const [apiError, setApiError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
-    const [saving, setSaving] = useState(false);
+    const [savingBatch, setSavingBatch] = useState(false);
     const [anio, setAnio] = useState(null);
 
     const [editTalla, setEditTalla] = useState(null);
@@ -311,6 +347,8 @@ export default function MiVestuarioPage() {
             .then(res => {
                 if (res && typeof res === 'object' && 'empleado' in res) {
                     setData(res);
+                    setBaseline((res.asignaciones ?? []).map((a) => ({ ...a })));
+                    setPendingEdits({});
                     setPeriodoActivo(res.periodo_activo ?? null);
                     if (!anioParam && res.anio) setAnio(res.anio);
                 } else {
@@ -339,45 +377,119 @@ export default function MiVestuarioPage() {
 
     const showToast = (msg) => setToast(msg);
 
-    const handleSaveTalla = async (talla) => {
-        setSaving(true);
-        try {
-            await api.put(`/api/mi-vestuario/${editTalla.id}/talla`, { talla });
-            showToast('Talla actualizada.');
-            setEditTalla(null);
-            load(anio);
-        } catch (err) { alert(err.message); }
-        finally { setSaving(false); }
+    const upsertPending = useCallback((seleccionId, partial) => {
+        setPendingEdits((prev) => {
+            const b = baseline.find((x) => x.id === seleccionId);
+            if (!b) return prev;
+            const cur = { ...(prev[seleccionId] || {}), ...partial };
+            if (rowsEquivalent(b, cur)) {
+                const next = { ...prev };
+                delete next[seleccionId];
+                return next;
+            }
+            return { ...prev, [seleccionId]: cur };
+        });
+    }, [baseline]);
+
+    const handleApplyTalla = (talla) => {
+        if (!editTalla) return;
+        const t = String(talla ?? '').trim();
+        upsertPending(editTalla.id, { talla: t.toUpperCase() });
+        setEditTalla(null);
     };
 
-    const handleSaveProducto = async (productoId, talla) => {
-        setSaving(true);
-        try {
-            await api.put(`/api/mi-vestuario/${cambiarProd.id}/producto`, { producto_id: productoId, talla });
-            showToast('Artículo actualizado.');
-            setCambiarProd(null);
-            load(anio);
-        } catch (err) { alert(err.message); }
-        finally { setSaving(false); }
+    const handleApplyProducto = (selected, tallaStr) => {
+        if (!cambiarProd || !selected) return;
+        const t = String(tallaStr ?? '').trim().toUpperCase();
+        const sid = cambiarProd.id;
+        setPendingEdits((prev) => {
+            const b = baseline.find((x) => x.id === sid);
+            if (!b) return prev;
+            const prevPatch = prev[sid] || {};
+            const cur = {
+                ...prevPatch,
+                producto_id: selected.id,
+                descripcion: selected.descripcion,
+                clave_vestuario: selected.clave_vestuario ?? selected.codigo,
+            };
+            if (t) cur.talla = t;
+            else delete cur.talla;
+
+            if (rowsEquivalent(b, cur)) {
+                const next = { ...prev };
+                delete next[sid];
+                return next;
+            }
+            return { ...prev, [sid]: cur };
+        });
+        setCambiarProd(null);
     };
 
-    const handleSaveCantidad = async (cantidad) => {
-        setSaving(true);
-        try {
-            await api.put(`/api/mi-vestuario/${editCantidad.id}/cantidad`, { cantidad });
-            showToast('Cantidad actualizada.');
-            setEditCantidad(null);
-            load(anio);
-        } catch (err) { alert(err.message); }
-        finally { setSaving(false); }
+    const handleApplyCantidad = (cantidad) => {
+        if (!editCantidad) return;
+        const n = Math.max(1, parseInt(cantidad, 10) || 1);
+        upsertPending(editCantidad.id, { cantidad: n });
+        setEditCantidad(null);
     };
 
-    const asignaciones = (data?.asignaciones ?? []).filter(a =>
+    const pendingCount = Object.keys(pendingEdits).length;
+
+    const asignacionesMerged = useMemo(() => {
+        const rows = data?.asignaciones ?? [];
+        return rows.map((row) => {
+            const b = baseline.find((x) => x.id === row.id) ?? row;
+            return displayItem(b, pendingEdits[row.id]);
+        });
+    }, [data?.asignaciones, baseline, pendingEdits]);
+
+    const asignaciones = asignacionesMerged.filter((a) =>
         debouncedFilter
             ? a.descripcion.toLowerCase().includes(debouncedFilter.toLowerCase()) ||
             (a.clave_vestuario ?? '').toLowerCase().includes(debouncedFilter.toLowerCase())
             : true
     );
+
+    const confirmarCambios = async () => {
+        if (pendingCount === 0) return;
+        setSavingBatch(true);
+        try {
+            for (const idStr of Object.keys(pendingEdits)) {
+                const id = Number(idStr);
+                const orig = baseline.find((x) => x.id === id);
+                const patch = pendingEdits[id];
+                if (!orig || !patch) continue;
+
+                const m = mergedRow(orig, patch);
+                let didProducto = false;
+                if (patch.producto_id != null && patch.producto_id !== orig.producto_id) {
+                    await api.put(`/api/mi-vestuario/${id}/producto`, {
+                        producto_id: patch.producto_id,
+                        talla: (m.talla || '').trim(),
+                    });
+                    didProducto = true;
+                }
+                if (!didProducto && String(m.talla ?? '') !== String(orig.talla ?? '')) {
+                    await api.put(`/api/mi-vestuario/${id}/talla`, { talla: m.talla });
+                }
+                if (Number(m.cantidad) !== Number(orig.cantidad)) {
+                    await api.put(`/api/mi-vestuario/${id}/cantidad`, { cantidad: m.cantidad });
+                }
+            }
+            showToast('Vestuario actualizado correctamente.');
+            setPendingEdits({});
+            load(anio ?? data?.anio);
+        } catch (err) {
+            alert(err.message || 'No se pudieron guardar los cambios.');
+        } finally {
+            setSavingBatch(false);
+        }
+    };
+
+    const descartarPendientes = () => {
+        if (pendingCount === 0) return;
+        if (!window.confirm('¿Descartar todos los cambios pendientes?')) return;
+        setPendingEdits({});
+    };
 
 
     if (loading) return (
@@ -440,7 +552,7 @@ export default function MiVestuarioPage() {
     const editable = !!periodoActivo;
 
     return (
-        <div>
+        <div className={pendingCount > 0 && editable ? 'pb-28 sm:pb-24' : ''}>
             {/* Encabezado */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -495,7 +607,7 @@ export default function MiVestuarioPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                     </svg>
                     {periodoActivo
-                        ? `Periodo activo hasta el ${(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()} — puedes actualizar tus tallas y artículos.`
+                        ? `Periodo activo hasta el ${(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()} — puedes actualizar tus tallas y artículos. Los cambios se guardan cuando pulsas «Guardar cambios».`
                         : 'No hay periodo activo — la edición no está disponible por el momento.'
                     }
                 </div>
@@ -524,9 +636,45 @@ export default function MiVestuarioPage() {
                 </div>
             )}
 
-            <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onSave={handleSaveTalla} saving={saving} />
-            <ModalCambiarProducto item={cambiarProd} anio={anio ?? data?.anio} onClose={() => setCambiarProd(null)} onSave={handleSaveProducto} saving={saving} />
-            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onSave={handleSaveCantidad} saving={saving} />
+            <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
+            <ModalCambiarProducto item={cambiarProd} anio={anio ?? data?.anio} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
+            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
+
+            {pendingCount > 0 && editable && (
+                <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                    <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                            <AlertCircle className="size-5 text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
+                            <div className="min-w-0">
+                                <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">
+                                    {pendingCount === 1 ? '1 cambio pendiente' : `${pendingCount} cambios pendientes`}
+                                </p>
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                                    Revisa las tarjetas marcadas y guarda cuando todo esté correcto.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col-reverse sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+                            <button
+                                type="button"
+                                onClick={descartarPendientes}
+                                disabled={savingBatch}
+                                className="min-h-[44px] px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
+                            >
+                                Descartar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmarCambios}
+                                disabled={savingBatch}
+                                className="min-h-[44px] px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50"
+                            >
+                                {savingBatch ? 'Guardando…' : 'Guardar cambios'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </div>
