@@ -37,7 +37,8 @@ class PresupuestoController extends Controller
             ->select([
                 'e.dependencia_id',
                 'pa.numero AS partida',
-                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0) * 1.16) AS gastado'),
+                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS gastado'),
+                DB::raw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0) * 1.16) AS gastado_iva'),
                 DB::raw('SUM(s.cantidad) AS total_cantidad'),
                 DB::raw('COUNT(s.id) AS registros'),
             ])
@@ -54,62 +55,72 @@ class PresupuestoController extends Controller
 
         $partidas = $gastados->pluck('partida')->unique()->sort()->values();
 
-        $gastadoMap   = [];
-        $cantidadMap  = [];
-        $registrosMap = [];
+        $gastadoMap    = [];
+        $gastadoIvaMap = [];
+        $cantidadMap   = [];
+        $registrosMap  = [];
         foreach ($gastados as $g) {
             $key = "{$g->dependencia_id}_{$g->partida}";
-            $gastadoMap[$key]   = (float) $g->gastado;
-            $cantidadMap[$key]  = (int) $g->total_cantidad;
-            $registrosMap[$key] = (int) $g->registros;
+            $gastadoMap[$key]    = (float) $g->gastado;
+            $gastadoIvaMap[$key] = (float) $g->gastado_iva;
+            $cantidadMap[$key]   = (int) $g->total_cantidad;
+            $registrosMap[$key]  = (int) $g->registros;
         }
 
-        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $cantidadMap, $registrosMap, $trabPorDep) {
+        $rows = $dependencias->map(function ($dep) use ($partidas, $gastadoMap, $gastadoIvaMap, $cantidadMap, $registrosMap, $trabPorDep) {
             $columnas = [];
-            $totalGastado  = 0;
-            $totalPiezas   = 0;
+            $totalGastado    = 0;
+            $totalGastadoIva = 0;
+            $totalPiezas     = 0;
 
             foreach ($partidas as $pa) {
-                $key      = "{$dep->id}_{$pa}";
-                $gastado  = $gastadoMap[$key] ?? 0;
-                $cantidad = $cantidadMap[$key] ?? 0;
+                $key        = "{$dep->id}_{$pa}";
+                $gastado    = $gastadoMap[$key] ?? 0;
+                $gastadoIva = $gastadoIvaMap[$key] ?? 0;
+                $cantidad   = $cantidadMap[$key] ?? 0;
 
                 $columnas[] = [
                     'partida_especifica' => $pa,
                     'gastado'            => round($gastado, 2),
+                    'gastado_iva'        => round($gastadoIva, 2),
                     'cantidad'           => $cantidad,
                     'registros'          => $registrosMap[$key] ?? 0,
                     'limite'             => 0,
                     'porcentaje'         => null,
                 ];
 
-                $totalGastado += $gastado;
-                $totalPiezas  += $cantidad;
+                $totalGastado    += $gastado;
+                $totalGastadoIva += $gastadoIva;
+                $totalPiezas     += $cantidad;
             }
 
             return [
-                'ur'            => $dep->clave,
-                'nombre'        => $dep->nombre,
-                'trabajadores'  => (int) ($trabPorDep[$dep->id] ?? 0),
-                'columnas'      => $columnas,
-                'total_gastado' => round($totalGastado, 2),
-                'total_piezas'  => $totalPiezas,
-                'total_limite'  => 0,
-                'total_pct'     => null,
+                'ur'                => $dep->clave,
+                'nombre'            => $dep->nombre,
+                'trabajadores'      => (int) ($trabPorDep[$dep->id] ?? 0),
+                'columnas'          => $columnas,
+                'total_gastado'     => round($totalGastado, 2),
+                'total_gastado_iva' => round($totalGastadoIva, 2),
+                'total_piezas'      => $totalPiezas,
+                'total_limite'      => 0,
+                'total_pct'         => null,
             ];
         })->filter(fn ($r) => $r['total_gastado'] > 0)->values();
 
-        $totalesGlobales = $partidas->map(function ($pa) use ($gastadoMap, $cantidadMap, $dependencias) {
-            $gastado  = 0;
-            $cantidad = 0;
+        $totalesGlobales = $partidas->map(function ($pa) use ($gastadoMap, $gastadoIvaMap, $cantidadMap, $dependencias) {
+            $gastado    = 0;
+            $gastadoIva = 0;
+            $cantidad   = 0;
             foreach ($dependencias as $dep) {
                 $key = "{$dep->id}_{$pa}";
-                $gastado  += $gastadoMap[$key] ?? 0;
-                $cantidad += $cantidadMap[$key] ?? 0;
+                $gastado    += $gastadoMap[$key] ?? 0;
+                $gastadoIva += $gastadoIvaMap[$key] ?? 0;
+                $cantidad   += $cantidadMap[$key] ?? 0;
             }
             return [
                 'partida_especifica' => $pa,
                 'gastado'            => round($gastado, 2),
+                'gastado_iva'        => round($gastadoIva, 2),
                 'cantidad'           => $cantidad,
                 'limite'             => 0,
                 'porcentaje'         => null,

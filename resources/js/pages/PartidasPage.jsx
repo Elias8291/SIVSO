@@ -47,7 +47,7 @@ function nivelAlerta(pct) {
     return 'ok';
 }
 
-function StatSummary({ label, gastado, cantidad, limite, pct, icon }) {
+function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon }) {
     const nivel = nivelAlerta(pct);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 flex items-start gap-4">
@@ -56,7 +56,12 @@ function StatSummary({ label, gastado, cantidad, limite, pct, icon }) {
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-zinc-400 mb-1">{label}</p>
-                <p className="text-[18px] font-extrabold text-zinc-800 dark:text-zinc-100 leading-none">{fmtCompact(gastado)}</p>
+                <p className="text-[18px] font-extrabold text-zinc-800 dark:text-zinc-100 leading-none">
+                    {fmtCompact(gastado)} <span className="text-[11px] font-medium text-zinc-400">s/IVA</span>
+                </p>
+                <p className="text-[15px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 leading-none">
+                    {fmtCompact(gastadoIva)} <span className="text-[10px] font-medium opacity-70">c/IVA</span>
+                </p>
                 {cantidad > 0 && (
                     <p className="text-[11px] text-zinc-400 mt-1">{fmtNum(cantidad)} piezas</p>
                 )}
@@ -82,11 +87,14 @@ function CeldaPartida({ col }) {
     const nivel = nivelAlerta(col.porcentaje);
     return (
         <td className="px-4 py-3 align-top">
-            <div className="min-w-[130px]">
+            <div className="min-w-[150px]">
                 <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400'
                     : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400'
                         : 'text-zinc-700 dark:text-zinc-300'
                     }`}>{fmt(col.gastado)}</p>
+                <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {fmt(col.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
+                </p>
 
                 <p className="text-[11px] text-zinc-400 mt-0.5">
                     {fmtNum(col.cantidad)} pzas
@@ -149,26 +157,29 @@ export default function PartidasPage() {
     };
 
     // Totales calculados desde las filas visibles (filtra correctamente con búsqueda)
-    const { sumByPartida, totalGastado, totalPiezas, totalLimite } = useMemo(() => {
+    const { sumByPartida, totalGastado, totalGastadoIva, totalPiezas, totalLimite } = useMemo(() => {
         const byPart = {};
         let tGastado = 0;
+        let tGastadoIva = 0;
         let tPiezas = 0;
         let tLimite = 0;
 
         for (const row of rows) {
             for (const col of row.columnas) {
                 const pa = col.partida_especifica;
-                if (!byPart[pa]) byPart[pa] = { gastado: 0, cantidad: 0, limite: 0 };
+                if (!byPart[pa]) byPart[pa] = { gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0 };
                 byPart[pa].gastado += col.gastado;
+                byPart[pa].gastado_iva += col.gastado_iva ?? 0;
                 byPart[pa].cantidad += col.cantidad;
                 byPart[pa].limite += col.limite;
             }
             tGastado += row.total_gastado;
+            tGastadoIva += row.total_gastado_iva ?? 0;
             tPiezas += row.total_piezas ?? 0;
             tLimite += row.total_limite;
         }
 
-        return { sumByPartida: byPart, totalGastado: tGastado, totalPiezas: tPiezas, totalLimite: tLimite };
+        return { sumByPartida: byPart, totalGastado: tGastado, totalGastadoIva: tGastadoIva, totalPiezas: tPiezas, totalLimite: tLimite };
     }, [rows]);
 
     const totalPct = totalLimite > 0 ? Math.min(Math.round((totalGastado / totalLimite) * 100), 999) : null;
@@ -192,7 +203,7 @@ export default function PartidasPage() {
         <div>
             <PageHeader
                 title="Partidas Presupuestales"
-                description={`Gasto por partida (IVA incluido) · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
+                description={`Gasto por partida · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
                 actions={
                     <div className="flex items-center gap-2">
                         <select
@@ -222,18 +233,20 @@ export default function PartidasPage() {
                 <StatSummary
                     label="Total General"
                     gastado={totalGastado}
+                    gastadoIva={totalGastadoIva}
                     cantidad={totalPiezas}
                     limite={totalLimite}
                     pct={totalPct}
                     icon={<DollarSign size={18} strokeWidth={1.8} />}
                 />
                 {partidas.map((pa) => {
-                    const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0, limite: 0 };
+                    const s = sumByPartida[pa] ?? { gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0 };
                     return (
                         <StatSummary
                             key={pa}
                             label={`Partida ${pa}`}
                             gastado={s.gastado}
+                            gastadoIva={s.gastado_iva}
                             cantidad={s.cantidad}
                             limite={s.limite}
                             pct={s.limite > 0 ? Math.round((s.gastado / s.limite) * 100) : null}
@@ -334,6 +347,9 @@ export default function PartidasPage() {
                                                     <p className="text-[14px] font-bold text-zinc-700 dark:text-zinc-200 leading-none">
                                                         {fmt(row.total_gastado)}
                                                     </p>
+                                                    <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                        {fmt(row.total_gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
+                                                    </p>
                                                     <p className="text-[11px] text-zinc-400 mt-0.5">
                                                         {fmtNum(row.total_piezas ?? 0)} pzas
                                                     </p>
@@ -368,16 +384,18 @@ export default function PartidasPage() {
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{rows.length} dependencias</p>
                                             </td>
                                             {partidas.map((pa) => {
-                                                const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0 };
+                                                const s = sumByPartida[pa] ?? { gastado: 0, gastado_iva: 0, cantidad: 0 };
                                                 return (
                                                     <td key={pa} className="px-4 py-4">
                                                         <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(s.gastado)}</p>
+                                                        <p className="text-[13px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(s.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(s.cantidad)} pzas</p>
                                                     </td>
                                                 );
                                             })}
                                             <td className="px-4 py-4">
                                                 <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
+                                                <p className="text-[14px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(totalPiezas)} pzas</p>
                                             </td>
                                             <td />
@@ -417,6 +435,9 @@ export default function PartidasPage() {
                                                             <p className={`text-[14px] font-bold leading-none ${nivel === 'critico' ? 'text-red-600 dark:text-red-400' : nivel === 'alto' ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}`}>
                                                                 {fmt(col.gastado)}
                                                             </p>
+                                                            <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                                {fmt(col.gastado_iva)} <span className="text-[9px] font-normal opacity-70">c/IVA</span>
+                                                            </p>
                                                             <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(col.cantidad)} pzas</p>
                                                             {col.limite > 0 && (
                                                                 <>
@@ -434,6 +455,9 @@ export default function PartidasPage() {
                                                     <div>
                                                         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">Total Gastado</p>
                                                         <p className="text-[16px] font-black text-zinc-800 dark:text-zinc-100 leading-none">{fmt(row.total_gastado)}</p>
+                                                        <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                                            {fmt(row.total_gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
+                                                        </p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(row.total_piezas ?? 0)} piezas</p>
                                                     </div>
                                                     {row.total_limite > 0 && (
@@ -456,22 +480,26 @@ export default function PartidasPage() {
                                     <p className="text-[13px] font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 text-center">Total General ({rows.length} UR)</p>
                                     <div className="flex flex-wrap gap-4 justify-between">
                                         {partidas.map((pa) => {
-                                            const s = sumByPartida[pa] ?? { gastado: 0, cantidad: 0 };
+                                            const s = sumByPartida[pa] ?? { gastado: 0, gastado_iva: 0, cantidad: 0 };
                                             return (
                                                 <div key={pa}>
                                                     <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Partida {pa}</p>
                                                     <p className="text-[15px] font-bold text-zinc-700 dark:text-zinc-200 mt-0.5">{fmt(s.gastado)}</p>
+                                                    <p className="text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">{fmt(s.gastado_iva)} <span className="text-[9px] opacity-70">c/IVA</span></p>
                                                     <p className="text-[10px] text-zinc-400">{fmtNum(s.cantidad)} pzas</p>
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-center">
+                                    <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex justify-between items-end">
                                         <div>
                                             <span className="text-[13px] font-black uppercase tracking-widest text-zinc-500">GRAN TOTAL</span>
                                             <p className="text-[10px] text-zinc-400">{fmtNum(totalPiezas)} piezas</p>
                                         </div>
-                                        <span className="font-black text-brand-gold text-[18px]">{fmt(totalGastado)}</span>
+                                        <div className="text-right">
+                                            <span className="font-black text-brand-gold text-[18px]">{fmt(totalGastado)}</span>
+                                            <p className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
