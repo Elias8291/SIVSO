@@ -18,6 +18,11 @@ trait ImportsCsv
         $handle = fopen($path, 'r');
         $header = fgetcsv($handle);
 
+        // Strip BOM from first column header
+        if ($header && isset($header[0])) {
+            $header[0] = preg_replace('/^\x{FEFF}/u', '', $header[0]);
+        }
+
         $rows = [];
         $count = 0;
 
