@@ -69,13 +69,14 @@ class RolesPermissionsSeeder extends Seeder
             'ver_delegaciones',
         ]);
 
+        // Colaborador: solo inicio personal, vestuario, cuenta y avisos (sin catálogo ni módulos de gestión)
         $empleado = Role::firstOrCreate(['name' => 'empleado']);
         $empleado->syncPermissions([
             'ver_dashboard',
             'ver_notificaciones',
-            'ver_catalogo',
             'ver_selecciones',
             'crear_seleccion',
+            'editar_seleccion',
         ]);
 
         $consulta = Role::firstOrCreate(['name' => 'consulta']);

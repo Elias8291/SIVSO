@@ -71,8 +71,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::put('empleados/{empleado}/vestuario/{id}/producto', [VestuarioController::class, 'empleadoUpdateProducto']);
     });
 
-    // Productos
-    Route::middleware('permission:ver_catalogo')->group(function () {
+    // Productos (catálogo o consulta desde Mi vestuario — sin menú de productos)
+    Route::middleware('permission:ver_catalogo|ver_selecciones|editar_seleccion')->group(function () {
         Route::get('productos', [ProductoController::class, 'index']);
         Route::get('productos/{id}', [ProductoController::class, 'show']);
     });

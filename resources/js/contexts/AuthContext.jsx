@@ -35,6 +35,7 @@ export function useAuth() {
             logoutUrl: '/logout',
             csrfToken: '',
             permissions: [],
+            roles: [],
             can: () => true,
             canAny: () => true,
             canAll: () => true,
