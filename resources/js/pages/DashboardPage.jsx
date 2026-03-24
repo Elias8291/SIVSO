@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Building2,
-    UserCheck, Layers, BarChart3,
+    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Layers,
 } from 'lucide-react';
-import { StatCard, PageHeader, Card } from '../components/ui';
+import { StatCard, PageHeader } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../lib/api';
 import { ROUTES } from '../config/routes';
@@ -31,6 +30,18 @@ function esVistaDelegadoOperativo(roles, can) {
     return can('ver_mi_delegacion');
 }
 
+function Spinner({ label }) {
+    return (
+        <div className="flex min-h-[40vh] items-center justify-center px-4">
+            <div className="flex flex-col items-center gap-3 text-center">
+                <span className="size-7 border-2 border-zinc-200 dark:border-zinc-800 border-t-brand-gold rounded-full animate-spin" />
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">{label}</span>
+            </div>
+        </div>
+    );
+}
+
+/** Panel colaborador: acentos brand-gold y zinc (identidad SIVSO) */
 function DashboardEmpleado() {
     const { user } = useAuth();
     const [data, setData] = useState(null);
@@ -48,143 +59,119 @@ function DashboardEmpleado() {
 
     const empleado = data?.empleado;
     const asignaciones = data?.asignaciones ?? [];
-    const preview = asignaciones.slice(0, 5);
+    const preview = asignaciones.slice(0, 6);
     const totalPiezas = asignaciones.reduce((acc, a) => acc + (Number(a.cantidad) || 0), 0);
     const periodo = data?.periodo_activo;
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-start py-20 pl-4 sm:pl-8">
-                <div className="flex flex-col items-start gap-4">
-                    <span className="size-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin" />
-                    <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Cargando su información...</span>
-                </div>
-            </div>
-        );
+        return <Spinner label="Cargando tu vestuario…" />;
     }
 
     return (
-        <div className="w-full max-w-6xl text-left space-y-8 pb-12">
-            {/* Encabezado Principal y Acciones */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                        Hola, {empleado?.nombre || user?.name || 'Colaborador'}
-                    </h1>
-                    {empleado?.dependencia_clave && (
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            {empleado.dependencia_clave}
-                            {empleado.delegacion_clave ? <span className="text-zinc-300 dark:text-zinc-600">•</span> : ''}
-                            {empleado.delegacion_clave ? `Delegación ${empleado.delegacion_clave}` : ''}
-                        </p>
-                    )}
-                </div>
-                <div className="shrink-0">
+        <div className="mx-auto w-full max-w-lg pb-16 pt-1">
+            <div className="rounded-3xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.07] to-white px-6 py-8 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.06] dark:to-zinc-900/40 sm:px-8">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-gold">
+                    Tu vestuario
+                </p>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                    {empleado?.nombre || user?.name || 'Colaborador'}
+                </h1>
+                {(empleado?.dependencia_clave || empleado?.delegacion_clave) && (
+                    <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+                        {[empleado.dependencia_clave, empleado.delegacion_clave ? `Deleg. ${empleado.delegacion_clave}` : null]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </p>
+                )}
+
+                <div className="mt-6">
                     <Link
                         to={ROUTES.MI_VESTUARIO}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-800 dark:hover:bg-white transition-colors"
+                        className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                     >
-                        Gestionar vestuario
-                        <ArrowRight size={16} />
+                        Ver y gestionar prendas
+                        <ArrowRight size={16} strokeWidth={2} />
                     </Link>
                 </div>
-            </header>
 
-            {/* Banner de Periodo (Minimalista) */}
-            {periodo && (
-                <div className="flex items-center gap-4 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/20">
-                    <div className="w-10 h-10 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shrink-0">
-                        <Calendar size={18} className="text-zinc-500 dark:text-zinc-400" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            Periodo de asignación activo: {periodo.nombre}
-                        </p>
-                        {periodo.fecha_fin && (
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                                Disponible hasta el {periodo.fecha_fin}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            )}
+                {periodo && (
+                    <p className="mt-6 flex items-start gap-2 border-t border-zinc-200/70 pt-5 text-sm text-zinc-600 dark:border-zinc-800/80 dark:text-zinc-400">
+                        <Calendar size={16} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={1.8} />
+                        <span>
+                            <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo activo:</span>{' '}
+                            {periodo.nombre}
+                            {periodo.fecha_fin ? (
+                                <span className="block text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
+                                    Hasta {periodo.fecha_fin}
+                                </span>
+                            ) : null}
+                        </span>
+                    </p>
+                )}
+            </div>
 
-            {/* Sección de Prendas (Grid Minimalista) */}
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                        Prendas asignadas ({totalPiezas})
-                    </h3>
-                    {asignaciones.length > 5 && (
-                        <Link
-                            to={ROUTES.MI_VESTUARIO}
-                            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-colors flex items-center gap-1"
-                        >
-                            Ver todas <ArrowRight size={14} />
-                        </Link>
-                    )}
-                </div>
-
+            <div className="mt-8">
                 {!empleado ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/20">
-                        <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
-                            <Users size={20} className="text-zinc-400" />
-                        </div>
-                        <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 mb-1">
-                            Sin vinculación
-                        </h3>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mb-6">
-                            Para ver sus asignaciones, es necesario vincular su número de empleado (NUE).
+                    <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/80 px-5 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+                        <Users size={22} className="mx-auto text-zinc-400" strokeWidth={1.5} />
+                        <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">Sin vinculación</p>
+                        <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+                            Vincula tu NUE en Mi cuenta para ver asignaciones.
                         </p>
-                        <Link 
-                            to={ROUTES.MI_CUENTA} 
-                            className="inline-flex items-center justify-center px-5 py-2 rounded-lg bg-white dark:bg-zinc-800 text-sm font-medium text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors"
+                        <Link
+                            to={ROUTES.MI_CUENTA}
+                            className="mt-5 inline-block text-sm font-medium text-brand-gold underline-offset-4 hover:underline"
                         >
                             Ir a Mi cuenta
                         </Link>
                     </div>
+                ) : preview.length === 0 ? (
+                    <p className="rounded-xl border border-zinc-200/80 bg-white px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400">
+                        No hay artículos en tu vestuario por ahora.
+                    </p>
                 ) : (
                     <>
-                        {preview.length === 0 ? (
-                            <div className="flex items-center justify-center py-12 text-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-                                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                    No hay artículos registrados en su vestuario actual.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {preview.map((item) => (
-                                    <div 
-                                        key={item.id} 
-                                        className="flex flex-col p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
-                                    >
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="w-10 h-10 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-                                                <Shirt size={18} strokeWidth={1.5} />
-                                            </div>
-                                            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                                                x{item.cantidad ?? 1}
-                                            </span>
-                                        </div>
-                                        
-                                        <h4 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-4 flex-1">
+                        <div className="mb-3 flex items-baseline justify-between gap-2">
+                            <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                                Resumen
+                            </h2>
+                            <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                                {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
+                                {asignaciones.length > preview.length ? ` · ${asignaciones.length} ítems` : ''}
+                            </span>
+                        </div>
+                        <ul className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white dark:border-zinc-800 dark:bg-zinc-900/60">
+                            {preview.map((item) => (
+                                <li
+                                    key={item.id}
+                                    className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3.5 last:border-0 dark:border-zinc-800/80"
+                                >
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold">
+                                        <Shirt size={16} strokeWidth={1.7} />
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                                             {item.descripcion || 'Artículo'}
-                                        </h4>
-                                        
-                                        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between gap-2">
-                                            <span className="text-[10px] uppercase tracking-wider font-medium text-zinc-500 dark:text-zinc-400 truncate">
-                                                {item.clave_vestuario || item.codigo || '—'}
-                                            </span>
-                                            {item.talla && (
-                                                <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 shrink-0">
-                                                    Talla {item.talla}
-                                                </span>
-                                            )}
-                                        </div>
+                                        </p>
+                                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                            {[item.clave_vestuario || item.codigo, item.talla ? `Talla ${item.talla}` : null]
+                                                .filter(Boolean)
+                                                .join(' · ') || '—'}
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
+                                    <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">
+                                        ×{item.cantidad ?? 1}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                        {asignaciones.length > preview.length && (
+                            <Link
+                                to={ROUTES.MI_VESTUARIO}
+                                className="mt-3 block text-center text-sm font-medium text-brand-gold hover:opacity-90"
+                            >
+                                Ver todo el vestuario
+                            </Link>
                         )}
                     </>
                 )}
@@ -193,6 +180,7 @@ function DashboardEmpleado() {
     );
 }
 
+/** Panel delegado: misma familia cromática (zinc + brand-gold), métricas en franja */
 function DashboardDelegado() {
     const { user, can } = useAuth();
     const [payload, setPayload] = useState(null);
@@ -213,216 +201,157 @@ function DashboardDelegado() {
     const sinAlcance = !loading && (!delegaciones.length || !resumen);
     const periodo = resumen?.periodo_activo;
     const ejercicio = resumen?.ejercicio_vigente ?? new Date().getFullYear();
-    const preview = delegaciones.slice(0, 6);
+    const preview = delegaciones.slice(0, 4);
 
     if (loading) {
-        return (
-            <div className="flex items-center justify-start py-20 pl-4 sm:pl-8">
-                <div className="flex flex-col items-start gap-4">
-                    <span className="size-6 border-2 border-zinc-200 dark:border-zinc-800 border-t-amber-600 dark:border-t-amber-400 rounded-full animate-spin" />
-                    <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Cargando tu panel de delegación…</span>
-                </div>
-            </div>
-        );
+        return <Spinner label="Cargando delegación…" />;
     }
 
     return (
-        <div className="w-full max-w-6xl text-left space-y-8 pb-12">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-zinc-200 dark:border-zinc-800 pb-6">
-                <div className="space-y-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700/90 dark:text-amber-400/90">
-                        Panel delegado
+        <div className="mx-auto w-full max-w-3xl pb-16 pt-1">
+            <div className="overflow-hidden rounded-3xl border border-zinc-200/90 bg-gradient-to-br from-brand-gold/[0.05] via-white to-zinc-50/40 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:via-zinc-950 dark:to-zinc-950">
+                <div className="border-b border-zinc-200/70 px-6 py-7 dark:border-zinc-800/80 sm:px-8">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-gold">
+                        Coordinación
                     </p>
-                    <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                        Hola, {user?.name || 'Delegado'}
+                    <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                        {user?.name || 'Delegado'}
                     </h1>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium max-w-xl leading-relaxed">
-                        Seguimiento del vestuario de tus colaboradores en el ejercicio <span className="text-amber-700 dark:text-amber-400 font-semibold">{ejercicio}</span>
-                        {' '}y acceso rápido a cada delegación.
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                        Ejercicio {ejercicio} · seguimiento de vestuario por delegación
                     </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-                    <Link
-                        to={ROUTES.MI_DELEGACION}
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm font-medium hover:bg-zinc-800 dark:hover:bg-white transition-colors"
-                    >
-                        Gestionar colaboradores
-                        <ArrowRight size={16} />
-                    </Link>
-                    {can('ver_selecciones') && (
+                    <div className="mt-6 flex flex-wrap gap-2">
                         <Link
-                            to={ROUTES.MI_VESTUARIO}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-colors"
+                            to={ROUTES.MI_DELEGACION}
+                            className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                         >
-                            <Shirt size={16} strokeWidth={1.6} />
-                            Mi vestuario
+                            Colaboradores
+                            <ArrowRight size={16} strokeWidth={2} />
                         </Link>
-                    )}
-                </div>
-            </header>
-
-            {sinAlcance ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-gradient-to-b from-zinc-50/80 to-transparent dark:from-zinc-900/40">
-                    <div className="w-14 h-14 rounded-2xl bg-amber-100/90 dark:bg-amber-900/30 flex items-center justify-center mb-4">
-                        <Layers size={26} className="text-amber-700 dark:text-amber-400" strokeWidth={1.5} />
+                        {can('ver_selecciones') && (
+                            <Link
+                                to={ROUTES.MI_VESTUARIO}
+                                className="inline-flex items-center gap-2 rounded-full border border-zinc-300/90 bg-white/80 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                            >
+                                <Shirt size={16} strokeWidth={1.6} />
+                                Mi vestuario
+                            </Link>
+                        )}
                     </div>
-                    <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-                        Sin delegaciones asignadas
-                    </h3>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mb-6">
-                        {payload?.message || 'Vincula tu perfil como delegado en Mi cuenta o asegúrate de tener NUE con delegación en el padrón.'}
-                    </p>
-                    <Link
-                        to={ROUTES.MI_CUENTA}
-                        className="inline-flex items-center px-5 py-2.5 rounded-lg bg-white dark:bg-zinc-800 text-sm font-medium border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700"
-                    >
-                        Ir a Mi cuenta
-                    </Link>
                 </div>
-            ) : (
-                <>
-                    {periodo && (
-                        <div className="flex items-start gap-4 p-4 rounded-xl border border-amber-200/70 dark:border-amber-900/40 bg-gradient-to-r from-amber-50/90 to-white dark:from-amber-950/25 dark:to-zinc-900/40">
-                            <div className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-amber-800/50 flex items-center justify-center shrink-0">
-                                <Calendar size={20} className="text-amber-700 dark:text-amber-400" />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    Periodo de actualización: {periodo.nombre}
-                                </p>
-                                {periodo.fecha_fin && (
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                                        Cierra el {periodo.fecha_fin} · Los colaboradores deben confirmar su vestuario en el ejercicio {ejercicio}.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-sm shadow-black/[0.03]">
-                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 mb-2">
-                                <Building2 size={16} strokeWidth={1.7} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Delegaciones</span>
+                {sinAlcance ? (
+                    <div className="px-6 py-12 text-center sm:px-8">
+                        <Layers size={28} className="mx-auto text-brand-gold/90" strokeWidth={1.4} />
+                        <p className="mt-4 text-sm font-medium text-zinc-800 dark:text-zinc-200">Sin delegaciones asignadas</p>
+                        <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500 dark:text-zinc-400">
+                            {payload?.message || 'Revisa tu perfil en Mi cuenta o el padrón con NUE de delegación.'}
+                        </p>
+                        <Link
+                            to={ROUTES.MI_CUENTA}
+                            className="mt-5 inline-block text-sm font-medium text-brand-gold underline-offset-4 hover:underline"
+                        >
+                            Ir a Mi cuenta
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-0">
+                        {periodo && (
+                            <div className="flex items-start gap-3 border-b border-zinc-200/60 bg-white/40 px-6 py-4 dark:border-zinc-800/60 dark:bg-zinc-950/20 sm:px-8">
+                                <Calendar size={17} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={1.8} />
+                                <div className="min-w-0 text-sm text-zinc-600 dark:text-zinc-400">
+                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo:</span>{' '}
+                                    {periodo.nombre}
+                                    {periodo.fecha_fin ? (
+                                        <span className="block text-xs text-zinc-500 mt-0.5">Cierre {periodo.fecha_fin}</span>
+                                    ) : null}
+                                </div>
                             </div>
-                            <p className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tabular-nums">
-                                {resumen.delegaciones_count}
-                            </p>
-                            <p className="text-[11px] text-zinc-500 mt-1">Códigos bajo tu alcance</p>
+                        )}
+
+                        <div className="grid grid-cols-3 divide-x divide-zinc-200/80 border-b border-zinc-200/60 dark:divide-zinc-800 dark:border-zinc-800/60">
+                            <div className="px-3 py-4 text-center sm:px-4">
+                                <p className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                    {resumen.delegaciones_count ?? 0}
+                                </p>
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    Delegaciones
+                                </p>
+                            </div>
+                            <div className="px-3 py-4 text-center sm:px-4">
+                                <p className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                    {resumen.colaboradores_total ?? 0}
+                                </p>
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    Colaboradores
+                                </p>
+                            </div>
+                            <div className="px-3 py-4 text-center sm:px-4">
+                                <p className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                    {resumen.porcentaje_actualizado ?? 0}%
+                                </p>
+                                <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    Actualizados
+                                </p>
+                            </div>
                         </div>
-                        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-sm shadow-black/[0.03]">
-                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 mb-2">
-                                <UserCheck size={16} strokeWidth={1.7} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Delegados</span>
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tabular-nums">
-                                {resumen.delegados_registro_count}
-                            </p>
-                            <p className="text-[11px] text-zinc-500 mt-1">Registros en padrón (nombre)</p>
-                        </div>
-                        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-sm shadow-black/[0.03]">
-                            <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 mb-2">
-                                <Users size={16} strokeWidth={1.7} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Colaboradores</span>
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tabular-nums">
-                                {resumen.colaboradores_total}
-                            </p>
-                            <p className="text-[11px] text-zinc-500 mt-1">Trabajadores en esas UR</p>
-                        </div>
-                        <div className="rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 bg-gradient-to-br from-emerald-50/80 to-white dark:from-emerald-950/20 dark:to-zinc-900 p-4 sm:p-5 shadow-sm">
-                            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 mb-2">
-                                <CheckCircle size={16} strokeWidth={1.7} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Actualizados {ejercicio}</span>
-                            </div>
-                            <p className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50 tabular-nums">
-                                {resumen.actualizados_ejercicio}
-                                <span className="text-base sm:text-lg font-semibold text-zinc-400 dark:text-zinc-500">
-                                    {' '}/ {resumen.colaboradores_total}
-                                </span>
-                            </p>
-                            <div className="mt-3 h-2 rounded-full bg-zinc-200/80 dark:bg-zinc-800 overflow-hidden">
+
+                        <div className="px-6 py-3 dark:bg-zinc-950/10 sm:px-8">
+                            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                                 <div
-                                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
-                                    style={{ width: `${resumen.porcentaje_actualizado}%` }}
+                                    className="h-full rounded-full bg-brand-gold transition-all duration-500"
+                                    style={{ width: `${Math.min(100, Math.max(0, Number(resumen.porcentaje_actualizado) || 0))}%` }}
                                 />
                             </div>
-                            <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 mt-2 font-medium">
-                                {resumen.porcentaje_actualizado}% con selección en el ejercicio vigente
-                                {resumen.pendientes_actualizar > 0 && (
-                                    <span className="text-zinc-500 dark:text-zinc-400 font-normal">
-                                        {' · '}{resumen.pendientes_actualizar} pendientes
-                                    </span>
+                            <p className="mt-2 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {resumen.actualizados_ejercicio ?? 0} de {resumen.colaboradores_total ?? 0} con selección en {ejercicio}
+                                {(resumen.pendientes_actualizar ?? 0) > 0 && (
+                                    <span> · {resumen.pendientes_actualizar} pendientes</span>
                                 )}
                             </p>
                         </div>
-                    </div>
 
-                    <div className="space-y-5">
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                                <BarChart3 size={18} className="text-zinc-400" strokeWidth={1.6} />
-                                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-                                    Por delegación
-                                </h3>
-                            </div>
-                            {delegaciones.length > preview.length && (
-                                <Link
-                                    to={ROUTES.MI_DELEGACION}
-                                    className="text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
-                                >
-                                    Ver todas <ArrowRight size={14} />
-                                </Link>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {preview.map((del) => {
-                                const total = del.trabajadores_count ?? 0;
-                                const act = del.actualizados_ejercicio ?? 0;
-                                const pctDel = total > 0 ? Math.round((100 * act) / total) : 0;
-                                return (
-                                    <div
-                                        key={del.id}
-                                        className="flex flex-col rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 hover:border-amber-300/50 dark:hover:border-amber-800/40 transition-colors shadow-sm"
+                        <div className="px-6 pb-8 pt-2 sm:px-8">
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Por delegación</h2>
+                                {delegaciones.length > preview.length && (
+                                    <Link
+                                        to={ROUTES.MI_DELEGACION}
+                                        className="text-xs font-medium text-brand-gold hover:underline"
                                     >
-                                        <div className="flex items-start justify-between gap-2 mb-4">
-                                            <div>
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Delegación</p>
-                                                <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">
+                                        Ver todas
+                                    </Link>
+                                )}
+                            </div>
+                            <ul className="divide-y divide-zinc-100 rounded-xl border border-zinc-200/80 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50">
+                                {preview.map((del) => {
+                                    const total = del.trabajadores_count ?? 0;
+                                    const act = del.actualizados_ejercicio ?? 0;
+                                    const pctDel = total > 0 ? Math.round((100 * act) / total) : 0;
+                                    return (
+                                        <li key={del.id} className="flex items-center gap-3 px-4 py-3.5">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                                                     {del.clave}
                                                 </p>
+                                                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                                    {act}/{total} actualizados · {pctDel}%
+                                                </p>
                                             </div>
-                                            <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
-                                                {act}/{total}
-                                            </span>
-                                        </div>
-                                        <div className="h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden mb-3">
-                                            <div
-                                                className="h-full rounded-full bg-amber-500 dark:bg-amber-500"
-                                                style={{ width: `${pctDel}%` }}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 flex-1">
-                                            <span className="font-semibold text-zinc-700 dark:text-zinc-300">{act}</span>
-                                            {' '}de{' '}
-                                            <span className="font-semibold">{total}</span>
-                                            {' '}colaboradores ya registraron vestuario en {ejercicio}.
-                                        </p>
-                                        <Link
-                                            to={ROUTES.MI_DELEGACION}
-                                            className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/50 hover:bg-amber-100/80 dark:hover:bg-amber-900/30 transition-colors"
-                                        >
-                                            Abrir lista
-                                            <ArrowRight size={14} />
-                                        </Link>
-                                    </div>
-                                );
-                            })}
+                                            <Link
+                                                to={ROUTES.MI_DELEGACION}
+                                                className="shrink-0 text-xs font-medium text-brand-gold hover:opacity-90"
+                                            >
+                                                Lista →
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
                         </div>
                     </div>
-                </>
-            )}
+                )}
+            </div>
         </div>
     );
 }
