@@ -375,8 +375,13 @@ export default function MiVestuarioPage() {
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
                     <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
-                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex items-center gap-2">
+                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex flex-wrap items-center gap-2">
                             Actualiza tu vestuario al ejercicio {ejercicioVigente}
+                            {periodoActivo?.fecha_fin && (
+                                <span className="text-[11px] bg-brand-gold/15 dark:bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
+                                    Límite: {(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()}
+                                </span>
+                            )}
                         </p>
                         <p>
                             Lo que ves ahora son tus productos del ejercicio <strong className="text-zinc-900 dark:text-white">{data.anio_referencia_vista}</strong>
