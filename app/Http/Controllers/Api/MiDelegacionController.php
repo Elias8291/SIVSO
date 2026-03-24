@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Delegado;
 use App\Models\Empleado;
+use App\Models\Periodo;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -153,22 +154,70 @@ class MiDelegacionController extends Controller
                     ? 'Tu NUE no tiene delegación asignada en el padrón.'
                     : 'Asigna un delegado en Mi Cuenta o vincula tu NUE.');
 
-            return response()->json(['data' => [], 'message' => $message]);
+            return response()->json(['data' => [], 'message' => $message, 'resumen' => null]);
         }
 
+        $delegacionIds = $delegaciones->pluck('delegacion_id')->unique()->values();
+        $delegadosRegistradosCount = $delegaciones->pluck('delegado_id')->unique()->count();
+
+        $periodo = Periodo::where('estado', 'abierto')->orderByDesc('anio')->first();
+        $anioVigente = $periodo ? (int) $periodo->anio : (int) date('Y');
+
         $trabCounts = DB::table('empleados')
-            ->whereIn('delegacion_id', $delegaciones->pluck('delegacion_id')->unique())
+            ->whereIn('delegacion_id', $delegacionIds)
             ->selectRaw('delegacion_id, COUNT(*) AS cnt')
             ->groupBy('delegacion_id')
             ->pluck('cnt', 'delegacion_id');
+
+        $actualizadosPorDelegacion = DB::table('empleados AS e')
+            ->whereIn('e.delegacion_id', $delegacionIds)
+            ->whereExists(function ($q) use ($anioVigente) {
+                $q->selectRaw('1')
+                    ->from('selecciones AS s')
+                    ->whereColumn('s.empleado_id', 'e.id')
+                    ->where('s.anio', $anioVigente);
+            })
+            ->groupBy('e.delegacion_id')
+            ->selectRaw('e.delegacion_id, COUNT(*) AS cnt')
+            ->pluck('cnt', 'delegacion_id');
+
+        $colaboradoresTotal = (int) DB::table('empleados')
+            ->whereIn('delegacion_id', $delegacionIds)
+            ->count();
+
+        $actualizadosTotal = (int) $actualizadosPorDelegacion->sum();
+        $pendientes = max(0, $colaboradoresTotal - $actualizadosTotal);
+        $pct = $colaboradoresTotal > 0
+            ? (int) round(100 * $actualizadosTotal / $colaboradoresTotal)
+            : 0;
 
         $data = $delegaciones->map(fn ($d) => [
             'id' => $d->delegacion_id,
             'clave' => $d->clave,
             'delegado_nombre' => $d->nombre,
             'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
+            'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion[$d->delegacion_id] ?? 0),
         ])->values()->all();
 
-        return response()->json(['data' => $data]);
+        $resumen = [
+            'ejercicio_vigente' => $anioVigente,
+            'delegaciones_count' => $delegacionIds->count(),
+            'delegados_registro_count' => $delegadosRegistradosCount,
+            'colaboradores_total' => $colaboradoresTotal,
+            'actualizados_ejercicio' => $actualizadosTotal,
+            'pendientes_actualizar' => $pendientes,
+            'porcentaje_actualizado' => $pct,
+            'periodo_activo' => $periodo ? [
+                'id' => $periodo->id,
+                'anio' => (int) $periodo->anio,
+                'nombre' => $periodo->nombre,
+                'fecha_fin' => $periodo->fecha_fin ? $periodo->fecha_fin->format('Y-m-d') : null,
+            ] : null,
+        ];
+
+        return response()->json([
+            'data' => $data,
+            'resumen' => $resumen,
+        ]);
     }
 }
