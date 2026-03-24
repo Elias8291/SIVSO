@@ -81,9 +81,17 @@ function DashboardEmpleado() {
         return <Spinner label="Cargando tu vestuario…" />;
     }
 
+    const layoutDosColumnas = Boolean(empleado && preview.length > 0);
+
     return (
-        <div className="mx-auto w-full max-w-md pb-12 pt-0">
-            <div className="rounded-2xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.06] to-white px-5 py-5 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:to-zinc-900/40">
+        <div
+            className={`mx-auto w-full pb-12 pt-0 ${
+                layoutDosColumnas
+                    ? 'max-w-5xl lg:grid lg:grid-cols-2 lg:items-start lg:gap-10'
+                    : 'max-w-md'
+            }`}
+        >
+            <div className="rounded-2xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.06] to-white px-5 py-5 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:to-zinc-900/40 lg:min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold">
                     Tu vestuario
                 </p>
@@ -149,7 +157,7 @@ function DashboardEmpleado() {
                 )}
             </div>
 
-            <div className="mt-5">
+            <div className={`mt-5 lg:min-w-0 ${layoutDosColumnas ? 'lg:mt-0' : ''}`}>
                 {!empleado ? (
                     <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
                         <Users size={22} className="mx-auto text-zinc-400" strokeWidth={1.5} />
@@ -183,11 +191,8 @@ function DashboardEmpleado() {
                             {preview.map((item) => (
                                 <li
                                     key={item.id}
-                                    className="flex items-center gap-2.5 border-b border-zinc-100 px-3 py-2.5 last:border-0 dark:border-zinc-800/80"
+                                    className="flex items-center gap-3 border-b border-zinc-100 px-3 py-2.5 last:border-0 dark:border-zinc-800/80"
                                 >
-                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-gold/10 text-brand-gold">
-                                        <Shirt size={14} strokeWidth={1.7} />
-                                    </span>
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                                             {item.descripcion || 'Artículo'}
@@ -207,7 +212,7 @@ function DashboardEmpleado() {
                         {asignaciones.length > preview.length && (
                             <Link
                                 to={ROUTES.MI_VESTUARIO}
-                                className="mt-3 block text-center text-sm font-medium text-brand-gold hover:opacity-90"
+                                className="mt-3 block text-center text-sm font-medium text-brand-gold hover:opacity-90 lg:text-left"
                             >
                                 Ver todo el vestuario
                             </Link>
