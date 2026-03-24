@@ -83,143 +83,169 @@ function DashboardEmpleado() {
 
     const layoutDosColumnas = Boolean(empleado && preview.length > 0);
 
-    return (
-        <div
-            className={`mx-auto w-full pb-12 pt-0 ${
-                layoutDosColumnas
-                    ? 'max-w-5xl lg:grid lg:grid-cols-2 lg:items-start lg:gap-10'
-                    : 'max-w-md'
-            }`}
-        >
-            <div className="rounded-2xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.06] to-white px-5 py-5 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:to-zinc-900/40 lg:min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold">
-                    Tu vestuario
+    const bloqueSaludo = (
+        <>
+            <div className="mb-3 h-0.5 w-9 rounded-full bg-brand-gold/90" aria-hidden />
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold">
+                Tu vestuario
+            </p>
+            <h1
+                className={`mt-1 font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 ${
+                    layoutDosColumnas ? 'text-xl lg:text-2xl lg:tracking-tight' : 'text-xl'
+                }`}
+            >
+                {empleado?.nombre || user?.name || 'Colaborador'}
+            </h1>
+            {(empleado?.dependencia_clave || empleado?.delegacion_clave) && (
+                <p className="mt-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {[empleado.dependencia_clave, empleado.delegacion_clave ? `Deleg. ${empleado.delegacion_clave}` : null]
+                        .filter(Boolean)
+                        .join(' · ')}
                 </p>
-                <h1 className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {empleado?.nombre || user?.name || 'Colaborador'}
-                </h1>
-                {(empleado?.dependencia_clave || empleado?.delegacion_clave) && (
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                        {[empleado.dependencia_clave, empleado.delegacion_clave ? `Deleg. ${empleado.delegacion_clave}` : null]
-                            .filter(Boolean)
-                            .join(' · ')}
+            )}
+
+            <div className="mt-4">
+                <Link
+                    to={ROUTES.MI_VESTUARIO}
+                    className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white lg:px-5 lg:py-2.5"
+                >
+                    Mi vestuario
+                    <ArrowRight size={15} strokeWidth={2} />
+                </Link>
+            </div>
+
+            {periodo && empleado && (
+                <div className="mt-4 space-y-2 border-t border-zinc-200/70 pt-4 dark:border-zinc-800/80">
+                    <p className="flex items-start gap-2 text-xs leading-snug text-zinc-600 dark:text-zinc-400">
+                        <Calendar size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                        <span>
+                            {periodoTitulo ? (
+                                <>
+                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">{periodoTitulo}</span>
+                                    {periodo.fecha_fin ? (
+                                        <span className="text-zinc-500 dark:text-zinc-500"> · Hasta {periodo.fecha_fin}</span>
+                                    ) : null}
+                                </>
+                            ) : periodo.fecha_fin ? (
+                                <span className="font-medium text-zinc-800 dark:text-zinc-200">Hasta {periodo.fecha_fin}</span>
+                            ) : (
+                                <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo de actualización abierto</span>
+                            )}
+                        </span>
                     </p>
-                )}
-
-                <div className="mt-4">
-                    <Link
-                        to={ROUTES.MI_VESTUARIO}
-                        className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-                    >
-                        Mi vestuario
-                        <ArrowRight size={15} strokeWidth={2} />
-                    </Link>
-                </div>
-
-                {periodo && empleado && (
-                    <div className="mt-4 space-y-2 border-t border-zinc-200/70 pt-4 dark:border-zinc-800/80">
-                        <p className="flex items-start gap-2 text-xs leading-snug text-zinc-600 dark:text-zinc-400">
-                            <Calendar size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                    {enPeriodoSinCerrar && (
+                        <p className="flex items-start gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 text-[11px] leading-snug text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
+                            <CircleAlert size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
                             <span>
-                                {periodoTitulo ? (
-                                    <>
-                                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{periodoTitulo}</span>
-                                        {periodo.fecha_fin ? (
-                                            <span className="text-zinc-500 dark:text-zinc-500"> · Hasta {periodo.fecha_fin}</span>
-                                        ) : null}
-                                    </>
-                                ) : periodo.fecha_fin ? (
-                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Hasta {periodo.fecha_fin}</span>
-                                ) : (
-                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo de actualización abierto</span>
-                                )}
+                                Actualiza o confirma tus prendas en{' '}
+                                <Link to={ROUTES.MI_VESTUARIO} className="font-medium text-brand-gold underline-offset-2 hover:underline">
+                                    Mi vestuario
+                                </Link>
+                                {' '}y guarda los cambios antes del cierre.
                             </span>
                         </p>
-                        {enPeriodoSinCerrar && (
-                            <p className="flex items-start gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 text-[11px] leading-snug text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
-                                <CircleAlert size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
-                                <span>
-                                    Actualiza o confirma tus prendas en{' '}
-                                    <Link to={ROUTES.MI_VESTUARIO} className="font-medium text-brand-gold underline-offset-2 hover:underline">
-                                        Mi vestuario
-                                    </Link>
-                                    {' '}y guarda los cambios antes del cierre.
-                                </span>
-                            </p>
-                        )}
-                        {enPeriodoYaEnviado && (
-                            <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
-                                <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
-                                <span>Ya enviaste tu vestuario para el ejercicio {ejercicio}.</span>
-                            </p>
-                        )}
-                    </div>
-                )}
-            </div>
+                    )}
+                    {enPeriodoYaEnviado && (
+                        <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                            <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                            <span>Ya enviaste tu vestuario para el ejercicio {ejercicio}.</span>
+                        </p>
+                    )}
+                </div>
+            )}
+        </>
+    );
 
-            <div className={`mt-5 lg:min-w-0 ${layoutDosColumnas ? 'lg:mt-0' : ''}`}>
-                {!empleado ? (
-                    <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
-                        <Users size={22} className="mx-auto text-zinc-400" strokeWidth={1.5} />
-                        <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">Sin vinculación</p>
-                        <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
-                            Vincula tu NUE en Mi cuenta para ver asignaciones.
-                        </p>
-                        <Link
-                            to={ROUTES.MI_CUENTA}
-                            className="mt-5 inline-block text-sm font-medium text-brand-gold underline-offset-4 hover:underline"
-                        >
-                            Ir a Mi cuenta
-                        </Link>
-                    </div>
-                ) : preview.length === 0 ? (
-                    <p className="rounded-xl border border-zinc-200/80 bg-white px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400">
-                        No hay artículos en tu vestuario por ahora.
-                    </p>
-                ) : (
-                    <>
-                        <div className="mb-2 flex items-baseline justify-between gap-2">
-                            <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                                Prendas
-                            </h2>
-                            <span className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
-                                {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
-                                {asignaciones.length > preview.length ? ` · ${asignaciones.length} ítems` : ''}
-                            </span>
-                        </div>
-                        <ul className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white dark:border-zinc-800 dark:bg-zinc-900/60">
-                            {preview.map((item) => (
-                                <li
-                                    key={item.id}
-                                    className="flex items-center gap-3 border-b border-zinc-100 px-3 py-2.5 last:border-0 dark:border-zinc-800/80"
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                                            {item.descripcion || 'Artículo'}
-                                        </p>
-                                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                                            {[item.clave_vestuario || item.codigo, item.talla ? `Talla ${item.talla}` : null]
-                                                .filter(Boolean)
-                                                .join(' · ') || '—'}
-                                        </p>
-                                    </div>
-                                    <span className="shrink-0 text-xs font-semibold tabular-nums text-zinc-600 dark:text-zinc-300">
-                                        ×{item.cantidad ?? 1}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                        {asignaciones.length > preview.length && (
-                            <Link
-                                to={ROUTES.MI_VESTUARIO}
-                                className="mt-3 block text-center text-sm font-medium text-brand-gold hover:opacity-90 lg:text-left"
-                            >
-                                Ver todo el vestuario
-                            </Link>
-                        )}
-                    </>
-                )}
+    const bloquePrendas = (
+        <>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-zinc-100 pb-3.5 dark:border-zinc-800/80">
+                <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold">Asignación</p>
+                    <h2 className="mt-0.5 text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 lg:text-base">
+                        Prendas
+                    </h2>
+                </div>
+                <span className="rounded-lg bg-zinc-100/90 px-2.5 py-1 text-[11px] font-medium tabular-nums text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400">
+                    {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
+                    {asignaciones.length > preview.length ? ` · ${asignaciones.length} ítems` : ''}
+                </span>
             </div>
+            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                {preview.map((item) => (
+                    <li
+                        key={item.id}
+                        className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 lg:px-1 lg:py-3.5 lg:transition-colors lg:hover:bg-zinc-50/80 dark:lg:hover:bg-zinc-800/25"
+                    >
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                {item.descripcion || 'Artículo'}
+                            </p>
+                            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                {[item.clave_vestuario || item.codigo, item.talla ? `Talla ${item.talla}` : null]
+                                    .filter(Boolean)
+                                    .join(' · ') || '—'}
+                            </p>
+                        </div>
+                        <span className="shrink-0 rounded-md bg-zinc-100/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
+                            ×{item.cantidad ?? 1}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            {asignaciones.length > preview.length && (
+                <Link
+                    to={ROUTES.MI_VESTUARIO}
+                    className="mt-5 block border-t border-zinc-100 pt-4 text-center text-sm font-medium text-brand-gold hover:opacity-90 dark:border-zinc-800/80 lg:text-left"
+                >
+                    Ver todo el vestuario
+                </Link>
+            )}
+        </>
+    );
+
+    return (
+        <div className={`mx-auto w-full pb-12 pt-0 ${layoutDosColumnas ? 'max-w-5xl' : 'max-w-md'}`}>
+            {layoutDosColumnas ? (
+                <div className="rounded-[1.75rem] border border-zinc-200/80 bg-gradient-to-br from-white via-zinc-50/50 to-brand-gold/[0.05] p-5 shadow-[0_2px_32px_-14px_rgba(0,0,0,0.12)] dark:border-zinc-800/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-brand-gold/[0.04] sm:p-7 lg:p-9">
+                    <div className="grid gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-0">
+                        <div className="lg:col-span-5 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:justify-center lg:border-r lg:border-zinc-200/60 lg:pr-8 xl:pr-10 dark:lg:border-zinc-800/70">
+                            <div className="lg:min-w-0">{bloqueSaludo}</div>
+                        </div>
+                        <div className="lg:col-span-7 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:pl-8 xl:pl-10">
+                            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200/85 bg-white/95 p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)] dark:border-zinc-800/90 dark:bg-zinc-900/65 dark:shadow-none sm:p-6">
+                                {bloquePrendas}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <div className="rounded-2xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.06] to-white px-5 py-5 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:to-zinc-900/40">
+                        {bloqueSaludo}
+                    </div>
+                    <div className="mt-5">
+                        {!empleado ? (
+                            <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+                                <Users size={22} className="mx-auto text-zinc-400" strokeWidth={1.5} />
+                                <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">Sin vinculación</p>
+                                <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+                                    Vincula tu NUE en Mi cuenta para ver asignaciones.
+                                </p>
+                                <Link
+                                    to={ROUTES.MI_CUENTA}
+                                    className="mt-5 inline-block text-sm font-medium text-brand-gold underline-offset-4 hover:underline"
+                                >
+                                    Ir a Mi cuenta
+                                </Link>
+                            </div>
+                        ) : preview.length === 0 ? (
+                            <p className="rounded-xl border border-zinc-200/80 bg-white px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400">
+                                No hay artículos en tu vestuario por ahora.
+                            </p>
+                        ) : null}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
