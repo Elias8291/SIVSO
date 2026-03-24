@@ -396,17 +396,6 @@ export default function MiDelegacionVestuarioPage() {
                             )}
                         </div>
                     </div>
-
-                    {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                        <div className="mt-3 border-t border-zinc-200 dark:border-zinc-700 pt-3">
-                            <p className="font-bold text-zinc-900 dark:text-white mb-1.5">
-                                Referencia ejercicio {data.anio_referencia_vista}
-                            </p>
-                            <p>
-                                Parte del listado puede venir del año anterior hasta completar la actualización al ejercicio <strong className="text-zinc-900 dark:text-white">{ejercicioVigente}</strong>.
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
 
