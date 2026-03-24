@@ -128,6 +128,17 @@ class VestuarioController extends Controller
         return $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
     }
 
+    /** Guardado en lote (Mi delegación o quien tenga editar_seleccion). No marca edición cerrada del empleado. */
+    private function usuarioPuedeGuardarLoteVestuarioEmpleado(Request $request, int $empleadoId): bool
+    {
+        if ($request->user()->can('editar_seleccion')) {
+            return true;
+        }
+
+        return $request->user()->can('ver_mi_delegacion')
+            && $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
+    }
+
     private function verificarEmpleadoPuedeEditarSuVestuario(Empleado $empleado): ?JsonResponse
     {
         $v = $this->ejercicioVigenteAnio();
@@ -713,6 +724,13 @@ class VestuarioController extends Controller
 
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
     {
+        $user = $request->user();
+        if (! $user->can('ver_empleados')) {
+            if (! $user->can('ver_mi_delegacion') || ! $this->delegadoPuedeGestionarEmpleadoId($request, $empleado)) {
+                return response()->json(['message' => 'No tiene permiso para ver el vestuario de este colaborador.'], 403);
+            }
+        }
+
         $emp = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);
         if (! $emp) {
             return response()->json(['message' => 'Empleado no encontrado.'], 404);
@@ -818,6 +836,11 @@ class VestuarioController extends Controller
 
         $edicionCerradaEmp = $this->tieneEdicionCerrada($emp->id, $anioCalendario);
 
+        $periodoActivo = Periodo::where('estado', 'abierto')->orderByDesc('anio')->first();
+        $puedeEditarVestuario = $periodoActivo !== null
+            && $anio === $anioCalendario
+            && $this->usuarioPuedeGuardarLoteVestuarioEmpleado($request, $emp->id);
+
         return response()->json([
             'empleado' => $empleadoData,
             'asignaciones' => $asignaciones,
@@ -830,6 +853,93 @@ class VestuarioController extends Controller
             'anio_referencia_vista' => $anioReferenciaVista,
             'estado_actualizacion_ejercicio' => $estadoActualizacionEjercicio,
             'presupuesto_comparativo' => $presupuestoComparativo,
+            'periodo_activo' => $periodoActivo ? [
+                'id' => $periodoActivo->id,
+                'anio' => (int) $periodoActivo->anio,
+                'nombre' => $periodoActivo->nombre,
+                'fecha_fin' => $periodoActivo->fecha_fin ? $periodoActivo->fecha_fin->format('Y-m-d') : null,
+            ] : null,
+            'puede_editar_vestuario' => $puedeEditarVestuario,
+            'puede_reactivar_vestuario_empleado' => $this->usuarioPuedeReactivarVestuarioEmpleado($request, $emp->id),
+        ]);
+    }
+
+    public function empleadoGuardarCambiosVestuario(Request $request, int $empleado): JsonResponse
+    {
+        if (! $this->usuarioPuedeGuardarLoteVestuarioEmpleado($request, $empleado)) {
+            return response()->json(['message' => 'No tiene permiso para guardar el vestuario de este colaborador.'], 403);
+        }
+
+        $emp = Empleado::find($empleado);
+        if (! $emp) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+
+        $request->validate([
+            'cambios' => 'required|array|min:1|max:40',
+            'cambios.*.seleccion_id' => 'required|integer|min:1',
+            'cambios.*.tipo' => 'required|string|in:producto,talla,cantidad',
+        ]);
+
+        foreach ($request->input('cambios') as $i => $c) {
+            $tipo = $c['tipo'];
+            if ($tipo === 'talla' && empty($c['talla'])) {
+                return response()->json(['message' => "Cambio #{$i}: talla requerida."], 422);
+            }
+            if ($tipo === 'producto' && empty($c['producto_id'])) {
+                return response()->json(['message' => "Cambio #{$i}: producto_id requerido."], 422);
+            }
+            if ($tipo === 'cantidad') {
+                $q = (int) ($c['cantidad'] ?? 0);
+                if ($q < 1 || $q > 100) {
+                    return response()->json(['message' => "Cambio #{$i}: cantidad inválida."], 422);
+                }
+            }
+        }
+
+        try {
+            DB::transaction(function () use ($request, $emp) {
+                $resolved = [];
+                foreach ($request->input('cambios') as $c) {
+                    $clientId = (int) $c['seleccion_id'];
+                    $currentId = $resolved[$clientId] ?? $clientId;
+
+                    $seleccion = Seleccion::with('productoTalla')
+                        ->where('id', $currentId)
+                        ->where('empleado_id', $emp->id)
+                        ->first();
+
+                    if (! $seleccion) {
+                        $this->abortJson(404, 'Registro de vestuario no encontrado.');
+                    }
+
+                    $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $emp->id);
+                    $resolved[$clientId] = (int) $seleccion->id;
+
+                    $this->asegurarSeleccionEjercicioVigente($seleccion);
+
+                    match ($c['tipo']) {
+                        'talla' => $this->aplicarTallaSeleccionMiVestuario($seleccion, (string) $c['talla']),
+                        'producto' => $this->aplicarProductoSeleccionMiVestuario(
+                            $seleccion,
+                            (int) $c['producto_id'],
+                            isset($c['talla']) ? (string) $c['talla'] : null
+                        ),
+                        'cantidad' => $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $c['cantidad']),
+                        default => $this->abortJson(422, 'Tipo de cambio no válido.'),
+                    };
+                }
+            });
+        } catch (HttpResponseException $e) {
+            return $e->getResponse();
+        }
+
+        return response()->json([
+            'message' => 'Cambios del vestuario guardados correctamente.',
         ]);
     }
 

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { PageHeader, DataTable } from '../components/ui';
 import { api } from '../lib/api';
-import VestuarioEmpleadoModal from '../features/mi-delegacion/VestuarioEmpleadoModal';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
 
 export default function MiDelegacionPage() {
@@ -13,7 +12,6 @@ export default function MiDelegacionPage() {
     const [message, setMessage] = useState(null);
     const [successFlash, setSuccessFlash] = useState(null);
     const [search, setSearch] = useState('');
-    const [empleadoVestuario, setEmpleadoVestuario] = useState(null);
     const [crearUsuarioCtx, setCrearUsuarioCtx] = useState(null);
     const [expandidas, setExpandidas] = useState({});
 
@@ -236,12 +234,6 @@ export default function MiDelegacionPage() {
                     </div>
                 </div>
             )}
-
-            <VestuarioEmpleadoModal
-                empleado={empleadoVestuario}
-                onClose={() => setEmpleadoVestuario(null)}
-                onSaved={() => { }}
-            />
 
             <CrearUsuarioEmpleadoModal
                 empleado={crearUsuarioCtx?.empleado ?? null}

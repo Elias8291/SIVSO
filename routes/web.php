@@ -59,12 +59,20 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         Route::post('mi-delegacion/empleados/{empleado}/crear-usuario', [MiDelegacionController::class, 'crearUsuarioEmpleado']);
     });
 
+    Route::middleware('permission:ver_mi_delegacion|editar_seleccion')->post(
+        'empleados/{empleado}/vestuario/guardar-cambios',
+        [VestuarioController::class, 'empleadoGuardarCambiosVestuario']
+    );
+
     // Empleados
     Route::middleware('permission:ver_empleados')->group(function () {
         Route::get('empleados', [EmpleadoController::class, 'index']);
         Route::get('empleados/{empleado}', [EmpleadoController::class, 'show']);
-        Route::get('empleados/{empleado}/vestuario', [VestuarioController::class, 'empleadoVestuario']);
     });
+    Route::middleware('permission:ver_empleados|ver_mi_delegacion')->get(
+        'empleados/{empleado}/vestuario',
+        [VestuarioController::class, 'empleadoVestuario']
+    );
     Route::middleware('permission:editar_empleados')->group(function () {
         Route::post('empleados', [EmpleadoController::class, 'store']);
         Route::post('empleados/{empleado}/crear-usuario', [EmpleadoController::class, 'crearUsuario']);
@@ -72,8 +80,11 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         Route::delete('empleados/{empleado}', [EmpleadoController::class, 'destroy']);
         Route::patch('empleados/{empleado}/toggle', [EmpleadoController::class, 'toggle']);
     });
+    Route::middleware('permission:ver_mi_delegacion|editar_seleccion')->post(
+        'empleados/{empleado}/vestuario/reactivar-edicion',
+        [VestuarioController::class, 'empleadoReactivarEdicionVestuario']
+    );
     Route::middleware('permission:editar_seleccion')->group(function () {
-        Route::post('empleados/{empleado}/vestuario/reactivar-edicion', [VestuarioController::class, 'empleadoReactivarEdicionVestuario']);
         Route::put('empleados/{empleado}/vestuario/{id}/talla', [VestuarioController::class, 'empleadoUpdateTalla']);
         Route::put('empleados/{empleado}/vestuario/{id}/producto', [VestuarioController::class, 'empleadoUpdateProducto']);
         Route::put('empleados/{empleado}/vestuario/{id}/cantidad', [VestuarioController::class, 'empleadoUpdateCantidad']);

@@ -7,6 +7,7 @@ export const ROUTES = {
     DASHBOARD:     '/dashboard',
     MI_VESTUARIO:  '/dashboard/mi-vestuario',
     MI_DELEGACION: '/dashboard/mi-delegacion',
+    MI_DELEGACION_VESTUARIO: '/dashboard/mi-delegacion/vestuario/:empleadoId',
     MI_CUENTA:     '/dashboard/mi-cuenta',
     MI_CUENTA_CAMBIAR_PASSWORD: '/dashboard/mi-cuenta/cambiar-contrasena',
     ORGANIZACION:  '/dashboard/organizacion',
@@ -96,6 +97,7 @@ export function getRouteLabel(path) {
     if (path.match(/^\/dashboard\/permisos\/\d+\/editar/)) return 'Editar Permiso';
     if (path.startsWith('/dashboard/partidas/limites/editar')) return 'Editar Límites';
     if (path.startsWith('/dashboard/notificaciones')) return 'Notificaciones';
+    if (path.match(/^\/dashboard\/mi-delegacion\/vestuario\/\d+/)) return 'Vestuario del colaborador';
     return ROUTE_LABELS[path] ?? 'Dashboard';
 }
 

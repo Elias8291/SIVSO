@@ -10,6 +10,7 @@ import {
     DashboardPage,
     MiVestuarioPage,
     MiDelegacionPage,
+    MiDelegacionVestuarioPage,
     MiCuentaPage,
     MiCuentaCambiarContrasenaPage,
     EmpleadosPage,
@@ -86,6 +87,14 @@ export default function App({ initialState }) {
                                 element={
                                     <RequirePermission permission="ver_mi_delegacion">
                                         <MiDelegacionPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="mi-delegacion/vestuario/:empleadoId"
+                                element={
+                                    <RequirePermission permission="ver_mi_delegacion">
+                                        <MiDelegacionVestuarioPage />
                                     </RequirePermission>
                                 }
                             />
