@@ -81,7 +81,7 @@ export default function MiDelegacionPage() {
             render: (val, row) => (
                 <div>
                     <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200 tracking-wide leading-none">{val}</p>
-                    <p className="text-[11px] text-zinc-400 mt-1.5 font-mono leading-none">NUE: {row.nue}</p>
+                    <p className="text-[11px] text-zinc-400 mt-1.5 font-mono leading-none">NUE: {row.nue ?? '—'}</p>
                 </div>
             )
         },
@@ -157,7 +157,7 @@ export default function MiDelegacionPage() {
                         <div className="flex flex-row flex-wrap sm:flex-nowrap items-stretch gap-3">
                             <input
                                 type="text"
-                                placeholder="Buscar empleado por nombre o NUE..."
+                                placeholder="Buscar por NUE o nombre del colaborador…"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
@@ -182,11 +182,32 @@ export default function MiDelegacionPage() {
                                             <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
                                             <div>
                                                 <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
-                                                    Delegación: {del.clave}
+                                                    Delegación {del.clave}
                                                 </h3>
-                                                {del.delegado_nombre && (
-                                                    <p className="text-[11px] text-zinc-400 mt-0.5">Delegado: {del.delegado_nombre}</p>
-                                                )}
+                                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+                                                    {del.delegado_usuario?.rfc || del.delegado_usuario?.name ? (
+                                                        <>
+                                                            <span className="font-semibold text-zinc-600 dark:text-zinc-300">Cuenta del delegado:</span>{' '}
+                                                            {del.delegado_usuario.rfc && (
+                                                                <span className="font-mono">{del.delegado_usuario.rfc}</span>
+                                                            )}
+                                                            {del.delegado_usuario.rfc && del.delegado_usuario.name ? ' · ' : ''}
+                                                            {del.delegado_usuario.name && <span>{del.delegado_usuario.name}</span>}
+                                                        </>
+                                                    ) : del.delegado_nombre ? (
+                                                        <>
+                                                            <span className="font-semibold text-zinc-600 dark:text-zinc-300">Delegado (catálogo):</span>{' '}
+                                                            {del.delegado_nombre}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-zinc-400">Delegado sin cuenta vinculada</span>
+                                                            {del.delegado_id != null && (
+                                                                <span className="text-zinc-400"> · registro #{del.delegado_id}</span>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">

@@ -141,8 +141,16 @@ class MiDelegacionController extends Controller
             $delegaciones = DB::table('delegado_delegacion AS dd')
                 ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
                 ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
+                ->leftJoin('users AS du', 'du.id', '=', 'd.user_id')
                 ->where('dd.delegado_id', $delegado->id)
-                ->select(['dd.delegado_id', 'd.nombre', 'dl.id AS delegacion_id', 'dl.clave'])
+                ->select([
+                    'dd.delegado_id',
+                    'd.nombre',
+                    'dl.id AS delegacion_id',
+                    'dl.clave',
+                    'du.name AS delegado_user_name',
+                    'du.rfc AS delegado_user_rfc',
+                ])
                 ->orderBy('dl.clave')
                 ->get();
         }
@@ -153,8 +161,16 @@ class MiDelegacionController extends Controller
                 $delegaciones = DB::table('delegado_delegacion AS dd')
                     ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
                     ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
+                    ->leftJoin('users AS du', 'du.id', '=', 'd.user_id')
                     ->where('dd.delegacion_id', $empleado->delegacion_id)
-                    ->select(['dd.delegado_id', 'd.nombre', 'dl.id AS delegacion_id', 'dl.clave'])
+                    ->select([
+                        'dd.delegado_id',
+                        'd.nombre',
+                        'dl.id AS delegacion_id',
+                        'dl.clave',
+                        'du.name AS delegado_user_name',
+                        'du.rfc AS delegado_user_rfc',
+                    ])
                     ->get();
             }
         }
@@ -203,15 +219,23 @@ class MiDelegacionController extends Controller
             ? (int) round(100 * $actualizadosTotal / $colaboradoresTotal)
             : 0;
 
-        $data = $delegaciones->map(fn ($d) => [
-            'id' => $d->delegacion_id,
-            'clave' => $d->clave,
-            'delegado_nombre' => trim((string) ($d->nombre ?? '')) !== ''
-                ? trim($d->nombre)
-                : ('Delegado #'.$d->delegado_id),
-            'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
-            'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion[$d->delegacion_id] ?? 0),
-        ])->values()->all();
+        $data = $delegaciones->map(function ($d) {
+            $rfc = trim((string) ($d->delegado_user_rfc ?? ''));
+            $uName = trim((string) ($d->delegado_user_name ?? ''));
+            $delegadoUsuario = ($rfc !== '' || $uName !== '')
+                ? ['rfc' => $rfc !== '' ? $rfc : null, 'name' => $uName !== '' ? $uName : null]
+                : null;
+
+            return [
+                'id' => $d->delegacion_id,
+                'clave' => $d->clave,
+                'delegado_id' => (int) $d->delegado_id,
+                'delegado_nombre' => trim((string) ($d->nombre ?? '')) !== '' ? trim($d->nombre) : null,
+                'delegado_usuario' => $delegadoUsuario,
+                'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
+                'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion[$d->delegacion_id] ?? 0),
+            ];
+        })->values()->all();
 
         $resumen = [
             'ejercicio_vigente' => $anioVigente,
