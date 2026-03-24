@@ -362,8 +362,7 @@ export default function MiVestuarioPage() {
                             </span>
                         ) : periodoActivo && puedeEditar ? (
                             <span>
-                                Periodo ({periodoActivo.anio ?? ejercicioVigente}) hasta el {(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()}
-                                . «Guardar cambios» aplica todo y cierra tu edición para este ejercicio (no podrás volver a editar salvo reactivación del delegado).
+                                Usa los botones en cada prenda para ajustar tu vestuario y al confirmar que todo es correcto pulsa <strong>Guardar cambios</strong> para finalizar tu edición.
                             </span>
                         ) : !periodoActivo ? (
                             <span>No hay periodo activo — la edición no está disponible por el momento.</span>
