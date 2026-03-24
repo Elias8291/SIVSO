@@ -7,6 +7,7 @@ use App\Models\Delegado;
 use App\Models\Empleado;
 use App\Models\Periodo;
 use App\Models\Seleccion;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -304,6 +305,99 @@ class VestuarioController extends Controller
         return response()->json($payload);
     }
 
+    private function abortJson(int $status, string $message): void
+    {
+        throw new HttpResponseException(response()->json(['message' => $message], $status));
+    }
+
+    private function asegurarSeleccionEjercicioVigente(Seleccion $seleccion): void
+    {
+        $v = $this->ejercicioVigenteAnio();
+        if ((int) $seleccion->anio !== $v) {
+            $this->abortJson(403, "Solo puede actualizar el vestuario del ejercicio vigente ({$v}).");
+        }
+    }
+
+    private function aplicarTallaSeleccionMiVestuario(Seleccion $seleccion, string $talla): void
+    {
+        $seleccion->loadMissing('productoTalla');
+        if (! $seleccion->productoTalla) {
+            $this->abortJson(422, 'Selección sin talla de catálogo asociada.');
+        }
+
+        $nombre = strtoupper(trim($talla));
+        $row = DB::table('tallas')->where('nombre', $nombre)->first();
+        $tallaId = $row ? $row->id : DB::table('tallas')->insertGetId([
+            'nombre' => $nombre, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $newPt = DB::table('producto_tallas')
+            ->where('producto_id', $seleccion->productoTalla->producto_id)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
+
+        if (! $newPt) {
+            $newPtId = DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $seleccion->productoTalla->producto_id,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
+                'cantidad_disponible' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $newPtId = $newPt->id;
+        }
+
+        $seleccion->update(['producto_talla_id' => $newPtId]);
+    }
+
+    private function aplicarProductoSeleccionMiVestuario(Seleccion $seleccion, int $productoId, ?string $tallaStr): void
+    {
+        $seleccion->loadMissing('productoTalla');
+        if (! $seleccion->productoTalla) {
+            $this->abortJson(422, 'Selección sin producto asociado.');
+        }
+
+        $tallaId = $seleccion->productoTalla->talla_id;
+        if ($tallaStr !== null && trim($tallaStr) !== '') {
+            $nombre = strtoupper(trim($tallaStr));
+            $talla = DB::table('tallas')->where('nombre', $nombre)->first();
+            $tallaId = $talla ? $talla->id : DB::table('tallas')->insertGetId([
+                'nombre' => $nombre, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $pt = DB::table('producto_tallas')
+            ->where('producto_id', $productoId)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $seleccion->anio)
+            ->first();
+
+        if (! $pt) {
+            $ptId = DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $productoId,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
+                'cantidad_disponible' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $ptId = $pt->id;
+        }
+
+        $seleccion->update(['producto_talla_id' => $ptId]);
+    }
+
+    private function aplicarCantidadSeleccionMiVestuario(Seleccion $seleccion, int $cantidad): void
+    {
+        $seleccion->update(['cantidad' => $cantidad]);
+    }
+
     /** Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio. */
     private function totalGastoDependenciaAnio(?int $dependenciaId, int $anio): array
     {
@@ -364,36 +458,10 @@ class VestuarioController extends Controller
 
         $request->validate(['talla' => 'required|string|max:30']);
 
-        $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
-        if (! $talla) {
-            $tallaId = DB::table('tallas')->insertGetId(['nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now()]);
-        } else {
-            $tallaId = $talla->id;
-        }
+        $this->aplicarTallaSeleccionMiVestuario($seleccion, $request->talla);
+        $seleccion->refresh();
 
-        $newPt = DB::table('producto_tallas')
-            ->where('producto_id', $seleccion->productoTalla->producto_id)
-            ->where('talla_id', $tallaId)
-            ->where('anio', $seleccion->anio)
-            ->first();
-
-        if (! $newPt) {
-            $newPt = (object) ['id' => DB::table('producto_tallas')->insertGetId([
-                'producto_id' => $seleccion->productoTalla->producto_id,
-                'talla_id' => $tallaId,
-                'anio' => $seleccion->anio,
-                'medidas' => null,
-                'cantidad_disponible' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])];
-        }
-
-        $seleccion->update(['producto_talla_id' => $newPt->id]);
-
-        if ($request->boolean('cerrar_edicion')) {
-            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
-        }
+        $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
 
         return $this->jsonActualizacionSeleccion('Talla actualizada correctamente.', $seleccion, $origId);
     }
@@ -434,39 +502,10 @@ class VestuarioController extends Controller
             'talla' => 'nullable|string|max:30',
         ]);
 
-        $tallaId = $seleccion->productoTalla->talla_id;
-        if ($request->talla) {
-            $talla = DB::table('tallas')->where('nombre', strtoupper(trim($request->talla)))->first();
-            $tallaId = $talla ? $talla->id : DB::table('tallas')->insertGetId([
-                'nombre' => strtoupper(trim($request->talla)), 'created_at' => now(), 'updated_at' => now(),
-            ]);
-        }
+        $this->aplicarProductoSeleccionMiVestuario($seleccion, (int) $request->producto_id, $request->talla);
+        $seleccion->refresh();
 
-        $pt = DB::table('producto_tallas')
-            ->where('producto_id', $request->producto_id)
-            ->where('talla_id', $tallaId)
-            ->where('anio', $seleccion->anio)
-            ->first();
-
-        if (! $pt) {
-            $ptId = DB::table('producto_tallas')->insertGetId([
-                'producto_id' => $request->producto_id,
-                'talla_id' => $tallaId,
-                'anio' => $seleccion->anio,
-                'medidas' => null,
-                'cantidad_disponible' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } else {
-            $ptId = $pt->id;
-        }
-
-        $seleccion->update(['producto_talla_id' => $ptId]);
-
-        if ($request->boolean('cerrar_edicion')) {
-            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
-        }
+        $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
 
         return $this->jsonActualizacionSeleccion('Artículo actualizado correctamente.', $seleccion, $origId);
     }
@@ -504,13 +543,100 @@ class VestuarioController extends Controller
 
         $request->validate(['cantidad' => 'required|integer|min:1|max:100']);
 
-        $seleccion->update(['cantidad' => $request->cantidad]);
+        $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $request->cantidad);
+        $seleccion->refresh();
 
-        if ($request->boolean('cerrar_edicion')) {
-            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
-        }
+        $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
 
         return $this->jsonActualizacionSeleccion('Cantidad actualizada correctamente.', $seleccion, $origId);
+    }
+
+    public function guardarCambiosMiVestuario(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user->nue) {
+            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
+        }
+
+        $empleado = Empleado::where('nue', $user->nue)->first();
+        if (! $empleado) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarEmpleadoPuedeEditarSuVestuario($empleado)) {
+            return $blocked;
+        }
+
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+
+        $request->validate([
+            'cambios' => 'required|array|min:1|max:40',
+            'cambios.*.seleccion_id' => 'required|integer|min:1',
+            'cambios.*.tipo' => 'required|string|in:producto,talla,cantidad',
+        ]);
+
+        foreach ($request->input('cambios') as $i => $c) {
+            $tipo = $c['tipo'];
+            if ($tipo === 'talla' && empty($c['talla'])) {
+                return response()->json(['message' => "Cambio #{$i}: talla requerida."], 422);
+            }
+            if ($tipo === 'producto') {
+                if (empty($c['producto_id'])) {
+                    return response()->json(['message' => "Cambio #{$i}: producto_id requerido."], 422);
+                }
+            }
+            if ($tipo === 'cantidad') {
+                $q = (int) ($c['cantidad'] ?? 0);
+                if ($q < 1 || $q > 100) {
+                    return response()->json(['message' => "Cambio #{$i}: cantidad inválida."], 422);
+                }
+            }
+        }
+
+        try {
+            DB::transaction(function () use ($request, $empleado) {
+                $resolved = [];
+                foreach ($request->input('cambios') as $c) {
+                    $clientId = (int) $c['seleccion_id'];
+                    $currentId = $resolved[$clientId] ?? $clientId;
+
+                    $seleccion = Seleccion::with('productoTalla')
+                        ->where('id', $currentId)
+                        ->where('empleado_id', $empleado->id)
+                        ->first();
+
+                    if (! $seleccion) {
+                        $this->abortJson(404, 'Registro de vestuario no encontrado.');
+                    }
+
+                    $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
+                    $resolved[$clientId] = (int) $seleccion->id;
+
+                    $this->asegurarSeleccionEjercicioVigente($seleccion);
+
+                    match ($c['tipo']) {
+                        'talla' => $this->aplicarTallaSeleccionMiVestuario($seleccion, (string) $c['talla']),
+                        'producto' => $this->aplicarProductoSeleccionMiVestuario(
+                            $seleccion,
+                            (int) $c['producto_id'],
+                            isset($c['talla']) ? (string) $c['talla'] : null
+                        ),
+                        'cantidad' => $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $c['cantidad']),
+                        default => $this->abortJson(422, 'Tipo de cambio no válido.'),
+                    };
+                }
+
+                $this->marcarEdicionCerrada($empleado->id, $this->ejercicioVigenteAnio());
+            });
+        } catch (HttpResponseException $e) {
+            return $e->getResponse();
+        }
+
+        return response()->json([
+            'message' => 'Cambios guardados. Ya no podrás editar tu vestuario del ejercicio actual salvo que tu delegado reactive la actualización.',
+        ]);
     }
 
     public function empleadoReactivarEdicionVestuario(Request $request, int $empleado): JsonResponse

@@ -467,7 +467,7 @@ export default function MiVestuarioPage() {
 
     const confirmarCambios = async () => {
         if (pendingCount === 0) return;
-        const steps = [];
+        const cambios = [];
         for (const idStr of Object.keys(pendingEdits)) {
             const origIdKey = Number(idStr);
             const orig = baseline.find((x) => x.id === origIdKey);
@@ -476,50 +476,37 @@ export default function MiVestuarioPage() {
             const m = mergedRow(orig, patch);
             let didProducto = false;
             if (patch.producto_id != null && patch.producto_id !== orig.producto_id) {
-                steps.push({
-                    origIdKey,
-                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/producto`, {
-                        producto_id: patch.producto_id,
-                        talla: (m.talla || '').trim(),
-                        ...(isLast ? { cerrar_edicion: true } : {}),
-                    }),
-                });
+                const entry = {
+                    seleccion_id: origIdKey,
+                    tipo: 'producto',
+                    producto_id: patch.producto_id,
+                };
+                const tallaTrim = String(m.talla ?? '').trim();
+                if (tallaTrim) entry.talla = tallaTrim;
+                cambios.push(entry);
                 didProducto = true;
             }
             if (!didProducto && String(m.talla ?? '') !== String(orig.talla ?? '')) {
-                steps.push({
-                    origIdKey,
-                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/talla`, {
-                        talla: m.talla,
-                        ...(isLast ? { cerrar_edicion: true } : {}),
-                    }),
+                cambios.push({
+                    seleccion_id: origIdKey,
+                    tipo: 'talla',
+                    talla: m.talla,
                 });
             }
             if (Number(m.cantidad) !== Number(orig.cantidad)) {
-                steps.push({
-                    origIdKey,
-                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/cantidad`, {
-                        cantidad: m.cantidad,
-                        ...(isLast ? { cerrar_edicion: true } : {}),
-                    }),
+                cambios.push({
+                    seleccion_id: origIdKey,
+                    tipo: 'cantidad',
+                    cantidad: m.cantidad,
                 });
             }
         }
-        if (steps.length === 0) return;
+        if (cambios.length === 0) return;
 
         setSavingBatch(true);
-        const idByOrig = {};
         try {
-            for (let i = 0; i < steps.length; i++) {
-                const s = steps[i];
-                const cid = idByOrig[s.origIdKey] ?? s.origIdKey;
-                const isLast = i === steps.length - 1;
-                const res = await s.exec(cid, isLast);
-                if (res?.seleccion_id != null) {
-                    idByOrig[s.origIdKey] = res.seleccion_id;
-                }
-            }
-            showToast('Cambios guardados. Tu edición para este ejercicio quedó cerrada.');
+            const res = await api.post('/api/mi-vestuario/guardar-cambios', { cambios });
+            showToast(res?.message ?? 'Cambios guardados. Tu edición para este ejercicio quedó cerrada.');
             setPendingEdits({});
             load(anio ?? data?.anio);
         } catch (err) {

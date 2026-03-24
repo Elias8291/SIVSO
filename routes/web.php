@@ -1,21 +1,21 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\DependenciaController;
 use App\Http\Controllers\Api\DelegacionController;
 use App\Http\Controllers\Api\DelegadoController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\DependenciaController;
 use App\Http\Controllers\Api\EmpleadoController;
-use App\Http\Controllers\Api\ProductoController;
-use App\Http\Controllers\Api\VestuarioController;
-use App\Http\Controllers\Api\PresupuestoController;
-use App\Http\Controllers\Api\ProgramasController;
 use App\Http\Controllers\Api\MiDelegacionController;
 use App\Http\Controllers\Api\NotificacionController;
 use App\Http\Controllers\Api\PeriodoController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\PresupuestoController;
+use App\Http\Controllers\Api\ProductoController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProgramasController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VestuarioController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -47,6 +47,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
         Route::get('mi-vestuario', [VestuarioController::class, 'index']);
     });
     Route::middleware('permission:editar_seleccion')->group(function () {
+        Route::post('mi-vestuario/guardar-cambios', [VestuarioController::class, 'guardarCambiosMiVestuario']);
         Route::put('mi-vestuario/{id}/talla', [VestuarioController::class, 'updateTalla']);
         Route::put('mi-vestuario/{id}/producto', [VestuarioController::class, 'updateProducto']);
         Route::put('mi-vestuario/{id}/cantidad', [VestuarioController::class, 'updateCantidad']);
