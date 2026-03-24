@@ -2,7 +2,7 @@
  * Modal para ver y editar vestuario de un empleado (desde Mi Delegación).
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Ruler, RefreshCw, CheckCircle, Search } from 'lucide-react';
+import { Ruler, RefreshCw, CheckCircle, Search, Unlock } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Modal } from '../../components/ui';
 import { useDebounce } from '../../lib/useDebounce';
@@ -212,28 +212,27 @@ function ModalCantidad({ item, onClose, onSave, saving }) {
 
 export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
     const [data, setData] = useState(null);
-    const [anio, setAnio] = useState(() => new Date().getFullYear());
-    const [anioCalendario, setAnioCalendario] = useState(() => new Date().getFullYear());
+    const [anio, setAnio] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editTalla, setEditTalla] = useState(null);
     const [cambiarProd, setCambiarProd] = useState(null);
     const [editCantidad, setEditCantidad] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [reactivando, setReactivando] = useState(false);
     const [toast, setToast] = useState(null);
 
     const load = useCallback((anioParam) => {
         if (!empleado?.id) return;
-        const y = typeof anioParam === 'number' ? anioParam : new Date().getFullYear();
         setLoading(true);
         setError(null);
-        api.get(`/api/empleados/${empleado.id}/vestuario?anio=${y}`)
+        const url = typeof anioParam === 'number'
+            ? `/api/empleados/${empleado.id}/vestuario?anio=${anioParam}`
+            : `/api/empleados/${empleado.id}/vestuario`;
+        api.get(url)
             .then((res) => {
                 setData(res);
-                setAnio(res.anio ?? y);
-                if (res.anio_calendario != null) {
-                    setAnioCalendario(Number(res.anio_calendario));
-                }
+                setAnio(res.anio ?? anioParam ?? new Date().getFullYear());
                 setLoading(false);
             })
             .catch((err) => { setError(err.message || 'Error al cargar'); setLoading(false); });
@@ -241,14 +240,12 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
 
     useEffect(() => {
         if (!empleado?.id) return;
-        const def = new Date().getFullYear();
-        setAnio(def);
-        setAnioCalendario(def);
         setEditTalla(null);
         setCambiarProd(null);
         setEditCantidad(null);
         setData(null);
-        load(def);
+        setAnio(null);
+        load();
     }, [empleado?.id, load]);
 
     useEffect(() => { const t = toast && setTimeout(() => setToast(null), 2500); return () => clearTimeout(t); }, [toast]);
@@ -260,7 +257,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             await api.put(`/api/empleados/${empleado.id}/vestuario/${editTalla.id}/talla`, { talla });
             setToast('Talla actualizada.');
             setEditTalla(null);
-            load(anio);
+            load(anio ?? undefined);
             onSaved?.();
         } catch (err) { setToast(err.message || 'Error'); }
         finally { setSaving(false); }
@@ -273,7 +270,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             await api.put(`/api/empleados/${empleado.id}/vestuario/${cambiarProd.id}/producto`, { producto_id: productoId, talla });
             setToast('Artículo actualizado.');
             setCambiarProd(null);
-            load(anio);
+            load(anio ?? undefined);
             onSaved?.();
         } catch (err) { setToast(err.message || 'Error'); }
         finally { setSaving(false); }
@@ -286,7 +283,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
             await api.put(`/api/empleados/${empleado.id}/vestuario/${editCantidad.id}/cantidad`, { cantidad });
             setToast('Cantidad actualizada.');
             setEditCantidad(null);
-            load(anio);
+            load(anio ?? undefined);
             onSaved?.();
         } catch (err) { setToast(err.message || 'Error'); }
         finally { setSaving(false); }
@@ -297,23 +294,43 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
         load(newAnio);
     };
 
-    /** Solo el año en curso (calendario del servidor) admite cambios; años anteriores = solo consulta. */
-    const editable = Number(anio) === Number(anioCalendario);
+    const ejercicioVigente = data?.ejercicio_vigente ?? data?.anio_calendario ?? new Date().getFullYear();
+
+    /** Solo el ejercicio vigente admite cambios; años anteriores = solo consulta. */
+    const editable = anio != null && Number(anio) === Number(ejercicioVigente);
 
     const aniosOpciones = useMemo(() => {
         const hist = data?.anios_disponibles ?? [];
-        return [...new Set([anioCalendario, ...hist])].sort((a, b) => b - a);
-    }, [data?.anios_disponibles, anioCalendario]);
+        return [...new Set([ejercicioVigente, ...hist])].sort((a, b) => b - a);
+    }, [data?.anios_disponibles, ejercicioVigente]);
 
+    /** Catálogo de reemplazo siempre al precio/clave del ejercicio vigente cuando editas ese ejercicio. */
     const catalogAnio = useMemo(() => {
-        if (Number(anio) === Number(anioCalendario)) return anioCalendario;
-        return anio ?? data?.anio ?? anioCalendario;
-    }, [anio, anioCalendario, data?.anio]);
+        if (editable) return ejercicioVigente;
+        return anio ?? data?.anio ?? ejercicioVigente;
+    }, [editable, anio, data?.anio, ejercicioVigente]);
+
+    const handleReactivarEdicion = async () => {
+        if (!empleado?.id) return;
+        setReactivando(true);
+        try {
+            await api.post(`/api/empleados/${empleado.id}/vestuario/reactivar-edicion`, { anio: ejercicioVigente });
+            setToast('Actualización reactivada: el empleado podrá editar de nuevo.');
+            load(anio ?? ejercicioVigente);
+            onSaved?.();
+        } catch (err) {
+            setToast(err.message || 'No se pudo reactivar');
+        } finally {
+            setReactivando(false);
+        }
+    };
 
     if (!empleado) return null;
 
     const estadoEj = data?.estado_actualizacion_ejercicio;
     const pc = data?.presupuesto_comparativo;
+    const edicionCerradaEmp = data?.edicion_cerrada_ejercicio_vigente ?? false;
+    const selectAnio = anio ?? ejercicioVigente;
 
     return (
         <>
@@ -326,22 +343,38 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                                 <p className="text-[11px] text-zinc-500">NUE {empleado.nue} · {empleado.delegacion || ''}</p>
                             )}
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-end gap-2">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
                                 <span className="text-[11px] text-zinc-500 uppercase font-bold tracking-wider">Ejercicio</span>
                                 <select
-                                    value={anio ?? anioCalendario}
+                                    value={selectAnio}
                                     onChange={(e) => handleAnioChange(Number(e.target.value))}
                                     className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer"
                                 >
                                     {aniosOpciones.map((a) => (
-                                        <option key={a} value={a}>{a}{a === anioCalendario ? ' (actual)' : ''}</option>
+                                        <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
                                     ))}
                                 </select>
+                                {editable && edicionCerradaEmp && (
+                                    <button
+                                        type="button"
+                                        disabled={reactivando}
+                                        onClick={handleReactivarEdicion}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 disabled:opacity-50"
+                                    >
+                                        <Unlock size={12} strokeWidth={2} />
+                                        {reactivando ? '…' : 'Activar actualización'}
+                                    </button>
+                                )}
                             </div>
                             {!editable && estadoEj !== 'historico' && (
-                                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium max-w-[220px] text-right leading-snug">
-                                    Solo consulta. Para modificar talla, artículo o cantidad elija el ejercicio {anioCalendario}.
+                                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium max-w-[240px] text-right leading-snug">
+                                    Solo consulta. Los años anteriores no se modifican; elija el ejercicio vigente ({ejercicioVigente}) para editar con el catálogo actual.
+                                </p>
+                            )}
+                            {editable && edicionCerradaEmp && (
+                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 max-w-[260px] text-right leading-snug">
+                                    El empleado ya cerró su edición. Puede seguir usted como delegado o pulse «Activar actualización» para permitirle editar de nuevo.
                                 </p>
                             )}
                         </div>
@@ -351,21 +384,21 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                         <div className="space-y-3">
                             {estadoEj === 'pendiente_actualizar' && data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
                                 <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/30 px-4 py-3 text-[12px] text-amber-950 dark:text-amber-100 leading-relaxed">
-                                    <p className="font-bold uppercase tracking-wide text-[10px] text-amber-800 dark:text-amber-300 mb-1.5">Falta actualizar al ejercicio {anioCalendario}</p>
+                                    <p className="font-bold uppercase tracking-wide text-[10px] text-amber-800 dark:text-amber-300 mb-1.5">Falta actualizar al ejercicio {ejercicioVigente}</p>
                                     <p>
                                         Se muestran las prendas del ejercicio <strong>{data.anio_referencia_vista}</strong> (precios de ese catálogo).
-                                        Cualquier cambio de talla, artículo o cantidad se registra en el ejercicio <strong>{anioCalendario}</strong>.
+                                        Cualquier cambio se registra en el ejercicio <strong>{ejercicioVigente}</strong> con precios y claves del catálogo vigente.
                                     </p>
                                 </div>
                             )}
-                            {estadoEj === 'actualizado' && Number(anio) === Number(anioCalendario) && (
+                            {estadoEj === 'actualizado' && editable && (
                                 <div className="rounded-xl border border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/80 dark:bg-emerald-950/25 px-4 py-2.5 text-[11px] text-emerald-900 dark:text-emerald-200 leading-relaxed">
-                                    Ya hay vestuario registrado en <strong>{anioCalendario}</strong>. Como delegado puede seguir modificando tallas, artículos o cantidades.
+                                    Vestuario en <strong>{ejercicioVigente}</strong>. Como delegado puede modificar tallas, artículos o cantidades (catálogo del ejercicio vigente).
                                 </div>
                             )}
                             {estadoEj === 'historico' && (
                                 <div className="rounded-xl border border-sky-200/80 dark:border-sky-900/40 bg-sky-50/70 dark:bg-sky-950/20 px-4 py-2.5 text-[11px] text-sky-900 dark:text-sky-200">
-                                    Consulta histórica del ejercicio <strong>{anio}</strong>. No se pueden aplicar cambios en años anteriores.
+                                    Consulta histórica del ejercicio <strong>{anio}</strong>. No se modifican tallas ni artículos de ejercicios cerrados; use el ejercicio vigente ({ejercicioVigente}) para actualizar.
                                 </div>
                             )}
 
@@ -403,7 +436,7 @@ export default function VestuarioEmpleadoModal({ empleado, onClose, onSaved }) {
                         <p className="py-8 text-center text-sm text-zinc-500">
                             {data?.estado_actualizacion_ejercicio === 'sin_historial'
                                 ? 'Sin historial de vestuario: no hay registros en el ejercicio actual ni en años anteriores.'
-                                : `Sin asignaciones de vestuario para el ejercicio ${anio ?? anioCalendario}.`}
+                                : `Sin asignaciones de vestuario para el ejercicio ${anio ?? ejercicioVigente}.`}
                         </p>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

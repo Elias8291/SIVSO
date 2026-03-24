@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Delegado;
 use App\Models\Empleado;
 use App\Models\Periodo;
 use App\Models\Seleccion;
@@ -13,6 +14,96 @@ use Illuminate\Support\Facades\DB;
 
 class VestuarioController extends Controller
 {
+    private function tieneEdicionCerrada(int $empleadoId, int $anio): bool
+    {
+        return DB::table('vestuario_ejercicio_cerrado')
+            ->where('empleado_id', $empleadoId)
+            ->where('anio', $anio)
+            ->exists();
+    }
+
+    private function marcarEdicionCerrada(int $empleadoId, int $anio): void
+    {
+        $now = now();
+        if ($this->tieneEdicionCerrada($empleadoId, $anio)) {
+            DB::table('vestuario_ejercicio_cerrado')
+                ->where('empleado_id', $empleadoId)
+                ->where('anio', $anio)
+                ->update(['updated_at' => $now]);
+
+            return;
+        }
+
+        DB::table('vestuario_ejercicio_cerrado')->insert([
+            'empleado_id' => $empleadoId,
+            'anio' => $anio,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    private function liberarEdicionCerrada(int $empleadoId, int $anio): void
+    {
+        DB::table('vestuario_ejercicio_cerrado')
+            ->where('empleado_id', $empleadoId)
+            ->where('anio', $anio)
+            ->delete();
+    }
+
+    private function delegacionIdsQueGestionaElUsuario(Request $request): Collection
+    {
+        $user = $request->user();
+        $delegado = Delegado::where('user_id', $user->id)->first();
+        $ids = collect();
+        if ($delegado) {
+            $ids = DB::table('delegado_delegacion AS dd')
+                ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
+                ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
+                ->pluck('dd.delegacion_id');
+        }
+        if ($ids->isEmpty() && $user->nue) {
+            $emp = Empleado::where('nue', $user->nue)->first();
+            if ($emp && $emp->delegacion_id) {
+                $ids = DB::table('delegado_delegacion AS dd')
+                    ->where('dd.delegacion_id', $emp->delegacion_id)
+                    ->pluck('dd.delegacion_id');
+            }
+        }
+
+        return $ids->unique()->values();
+    }
+
+    private function delegadoPuedeGestionarEmpleadoId(Request $request, int $empleadoId): bool
+    {
+        $emp = Empleado::find($empleadoId);
+        if (! $emp || ! $emp->delegacion_id) {
+            return false;
+        }
+
+        return $this->delegacionIdsQueGestionaElUsuario($request)->contains($emp->delegacion_id);
+    }
+
+    private function usuarioPuedeReactivarVestuarioEmpleado(Request $request, int $empleadoId): bool
+    {
+        if ($request->user()->can('editar_empleados')) {
+            return true;
+        }
+
+        return $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
+    }
+
+    private function verificarEmpleadoPuedeEditarSuVestuario(Empleado $empleado): ?JsonResponse
+    {
+        $v = $this->ejercicioVigenteAnio();
+        if (! $this->tieneEdicionCerrada($empleado->id, $v)) {
+            return null;
+        }
+
+        return response()->json([
+            'message' => "Ya confirmaste tu vestuario para el ejercicio {$v}. Tu delegado puede reactivar la actualización si necesitas corregir algo.",
+        ], 403);
+    }
+
     /** Año del ejercicio en curso: periodo abierto, o año calendario si no hay periodo abierto. */
     private function ejercicioVigenteAnio(): int
     {
@@ -26,7 +117,15 @@ class VestuarioController extends Controller
         $user = $request->user();
 
         if (! $user->nue) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => [], 'ejercicio_vigente' => (int) date('Y')]);
+            return response()->json([
+                'empleado' => null,
+                'asignaciones' => [],
+                'anio' => (int) date('Y'),
+                'anios_disponibles' => [],
+                'ejercicio_vigente' => (int) date('Y'),
+                'edicion_cerrada_ejercicio_vigente' => false,
+                'puede_editar_vestuario' => false,
+            ]);
         }
 
         $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
@@ -34,7 +133,15 @@ class VestuarioController extends Controller
             ->first();
 
         if (! $empleado) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => [], 'ejercicio_vigente' => (int) date('Y')]);
+            return response()->json([
+                'empleado' => null,
+                'asignaciones' => [],
+                'anio' => (int) date('Y'),
+                'anios_disponibles' => [],
+                'ejercicio_vigente' => (int) date('Y'),
+                'edicion_cerrada_ejercicio_vigente' => false,
+                'puede_editar_vestuario' => false,
+            ]);
         }
 
         $aniosDisponibles = DB::table('selecciones')
@@ -76,6 +183,11 @@ class VestuarioController extends Controller
             ->orderByDesc('anio')
             ->first();
 
+        $edicionCerrada = $this->tieneEdicionCerrada($empleado->id, $ejercicioVigente);
+        $puedeEditarVestuario = $periodoActivo !== null
+            && $anio === $ejercicioVigente
+            && ! $edicionCerrada;
+
         return response()->json([
             'empleado' => $empleadoData,
             'asignaciones' => $asignaciones,
@@ -84,6 +196,8 @@ class VestuarioController extends Controller
             'anios_disponibles' => $aniosDisponibles,
             'vista_hereda_anio_anterior' => $vistaHeredaAnioAnterior,
             'anio_referencia_vista' => $anioReferenciaVista,
+            'edicion_cerrada_ejercicio_vigente' => $edicionCerrada,
+            'puede_editar_vestuario' => $puedeEditarVestuario,
             'periodo_activo' => $periodoActivo ? [
                 'id' => $periodoActivo->id,
                 'anio' => (int) $periodoActivo->anio,
@@ -234,6 +348,10 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
+        if ($blocked = $this->verificarEmpleadoPuedeEditarSuVestuario($empleado)) {
+            return $blocked;
+        }
+
         $origId = (int) $seleccion->id;
         $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
 
@@ -273,6 +391,10 @@ class VestuarioController extends Controller
 
         $seleccion->update(['producto_talla_id' => $newPt->id]);
 
+        if ($request->boolean('cerrar_edicion')) {
+            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
+        }
+
         return $this->jsonActualizacionSeleccion('Talla actualizada correctamente.', $seleccion, $origId);
     }
 
@@ -291,6 +413,10 @@ class VestuarioController extends Controller
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
         if (! $seleccion) {
             return response()->json(['message' => 'Registro no encontrado.'], 404);
+        }
+
+        if ($blocked = $this->verificarEmpleadoPuedeEditarSuVestuario($empleado)) {
+            return $blocked;
         }
 
         $origId = (int) $seleccion->id;
@@ -338,6 +464,10 @@ class VestuarioController extends Controller
 
         $seleccion->update(['producto_talla_id' => $ptId]);
 
+        if ($request->boolean('cerrar_edicion')) {
+            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
+        }
+
         return $this->jsonActualizacionSeleccion('Artículo actualizado correctamente.', $seleccion, $origId);
     }
 
@@ -358,6 +488,10 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
+        if ($blocked = $this->verificarEmpleadoPuedeEditarSuVestuario($empleado)) {
+            return $blocked;
+        }
+
         $origId = (int) $seleccion->id;
         $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
 
@@ -372,7 +506,31 @@ class VestuarioController extends Controller
 
         $seleccion->update(['cantidad' => $request->cantidad]);
 
+        if ($request->boolean('cerrar_edicion')) {
+            $this->marcarEdicionCerrada($empleado->id, (int) $seleccion->anio);
+        }
+
         return $this->jsonActualizacionSeleccion('Cantidad actualizada correctamente.', $seleccion, $origId);
+    }
+
+    public function empleadoReactivarEdicionVestuario(Request $request, int $empleado): JsonResponse
+    {
+        if (! $this->usuarioPuedeReactivarVestuarioEmpleado($request, $empleado)) {
+            return response()->json(['message' => 'No tiene permiso para gestionar el vestuario de este empleado.'], 403);
+        }
+
+        $data = $request->validate([
+            'anio' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        $anio = isset($data['anio']) ? (int) $data['anio'] : $this->ejercicioVigenteAnio();
+
+        $this->liberarEdicionCerrada($empleado, $anio);
+
+        return response()->json([
+            'message' => 'Actualización de vestuario reactivada: el empleado podrá modificar de nuevo su vestuario para ese ejercicio.',
+            'anio' => $anio,
+        ]);
     }
 
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
@@ -451,12 +609,16 @@ class VestuarioController extends Controller
             ],
         ];
 
+        $edicionCerradaEmp = $this->tieneEdicionCerrada($emp->id, $anioCalendario);
+
         return response()->json([
             'empleado' => $empleadoData,
             'asignaciones' => $asignaciones,
             'anio' => $anio,
             'anios_disponibles' => $aniosDisponibles,
             'anio_calendario' => $anioCalendario,
+            'ejercicio_vigente' => $anioCalendario,
+            'edicion_cerrada_ejercicio_vigente' => $edicionCerradaEmp,
             'vista_hereda_anio_anterior' => $vistaHeredaAnioAnterior,
             'anio_referencia_vista' => $anioReferenciaVista,
             'estado_actualizacion_ejercicio' => $estadoActualizacionEjercicio,
@@ -559,13 +721,6 @@ class VestuarioController extends Controller
 
         $origId = (int) $seleccion->id;
         $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado);
-
-        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
-            return $blocked;
-        }
-        if ($blocked = $this->verificarSeleccionEsEjercicioVigente($seleccion)) {
-            return $blocked;
-        }
 
         $request->validate(['cantidad' => 'required|integer|min:1|max:100']);
 

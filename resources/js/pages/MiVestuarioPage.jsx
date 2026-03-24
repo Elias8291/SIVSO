@@ -467,40 +467,59 @@ export default function MiVestuarioPage() {
 
     const confirmarCambios = async () => {
         if (pendingCount === 0) return;
-        setSavingBatch(true);
-        try {
-            for (const idStr of Object.keys(pendingEdits)) {
-                const origIdKey = Number(idStr);
-                let currentId = origIdKey;
-                const applyRemap = (res) => {
-                    if (res?.seleccion_id != null) {
-                        currentId = res.seleccion_id;
-                    }
-                };
-                const orig = baseline.find((x) => x.id === origIdKey);
-                const patch = pendingEdits[idStr];
-                if (!orig || !patch) continue;
-
-                const m = mergedRow(orig, patch);
-                let didProducto = false;
-                if (patch.producto_id != null && patch.producto_id !== orig.producto_id) {
-                    const res = await api.put(`/api/mi-vestuario/${currentId}/producto`, {
+        const steps = [];
+        for (const idStr of Object.keys(pendingEdits)) {
+            const origIdKey = Number(idStr);
+            const orig = baseline.find((x) => x.id === origIdKey);
+            const patch = pendingEdits[idStr];
+            if (!orig || !patch) continue;
+            const m = mergedRow(orig, patch);
+            let didProducto = false;
+            if (patch.producto_id != null && patch.producto_id !== orig.producto_id) {
+                steps.push({
+                    origIdKey,
+                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/producto`, {
                         producto_id: patch.producto_id,
                         talla: (m.talla || '').trim(),
-                    });
-                    applyRemap(res);
-                    didProducto = true;
-                }
-                if (!didProducto && String(m.talla ?? '') !== String(orig.talla ?? '')) {
-                    const res = await api.put(`/api/mi-vestuario/${currentId}/talla`, { talla: m.talla });
-                    applyRemap(res);
-                }
-                if (Number(m.cantidad) !== Number(orig.cantidad)) {
-                    const res = await api.put(`/api/mi-vestuario/${currentId}/cantidad`, { cantidad: m.cantidad });
-                    applyRemap(res);
+                        ...(isLast ? { cerrar_edicion: true } : {}),
+                    }),
+                });
+                didProducto = true;
+            }
+            if (!didProducto && String(m.talla ?? '') !== String(orig.talla ?? '')) {
+                steps.push({
+                    origIdKey,
+                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/talla`, {
+                        talla: m.talla,
+                        ...(isLast ? { cerrar_edicion: true } : {}),
+                    }),
+                });
+            }
+            if (Number(m.cantidad) !== Number(orig.cantidad)) {
+                steps.push({
+                    origIdKey,
+                    exec: async (cid, isLast) => api.put(`/api/mi-vestuario/${cid}/cantidad`, {
+                        cantidad: m.cantidad,
+                        ...(isLast ? { cerrar_edicion: true } : {}),
+                    }),
+                });
+            }
+        }
+        if (steps.length === 0) return;
+
+        setSavingBatch(true);
+        const idByOrig = {};
+        try {
+            for (let i = 0; i < steps.length; i++) {
+                const s = steps[i];
+                const cid = idByOrig[s.origIdKey] ?? s.origIdKey;
+                const isLast = i === steps.length - 1;
+                const res = await s.exec(cid, isLast);
+                if (res?.seleccion_id != null) {
+                    idByOrig[s.origIdKey] = res.seleccion_id;
                 }
             }
-            showToast('Vestuario actualizado correctamente.');
+            showToast('Cambios guardados. Tu edición para este ejercicio quedó cerrada.');
             setPendingEdits({});
             load(anio ?? data?.anio);
         } catch (err) {
@@ -574,10 +593,12 @@ export default function MiVestuarioPage() {
         </div>
     );
 
-    const editable = !!periodoActivo;
+    const puedeEditar = data?.puede_editar_vestuario ?? false;
+    const edicionCerrada = data?.edicion_cerrada_ejercicio_vigente ?? false;
+    const viendoHistorico = (anio ?? data.anio) !== ejercicioVigente;
 
     return (
-        <div className={pendingCount > 0 && editable ? 'pb-28 sm:pb-24' : ''}>
+        <div className={pendingCount > 0 && puedeEditar ? 'pb-28 sm:pb-24' : ''}>
             {/* Encabezado */}
             <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -632,15 +653,31 @@ export default function MiVestuarioPage() {
                     />
                 </div>
 
-                {/* Alerta periodo */}
+                {/* Alerta periodo / bloqueo */}
                 <div className="mt-3 flex w-full items-center p-3 text-sm text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2 shrink-0">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                     </svg>
-                    {periodoActivo
-                        ? `Periodo de actualización (${periodoActivo.anio ?? ejercicioVigente}) activo hasta el ${(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()} — puedes actualizar tus tallas y artículos al ejercicio vigente. Los cambios se guardan cuando pulsas «Guardar cambios».`
-                        : 'No hay periodo activo — la edición no está disponible por el momento.'
-                    }
+                    <span>
+                        {viendoHistorico ? (
+                            <span>
+                                Ejercicio {anio ?? data.anio}: solo consulta. Las tallas y artículos de años anteriores no se modifican; trabaja siempre en el ejercicio vigente ({ejercicioVigente}) para actualizar.
+                            </span>
+                        ) : edicionCerrada ? (
+                            <span className="font-semibold text-amber-800 dark:text-amber-300">
+                                Ya confirmaste tu vestuario para {ejercicioVigente}. Para corregir algo, tu delegado debe usar «Activar actualización» en Mi delegación.
+                            </span>
+                        ) : periodoActivo && puedeEditar ? (
+                            <span>
+                                Periodo ({periodoActivo.anio ?? ejercicioVigente}) hasta el {(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()}
+                                . «Guardar cambios» aplica todo y cierra tu edición para este ejercicio (no podrás volver a editar salvo reactivación del delegado).
+                            </span>
+                        ) : !periodoActivo ? (
+                            <span>No hay periodo activo — la edición no está disponible por el momento.</span>
+                        ) : (
+                            <span>No puedes editar en este momento.</span>
+                        )}
+                    </span>
                 </div>
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
@@ -669,7 +706,7 @@ export default function MiVestuarioPage() {
                         <PrendaCard
                             key={item.id}
                             item={item}
-                            editable={editable}
+                            editable={puedeEditar}
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
                             onEditCantidad={setEditCantidad}
@@ -682,7 +719,7 @@ export default function MiVestuarioPage() {
             <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
             <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
 
-            {pendingCount > 0 && editable && (
+            {pendingCount > 0 && puedeEditar && (
                 <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
                     <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -692,7 +729,7 @@ export default function MiVestuarioPage() {
                                     {pendingCount === 1 ? '1 cambio pendiente' : `${pendingCount} cambios pendientes`}
                                 </p>
                                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                                    Revisa las tarjetas marcadas y guarda cuando todo esté correcto.
+                                    Revisa las tarjetas marcadas. Al guardar se cierra tu edición para el ejercicio vigente (el delegado puede reactivarla si hubo un error).
                                 </p>
                             </div>
                         </div>
