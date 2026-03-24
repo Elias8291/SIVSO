@@ -114,13 +114,12 @@ export default function MiDelegacionPage() {
                             Crear acceso
                         </button>
                     )}
-                    <button
-                        type="button"
-                        onClick={() => setEmpleadoVestuario(row)}
-                        className="px-3 py-1.5 rounded-lg bg-brand-gold/10 text-brand-gold text-[10px] font-bold uppercase tracking-wider border border-brand-gold/20 hover:bg-brand-gold hover:text-white transition-all whitespace-nowrap"
+                    <Link
+                        to={`/dashboard/mi-delegacion/vestuario/${row.id}`}
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-brand-gold/10 text-brand-gold text-[10px] font-bold uppercase tracking-wider border border-brand-gold/20 hover:bg-brand-gold hover:text-white transition-all whitespace-nowrap"
                     >
-                        Ver Vestuario
-                    </button>
+                        Ver vestuario
+                    </Link>
                 </div>
             )
         }
