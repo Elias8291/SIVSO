@@ -124,66 +124,68 @@ export function ModalCantidad({ item, onClose, onApply }) {
 export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
     const st = catStyle(item.partida);
     return (
-        <div className={`bg-white dark:bg-zinc-900 border rounded-2xl overflow-hidden flex flex-col ${item._pendiente ? 'border-amber-300/80 dark:border-amber-600/50 ring-1 ring-amber-400/25' : 'border-zinc-100 dark:border-zinc-800/80'}`}>
-            <div className={`${st.bg} px-4 py-3 flex items-center justify-between gap-2`}>
-                <div className="flex items-center gap-2 min-w-0">
-                    <span className={`size-1.5 rounded-full shrink-0 ${st.dot}`} />
-                    <span className={`text-[9px] font-bold uppercase tracking-widest ${st.text} truncate`}>
-                        {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
-                    </span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                    {item.heredado_preview && (
-                        <span className="text-[8px] font-black uppercase tracking-wider text-sky-800 dark:text-sky-300 bg-sky-100/90 dark:bg-sky-900/40 px-2 py-0.5 rounded-md">
-                            Año anterior
+        <div className={`bg-white dark:bg-zinc-900 rounded-2xl flex flex-col transition-all duration-300 ${item._pendiente ? 'border border-amber-300 dark:border-amber-600/50 shadow-[0_4px_20px_-4px_rgba(251,191,36,0.15)] ring-1 ring-amber-400/25' : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md'}`}>
+            <div className="px-5 py-4 flex-1 flex flex-col">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className={`size-1.5 rounded-full shrink-0 ${st.dot}`} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 truncate">
+                            {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                         </span>
-                    )}
-                    {item._pendiente && (
-                        <span className="text-[8px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
-                            Pendiente
-                        </span>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                        {item.heredado_preview && (
+                            <span className="text-[9px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 px-2 py-0.5 rounded-md">
+                                Año anterior
+                            </span>
+                        )}
+                        {item._pendiente && (
+                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md">
+                                Pendiente
+                            </span>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="px-4 py-4 flex-1 flex flex-col gap-3">
-                <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 leading-snug line-clamp-3">
+
+                <p className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200 leading-snug line-clamp-3 mb-5">
                     {item.descripcion}
                 </p>
-                <div className="flex items-center gap-3 flex-wrap mt-auto pt-2 border-t border-zinc-50 dark:border-zinc-800/50">
-                    <div className="flex flex-col items-center">
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Cantidad</span>
+
+                <div className="flex items-center gap-6 mt-auto">
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 mb-0.5">Cant</span>
                         {editable ? (
                             <button type="button" onClick={() => onEditCantidad(item)}
-                                className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline">
+                                className="text-[13px] font-bold text-brand-gold hover:underline text-left">
                                 {item.cantidad}
                             </button>
                         ) : (
-                            <span className="text-sm font-black text-zinc-800 dark:text-zinc-100">{item.cantidad}</span>
+                            <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">{item.cantidad}</span>
                         )}
                     </div>
-                    <div className="flex flex-col items-center">
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Talla</span>
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 mb-0.5">Talla</span>
                         {editable ? (
                             <button type="button" onClick={() => onEditTalla(item)}
-                                className="flex items-center gap-1 text-sm font-black text-brand-gold hover:underline">
+                                className="flex items-center gap-1 text-[13px] font-bold text-brand-gold hover:underline">
                                 {item.talla || '—'}
-                                <Ruler size={10} strokeWidth={2} />
                             </button>
                         ) : (
-                            <span className="text-sm font-black text-zinc-700 dark:text-zinc-300">{item.talla || '—'}</span>
+                            <span className="text-[13px] font-bold text-zinc-700 dark:text-zinc-300">{item.talla || '—'}</span>
                         )}
                     </div>
                 </div>
             </div>
+
             {editable && (
-                <div className="px-4 pb-4 flex gap-2">
+                <div className="px-3 pb-3 flex gap-1 border-t border-zinc-50 dark:border-zinc-800/50 pt-3">
                     <button type="button" onClick={() => onEditTalla(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation">
-                        <Ruler size={11} strokeWidth={2} /> Cambiar talla
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
+                        <Ruler size={13} strokeWidth={2} /> Talla
                     </button>
                     <button type="button" onClick={() => onCambiarProducto(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 min-h-[42px] py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:border-brand-gold/50 hover:text-brand-gold active:scale-[0.98] transition-all touch-manipulation">
-                        <RefreshCw size={11} strokeWidth={2} /> Cambiar artículo
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
+                        <RefreshCw size={13} strokeWidth={2} /> Artículo
                     </button>
                 </div>
             )}
