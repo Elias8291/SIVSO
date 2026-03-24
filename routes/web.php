@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AcuseVestuarioPdfController;
 use App\Http\Controllers\Api\DelegacionController;
 use App\Http\Controllers\Api\DelegadoController;
 use App\Http\Controllers\Api\DependenciaController;
@@ -57,6 +58,10 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
     Route::middleware('permission:ver_mi_delegacion')->group(function () {
         Route::get('mi-delegacion', [MiDelegacionController::class, 'index']);
         Route::post('mi-delegacion/empleados/{empleado}/crear-usuario', [MiDelegacionController::class, 'crearUsuarioEmpleado']);
+    });
+    Route::middleware('permission:ver_mi_delegacion|ver_empleados')->group(function () {
+        Route::get('mi-delegacion/empleados/{empleado}/acuse-pdf', [AcuseVestuarioPdfController::class, 'empleado']);
+        Route::get('mi-delegacion/delegaciones/{delegacion}/acuses-zip', [AcuseVestuarioPdfController::class, 'delegacionZip']);
     });
 
     Route::middleware('permission:ver_mi_delegacion|editar_seleccion')->post(

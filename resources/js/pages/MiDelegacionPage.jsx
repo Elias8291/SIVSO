@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileDown, FileText } from 'lucide-react';
 import { PageHeader, DataTable } from '../components/ui';
-import { api } from '../lib/api';
+import { api, resolveApiUrl } from '../lib/api';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
 
 export default function MiDelegacionPage() {
@@ -14,8 +14,55 @@ export default function MiDelegacionPage() {
     const [search, setSearch] = useState('');
     const [crearUsuarioCtx, setCrearUsuarioCtx] = useState(null);
     const [expandidas, setExpandidas] = useState({});
+    const [zipLoadingId, setZipLoadingId] = useState(null);
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
+
+    const openAcusePdf = (empleadoId) => {
+        const url = resolveApiUrl(`/api/mi-delegacion/empleados/${empleadoId}/acuse-pdf`);
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    const downloadAcusesZip = async (delegacionId, clave) => {
+        setZipLoadingId(delegacionId);
+        setMessage(null);
+        try {
+            const token =
+                typeof document !== 'undefined'
+                    ? document.querySelector('meta[name="csrf-token"]')?.content
+                    : '';
+            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${delegacionId}/acuses-zip`);
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/zip',
+                    'X-CSRF-TOKEN': token ?? '',
+                },
+            });
+            if (!res.ok) {
+                let msg = `Error ${res.status}`;
+                try {
+                    const j = await res.json();
+                    if (j.message) msg = j.message;
+                } catch {
+                    /* cuerpo no JSON */
+                }
+                setMessage(msg);
+                return;
+            }
+            const blob = await res.blob();
+            const safeClave = (clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Acuses_vestuario_${safeClave}.zip`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) {
+            setMessage(e.message || 'Error al descargar el archivo ZIP.');
+        } finally {
+            setZipLoadingId(null);
+        }
+    };
 
     useEffect(() => {
         api.get('/api/mi-delegacion')
@@ -114,6 +161,15 @@ export default function MiDelegacionPage() {
                             Crear acceso
                         </button>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => openAcusePdf(row.id)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all whitespace-nowrap"
+                        title="Acuse de recibo (PDF)"
+                    >
+                        <FileText className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                        PDF
+                    </button>
                     <Link
                         to={`/dashboard/mi-delegacion/vestuario/${row.id}`}
                         className="inline-flex items-center px-3 py-1.5 rounded-lg bg-brand-gold/10 text-brand-gold text-[10px] font-bold uppercase tracking-wider border border-brand-gold/20 hover:bg-brand-gold hover:text-white transition-all whitespace-nowrap"
@@ -207,7 +263,24 @@ export default function MiDelegacionPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+                                            <button
+                                                type="button"
+                                                disabled={zipLoadingId === del.id || loadingEmpleados}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    downloadAcusesZip(del.id, del.clave);
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                                                title="Un PDF por colaborador en un ZIP"
+                                            >
+                                                {zipLoadingId === del.id ? (
+                                                    <span className="size-3.5 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin shrink-0" aria-hidden />
+                                                ) : (
+                                                    <FileDown className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                                                )}
+                                                ZIP acuses
+                                            </button>
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">
                                                 {del.trabajadores_count} colaboradores
                                             </span>

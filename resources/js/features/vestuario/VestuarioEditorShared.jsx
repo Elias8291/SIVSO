@@ -2,7 +2,7 @@
  * UI y utilidades compartidas entre Mi vestuario y vestuario desde Mi delegación.
  */
 import { useState, useEffect } from 'react';
-import { Ruler, RefreshCw, CheckCircle, Search } from 'lucide-react';
+import { Ruler, RefreshCw, CheckCircle, Search, Minus, Plus, Hash } from 'lucide-react';
 import { Modal } from '../../components/ui';
 import { useDebounce } from '../../lib/useDebounce';
 
@@ -94,6 +94,78 @@ export function Toast({ message, onDone }) {
     );
 }
 
+/**
+ * Totales del vestuario completo (no del filtro).
+ * @param {'header' | 'footer'} variant — header: bajo el título, más grande; footer: pie discreto.
+ * @param {string} [rubrica] — texto pequeño sobre la línea de totales (solo variant header).
+ */
+export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados, totalFiltrados, variant = 'footer', rubrica = 'Tu vestuario' }) {
+    const articulosDistintos = asignacionesMerged.length;
+    const totalPiezas = asignacionesMerged.reduce((acc, a) => acc + (Number(a.cantidad) || 0), 0);
+    const hayFiltro = mostrandoFiltrados && totalFiltrados !== articulosDistintos;
+
+    if (articulosDistintos === 0) return null;
+
+    if (variant === 'header') {
+        return (
+            <div className="rounded-xl border border-zinc-200/65 bg-gradient-to-r from-brand-gold/[0.05] via-white to-zinc-50/40 px-4 py-3 dark:border-zinc-800/75 dark:from-brand-gold/[0.04] dark:via-zinc-900/90 dark:to-zinc-900 sm:rounded-2xl sm:px-5 sm:py-3.5">
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="hidden h-9 w-0.5 shrink-0 rounded-full bg-brand-gold/70 sm:block" aria-hidden />
+                    <div className="min-w-0 flex-1 text-center sm:text-left">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-brand-gold/95 mb-1.5 sm:mb-1">
+                            {rubrica}
+                        </p>
+                        <p className="flex flex-wrap items-baseline justify-center gap-x-0 gap-y-0.5 sm:justify-start">
+                            <span className="tabular-nums font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 text-[17px] sm:text-[19px]">
+                                {articulosDistintos}
+                            </span>
+                            <span className="ml-1 text-[13px] sm:text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+                                {articulosDistintos === 1 ? 'artículo' : 'artículos'}
+                            </span>
+                            <span className="mx-2 text-base font-light text-zinc-300 dark:text-zinc-600 leading-none" aria-hidden>
+                                ·
+                            </span>
+                            <span className="tabular-nums font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 text-[17px] sm:text-[19px]">
+                                {totalPiezas}
+                            </span>
+                            <span className="ml-1 text-[13px] sm:text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+                                {totalPiezas === 1 ? 'pieza' : 'piezas'}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                {hayFiltro ? (
+                    <p className="mt-2.5 border-t border-zinc-200/50 pt-2.5 text-[10px] leading-snug text-zinc-500 dark:border-zinc-800/60 dark:text-zinc-400">
+                        Filtro activo: se listan {totalFiltrados} de {articulosDistintos}. Las cifras son del vestuario completo.
+                    </p>
+                ) : null}
+            </div>
+        );
+    }
+
+    return (
+        <footer className="mt-10 border-t border-zinc-200/50 pt-7 dark:border-zinc-800/50">
+            <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 text-center">
+                <div className="h-px w-10 rounded-full bg-brand-gold/50" aria-hidden />
+                <p className="text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    <span className="tabular-nums font-semibold text-zinc-800 dark:text-zinc-200">{articulosDistintos}</span>
+                    {' '}
+                    {articulosDistintos === 1 ? 'artículo' : 'artículos'}
+                    <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
+                    <span className="tabular-nums font-semibold text-zinc-800 dark:text-zinc-200">{totalPiezas}</span>
+                    {' '}
+                    {totalPiezas === 1 ? 'pieza' : 'piezas'}
+                </p>
+                {hayFiltro ? (
+                    <p className="text-[10px] leading-snug text-zinc-400 dark:text-zinc-500">
+                        Filtro activo: se listan {totalFiltrados} de {articulosDistintos}. Las cifras son del vestuario completo.
+                    </p>
+                ) : null}
+            </div>
+        </footer>
+    );
+}
+
 export function ModalCantidad({ item, onClose, onApply }) {
     const [cantidad, setCantidad] = useState(item?.cantidad ?? 1);
     useEffect(() => { if (item) setCantidad(item.cantidad ?? 1); }, [item]);
@@ -112,7 +184,9 @@ export function ModalCantidad({ item, onClose, onApply }) {
         >
             {item && (
                 <div className="space-y-4">
-                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300">{item.descripcion}</p>
+                    <p className="max-h-40 overflow-y-auto text-[13px] sm:text-[14px] leading-relaxed text-zinc-600 dark:text-zinc-300 break-words">
+                        {item.descripcion}
+                    </p>
                     <input type="number" min="1" max="100" value={cantidad} onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 1)}
                         className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
                 </div>
@@ -121,10 +195,24 @@ export function ModalCantidad({ item, onClose, onApply }) {
     );
 }
 
-export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, editable }) {
+const CANTIDAD_MAX = 100;
+
+export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, onAdjustCantidad, editable }) {
     const st = catStyle(item.partida);
+    const cant = Math.max(1, Math.min(CANTIDAD_MAX, Number(item.cantidad) || 1));
+    const puedeMenos = cant > 1;
+    const puedeMas = cant < CANTIDAD_MAX;
+    const modificadoLocal = !!item._pendiente;
+    const pendienteRevisar = !!item.heredado_preview && !modificadoLocal;
+
+    const cardShell = modificadoLocal
+        ? 'border border-emerald-200/70 bg-emerald-50/45 dark:border-emerald-800/35 dark:bg-emerald-950/20 ring-1 ring-emerald-200/50 dark:ring-emerald-800/30 shadow-sm'
+        : pendienteRevisar
+            ? 'border border-slate-200/80 bg-slate-50/50 dark:border-slate-700/40 dark:bg-slate-900/35 ring-1 ring-slate-200/40 dark:ring-slate-700/25 shadow-sm'
+            : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md';
+
     return (
-        <div className={`bg-white dark:bg-zinc-900 rounded-2xl flex flex-col transition-all duration-300 ${item._pendiente ? 'border border-amber-300 dark:border-amber-600/50 shadow-[0_4px_20px_-4px_rgba(251,191,36,0.15)] ring-1 ring-amber-400/25' : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md'}`}>
+        <div className={`rounded-2xl flex flex-col transition-all duration-300 ${cardShell}`}>
             <div className="px-5 py-4 flex-1 flex flex-col">
                 <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2 min-w-0">
@@ -134,40 +222,69 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                         </span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                        {item.heredado_preview && (
-                            <span className="text-[9px] font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 px-2 py-0.5 rounded-md">
-                                Año anterior
+                        {item.heredado_preview && !modificadoLocal && (
+                            <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100/95 dark:bg-slate-800/70 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/50">
+                                Pendiente de revisar
                             </span>
                         )}
-                        {item._pendiente && (
-                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md">
-                                Pendiente
+                        {modificadoLocal && (
+                            <span className="text-[9px] font-semibold text-emerald-800 dark:text-emerald-300/90 bg-emerald-100/90 dark:bg-emerald-900/35 px-2 py-0.5 rounded-md border border-emerald-200/70 dark:border-emerald-800/40">
+                                Modificado
                             </span>
                         )}
                     </div>
                 </div>
 
-                <p className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200 leading-snug line-clamp-3 mb-5">
+                <p className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed break-words hyphens-auto mb-5">
                     {item.descripcion}
                 </p>
 
-                <div className="flex items-center gap-6 mt-auto">
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 mb-0.5">Cant</span>
-                        {editable ? (
+                <div className="flex flex-wrap items-end gap-5 mt-auto">
+                    <div className="flex flex-col gap-1 min-w-0">
+                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Cantidad</span>
+                        {editable && typeof onAdjustCantidad === 'function' ? (
+                            <div className="inline-flex items-stretch rounded-xl border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50 overflow-hidden">
+                                <button
+                                    type="button"
+                                    aria-label="Disminuir cantidad"
+                                    disabled={!puedeMenos}
+                                    onClick={() => onAdjustCantidad(item, -1)}
+                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/80 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                >
+                                    <Minus size={16} strokeWidth={2} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onEditCantidad(item)}
+                                    title="Escribir cantidad"
+                                    className="min-w-[2.75rem] px-2 py-2 text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-50 border-x border-zinc-200/90 dark:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900 transition-colors touch-manipulation"
+                                >
+                                    {cant}
+                                </button>
+                                <button
+                                    type="button"
+                                    aria-label="Aumentar cantidad"
+                                    disabled={!puedeMas}
+                                    onClick={() => onAdjustCantidad(item, 1)}
+                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/80 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                >
+                                    <Plus size={16} strokeWidth={2} />
+                                </button>
+                            </div>
+                        ) : editable ? (
                             <button type="button" onClick={() => onEditCantidad(item)}
-                                className="text-[13px] font-bold text-brand-gold hover:underline text-left">
-                                {item.cantidad}
+                                className="text-left text-[14px] font-bold text-brand-gold hover:underline tabular-nums">
+                                {cant}
                             </button>
                         ) : (
-                            <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100">{item.cantidad}</span>
+                            <span className="text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{cant}</span>
                         )}
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400 mb-0.5">Talla</span>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Talla</span>
                         {editable ? (
                             <button type="button" onClick={() => onEditTalla(item)}
-                                className="flex items-center gap-1 text-[13px] font-bold text-brand-gold hover:underline">
+                                className="flex items-center gap-1 text-[13px] font-bold text-brand-gold hover:underline text-left">
                                 {item.talla || '—'}
                             </button>
                         ) : (
@@ -178,7 +295,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
             </div>
 
             {editable && (
-                <div className="px-3 pb-3 flex gap-1 border-t border-zinc-50 dark:border-zinc-800/50 pt-3">
+                <div className="px-2 pb-3 flex gap-1 border-t border-zinc-50 dark:border-zinc-800/50 pt-3">
                     <button type="button" onClick={() => onEditTalla(item)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
                         <Ruler size={13} strokeWidth={2} /> Talla
@@ -186,6 +303,10 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                     <button type="button" onClick={() => onCambiarProducto(item)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
                         <RefreshCw size={13} strokeWidth={2} /> Artículo
+                    </button>
+                    <button type="button" onClick={() => onEditCantidad(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
+                        <Hash size={13} strokeWidth={2} /> Cantidad
                     </button>
                 </div>
             )}

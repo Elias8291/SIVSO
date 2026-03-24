@@ -14,6 +14,7 @@ import {
     PrendaCard,
     ModalTalla,
     ModalCambiarProducto,
+    VestuarioResumenTotales,
 } from '../features/vestuario/VestuarioEditorShared';
 
 /* ── Página principal ─────────────────────────────────────────────────────── */
@@ -127,6 +128,12 @@ export default function MiVestuarioPage() {
         upsertPending(editCantidad.id, { cantidad: n });
         setEditCantidad(null);
     };
+
+    const handleAdjustCantidad = useCallback((item, delta) => {
+        const cur = Number(item.cantidad) || 1;
+        const next = Math.min(100, Math.max(1, cur + delta));
+        upsertPending(item.id, { cantidad: next });
+    }, [upsertPending]);
 
     const pendingCount = Object.keys(pendingEdits).length;
 
@@ -292,50 +299,36 @@ export default function MiVestuarioPage() {
 
     return (
         <div className={pendingCount > 0 && puedeEditar ? 'pb-28 sm:pb-24' : ''}>
-            {/* Encabezado */}
             <div className="mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            Mi Vestuario
-                        </h2>
-                        <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                            <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
-                            {aniosSelect.length > 1 ? (
-                                <select
-                                    value={anio ?? data.anio}
-                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
-                                    className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
-                                >
-                                    {aniosSelect.map((a) => (
-                                        <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
-                            )}
-                            {(anio ?? data.anio) !== ejercicioVigente && (
-                                <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
-                            )}
-                            <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
-                            <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 shrink-0">NUE {data.empleado.nue}</span>
-                            <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
-                            <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 truncate max-w-[120px] sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
-                        </div>
-                    </div>
-
-                    {/* Resumen */}
-                    <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl px-5 py-3 shadow-sm shrink-0">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-0.5">Cantidad</p>
-                            <p className="text-xl font-black text-zinc-900 dark:text-white leading-none">
-                                {asignaciones.length} <span className="text-[13px] font-semibold text-zinc-400">artículos</span>
-                            </p>
-                        </div>
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                        Mi Vestuario
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
+                        {aniosSelect.length > 1 ? (
+                            <select
+                                value={anio ?? data.anio}
+                                onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
+                            >
+                                {aniosSelect.map((a) => (
+                                    <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
+                        )}
+                        {(anio ?? data.anio) !== ejercicioVigente && (
+                            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
+                        )}
+                        <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
+                        <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 shrink-0">NUE {data.empleado.nue}</span>
+                        <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
+                        <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 truncate max-w-[120px] sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
                     </div>
                 </div>
 
-                {/* Buscador filtro local */}
                 <div className="mt-6 relative w-full sm:w-96">
                     <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
                     <input
@@ -343,6 +336,15 @@ export default function MiVestuarioPage() {
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Buscar artículo por nombre o clave..."
                         className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
+                    />
+                </div>
+
+                <div className="mt-4">
+                    <VestuarioResumenTotales
+                        variant="header"
+                        asignacionesMerged={asignacionesMerged}
+                        mostrandoFiltrados={Boolean(debouncedFilter?.trim())}
+                        totalFiltrados={asignaciones.length}
                     />
                 </div>
 
@@ -365,7 +367,6 @@ export default function MiVestuarioPage() {
                 )}
             </div>
 
-            {/* Grid de prendas */}
             {asignaciones.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                     <Shirt size={32} className="text-zinc-200 dark:text-zinc-700" strokeWidth={1.2} />
@@ -374,7 +375,7 @@ export default function MiVestuarioPage() {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full min-w-0">
                     {asignaciones.map(item => (
                         <PrendaCard
                             key={item.id}
@@ -383,6 +384,7 @@ export default function MiVestuarioPage() {
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
                             onEditCantidad={setEditCantidad}
+                            onAdjustCantidad={handleAdjustCantidad}
                         />
                     ))}
                 </div>

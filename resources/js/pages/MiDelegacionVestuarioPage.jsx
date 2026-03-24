@@ -17,6 +17,7 @@ import {
     PrendaCard,
     ModalTalla,
     ModalCambiarProducto,
+    VestuarioResumenTotales,
 } from '../features/vestuario/VestuarioEditorShared';
 
 export default function MiDelegacionVestuarioPage() {
@@ -140,6 +141,12 @@ export default function MiDelegacionVestuarioPage() {
         upsertPending(editCantidad.id, { cantidad: n });
         setEditCantidad(null);
     };
+
+    const handleAdjustCantidad = useCallback((item, delta) => {
+        const cur = Number(item.cantidad) || 1;
+        const next = Math.min(100, Math.max(1, cur + delta));
+        upsertPending(item.id, { cantidad: next });
+    }, [upsertPending]);
 
     const pendingCount = Object.keys(pendingEdits).length;
 
@@ -312,55 +319,44 @@ export default function MiDelegacionVestuarioPage() {
                     <ArrowLeft size={16} strokeWidth={2} /> Volver a Mi delegación
                 </button>
 
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            Vestuario del colaborador
-                        </h2>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5 font-medium">
-                            {emp.nombre}
-                            {emp.nue && <span className="text-zinc-500"> · NUE {emp.nue}</span>}
-                            {emp.delegacion_clave && <span className="text-zinc-500"> · {emp.delegacion_clave}</span>}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                            <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
-                            {aniosSelect.length > 1 ? (
-                                <select
-                                    value={anio ?? data.anio}
-                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
-                                    className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
-                                >
-                                    {aniosSelect.map((a) => (
-                                        <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
-                            )}
-                            {(anio ?? data.anio) !== ejercicioVigente && (
-                                <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
-                            )}
-                            {puedeReactivar && edicionCerradaEmp && (
-                                <button
-                                    type="button"
-                                    disabled={reactivando}
-                                    onClick={handleReactivarEdicion}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:brightness-105 active:scale-95 transition-all ml-1"
-                                >
-                                    <Unlock size={12} strokeWidth={2} />
-                                    {reactivando ? '…' : 'Activar actualización'}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl px-5 py-3 shadow-sm shrink-0 mt-2 sm:mt-0">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-0.5">Cantidad</p>
-                            <p className="text-xl font-black text-zinc-900 dark:text-white leading-none">
-                                {asignaciones.length} <span className="text-[13px] font-semibold text-zinc-400">artículos</span>
-                            </p>
-                        </div>
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                        Vestuario del colaborador
+                    </h2>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300 mt-1.5 font-medium">
+                        {emp.nombre}
+                        {emp.nue && <span className="text-zinc-500"> · NUE {emp.nue}</span>}
+                        {emp.delegacion_clave && <span className="text-zinc-500"> · {emp.delegacion_clave}</span>}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
+                        {aniosSelect.length > 1 ? (
+                            <select
+                                value={anio ?? data.anio}
+                                onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
+                            >
+                                {aniosSelect.map((a) => (
+                                    <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
+                        )}
+                        {(anio ?? data.anio) !== ejercicioVigente && (
+                            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
+                        )}
+                        {puedeReactivar && edicionCerradaEmp && (
+                            <button
+                                type="button"
+                                disabled={reactivando}
+                                onClick={handleReactivarEdicion}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:brightness-105 active:scale-95 transition-all ml-1"
+                            >
+                                <Unlock size={12} strokeWidth={2} />
+                                {reactivando ? '…' : 'Activar actualización'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -371,6 +367,16 @@ export default function MiDelegacionVestuarioPage() {
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Buscar artículo por nombre o clave..."
                         className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
+                    />
+                </div>
+
+                <div className="mt-4">
+                    <VestuarioResumenTotales
+                        variant="header"
+                        rubrica="Resumen"
+                        asignacionesMerged={asignacionesMerged}
+                        mostrandoFiltrados={Boolean(debouncedFilter?.trim())}
+                        totalFiltrados={asignaciones.length}
                     />
                 </div>
                 <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
@@ -416,6 +422,7 @@ export default function MiDelegacionVestuarioPage() {
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
                             onEditCantidad={setEditCantidad}
+                            onAdjustCantidad={handleAdjustCantidad}
                         />
                     ))}
                 </div>

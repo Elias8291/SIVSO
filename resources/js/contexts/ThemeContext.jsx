@@ -2,8 +2,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext(null);
 
-export function ThemeProvider({ children, defaultDark = true }) {
-    const [isDark, setIsDark] = useState(defaultDark);
+function prefersDarkScheme() {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+export function ThemeProvider({ children }) {
+    const [isDark, setIsDark] = useState(prefersDarkScheme);
+
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        const onChange = () => setIsDark(mq.matches);
+        mq.addEventListener('change', onChange);
+        return () => mq.removeEventListener('change', onChange);
+    }, []);
 
     useEffect(() => {
         if (isDark) {
@@ -26,7 +38,7 @@ export function useTheme() {
     const context = useContext(ThemeContext);
     if (!context) {
         return {
-            isDarkMode: true,
+            isDarkMode: prefersDarkScheme(),
             toggleTheme: () => { },
         };
     }

@@ -54,6 +54,8 @@ async function request(method, url, body) {
     return json;
 }
 
+export { resolveApiUrl };
+
 export const api = {
     get:    (url)         => request('GET',    url),
     post:   (url, data)   => request('POST',   url, data),

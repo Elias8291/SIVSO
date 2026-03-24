@@ -158,14 +158,14 @@ function DashboardEmpleado() {
 
     const bloquePrendas = (
         <>
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-zinc-100 pb-3.5 dark:border-zinc-800/80">
-                <div>
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800/80 sm:mb-4 sm:gap-3 sm:pb-3.5">
+                <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-gold">Asignación</p>
                     <h2 className="mt-0.5 text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 lg:text-base">
                         Prendas
                     </h2>
                 </div>
-                <span className="rounded-lg bg-zinc-100/90 px-2.5 py-1 text-[11px] font-medium tabular-nums text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400">
+                <span className="shrink-0 rounded-lg bg-zinc-100/90 px-2.5 py-1 text-[11px] font-medium tabular-nums text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-400">
                     {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
                     {asignaciones.length > preview.length ? ` · ${asignaciones.length} ítems` : ''}
                 </span>
@@ -174,19 +174,19 @@ function DashboardEmpleado() {
                 {preview.map((item) => (
                     <li
                         key={item.id}
-                        className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 lg:px-1 lg:py-3.5 lg:transition-colors lg:hover:bg-zinc-50/80 dark:lg:hover:bg-zinc-800/25"
+                        className="flex w-full min-w-0 flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-3 lg:px-1 lg:py-3.5 lg:transition-colors lg:hover:bg-zinc-50/80 dark:lg:hover:bg-zinc-800/25"
                     >
-                        <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        <div className="min-w-0 w-full flex-1 sm:w-auto">
+                            <p className="text-sm font-medium leading-snug text-zinc-900 dark:text-zinc-100 break-words line-clamp-3 sm:line-clamp-none sm:truncate">
                                 {item.descripcion || 'Artículo'}
                             </p>
-                            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 break-words">
                                 {[item.clave_vestuario || item.codigo, item.talla ? `Talla ${item.talla}` : null]
                                     .filter(Boolean)
                                     .join(' · ') || '—'}
                             </p>
                         </div>
-                        <span className="shrink-0 rounded-md bg-zinc-100/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
+                        <span className="self-start shrink-0 rounded-md bg-zinc-100/80 px-2 py-0.5 text-xs font-semibold tabular-nums text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300 sm:self-center">
                             ×{item.cantidad ?? 1}
                         </span>
                     </li>
@@ -204,15 +204,15 @@ function DashboardEmpleado() {
     );
 
     return (
-        <div className={`mx-auto w-full pb-12 pt-0 ${layoutDosColumnas ? 'max-w-5xl' : 'max-w-md'}`}>
+        <div className={`mx-auto w-full min-w-0 pb-12 pt-0 ${layoutDosColumnas ? 'max-w-5xl' : 'max-w-md'}`}>
             {layoutDosColumnas ? (
-                <div className="rounded-[1.75rem] border border-zinc-200/80 bg-gradient-to-br from-white via-zinc-50/50 to-brand-gold/[0.05] p-5 shadow-[0_2px_32px_-14px_rgba(0,0,0,0.12)] dark:border-zinc-800/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-brand-gold/[0.04] sm:p-7 lg:p-9">
-                    <div className="grid gap-8 lg:grid-cols-12 lg:items-stretch lg:gap-0">
-                        <div className="lg:col-span-5 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:justify-center lg:border-r lg:border-zinc-200/60 lg:pr-8 xl:pr-10 dark:lg:border-zinc-800/70">
-                            <div className="lg:min-w-0">{bloqueSaludo}</div>
+                <div className="max-w-full overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white via-zinc-50/50 to-brand-gold/[0.05] p-4 shadow-[0_2px_32px_-14px_rgba(0,0,0,0.12)] dark:border-zinc-800/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-brand-gold/[0.04] sm:rounded-[1.75rem] sm:p-7 lg:p-9">
+                    <div className="grid min-w-0 gap-6 lg:grid-cols-12 lg:items-stretch lg:gap-0">
+                        <div className="min-w-0 lg:col-span-5 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:justify-center lg:border-r lg:border-zinc-200/60 lg:pr-8 xl:pr-10 dark:lg:border-zinc-800/70">
+                            <div className="min-w-0 lg:min-w-0">{bloqueSaludo}</div>
                         </div>
-                        <div className="lg:col-span-7 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:pl-8 xl:pl-10">
-                            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200/85 bg-white/95 p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)] dark:border-zinc-800/90 dark:bg-zinc-900/65 dark:shadow-none sm:p-6">
+                        <div className="min-w-0 lg:col-span-7 lg:flex lg:min-h-[min(22rem,55vh)] lg:flex-col lg:pl-8 xl:pl-10">
+                            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200/85 bg-white/95 p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.85)] dark:border-zinc-800/90 dark:bg-zinc-900/65 dark:shadow-none sm:rounded-2xl sm:p-6">
                                 {bloquePrendas}
                             </div>
                         </div>
