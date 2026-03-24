@@ -7,6 +7,7 @@ use App\Models\Delegado;
 use App\Models\Empleado;
 use App\Models\Periodo;
 use App\Models\Seleccion;
+use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,9 +52,25 @@ class VestuarioController extends Controller
             ->delete();
     }
 
+    /** Si el usuario solo está ligado por `empleados.user_id`, refleja el NUE en el perfil (Mi delegación / permisos). */
+    private function asegurarNueUsuarioDesdeEmpleadoSiFalta(User $user): void
+    {
+        if (trim((string) ($user->nue ?? '')) !== '') {
+            return;
+        }
+        $emp = Empleado::where('user_id', $user->id)->first();
+        if ($emp && $emp->nue) {
+            $user->nue = trim((string) $emp->nue);
+            $user->save();
+        }
+    }
+
     private function delegacionIdsQueGestionaElUsuario(Request $request): Collection
     {
         $user = $request->user();
+        if ($user instanceof User) {
+            $this->asegurarNueUsuarioDesdeEmpleadoSiFalta($user);
+        }
         $delegado = Delegado::where('user_id', $user->id)->first();
         $ids = collect();
         if ($delegado) {
@@ -62,8 +79,15 @@ class VestuarioController extends Controller
                 ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
                 ->pluck('dd.delegacion_id');
         }
-        if ($ids->isEmpty() && $user->nue) {
-            $emp = Empleado::where('nue', $user->nue)->first();
+        if ($ids->isEmpty()) {
+            $emp = null;
+            $nueTrim = trim((string) ($user->nue ?? ''));
+            if ($nueTrim !== '') {
+                $emp = Empleado::where('nue', $nueTrim)->first();
+            }
+            if (! $emp && $user instanceof User) {
+                $emp = Empleado::where('user_id', $user->id)->first();
+            }
             if ($emp && $emp->delegacion_id) {
                 $ids = DB::table('delegado_delegacion AS dd')
                     ->where('dd.delegacion_id', $emp->delegacion_id)
@@ -113,25 +137,39 @@ class VestuarioController extends Controller
         return $periodo ? (int) $periodo->anio : (int) date('Y');
     }
 
+    /**
+     * Empleado asociado al usuario autenticado: primero por NUE en el perfil, si no por user_id en el padrón
+     * (p. ej. delegado vinculado solo en empleados o cuenta creada desde Mi delegación).
+     * Si solo hay vínculo por user_id, copia el NUE al usuario para alinear perfil y vestuario.
+     */
+    private function resolverEmpleadoDelUsuarioAutenticado(User $user): ?Empleado
+    {
+        $nueTrim = trim((string) ($user->nue ?? ''));
+        if ($nueTrim !== '') {
+            $porNue = Empleado::where('nue', $nueTrim)->first();
+            if ($porNue) {
+                return $porNue;
+            }
+        }
+
+        $porUserId = Empleado::where('user_id', $user->id)->first();
+        if ($porUserId) {
+            if ($nueTrim === '' && $porUserId->nue) {
+                $user->nue = trim((string) $porUserId->nue);
+                $user->save();
+            }
+
+            return $porUserId;
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        if (! $user->nue) {
-            return response()->json([
-                'empleado' => null,
-                'asignaciones' => [],
-                'anio' => (int) date('Y'),
-                'anios_disponibles' => [],
-                'ejercicio_vigente' => (int) date('Y'),
-                'edicion_cerrada_ejercicio_vigente' => false,
-                'puede_editar_vestuario' => false,
-            ]);
-        }
-
-        $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
-            ->where('nue', $user->nue)
-            ->first();
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
 
         if (! $empleado) {
             return response()->json([
@@ -144,6 +182,8 @@ class VestuarioController extends Controller
                 'puede_editar_vestuario' => false,
             ]);
         }
+
+        $empleado->load(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
 
         $aniosDisponibles = DB::table('selecciones')
             ->where('empleado_id', $empleado->id)
@@ -428,13 +468,9 @@ class VestuarioController extends Controller
     public function updateTalla(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
-        }
-
-        $empleado = Empleado::where('nue', $user->nue)->first();
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
         if (! $empleado) {
-            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+            return response()->json(['message' => 'Sin empleado vinculado. Vincula tu NUE en Mi cuenta o revisa tu registro en el padrón.'], 403);
         }
 
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
@@ -469,13 +505,9 @@ class VestuarioController extends Controller
     public function updateProducto(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
-        }
-
-        $empleado = Empleado::where('nue', $user->nue)->first();
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
         if (! $empleado) {
-            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+            return response()->json(['message' => 'Sin empleado vinculado. Vincula tu NUE en Mi cuenta o revisa tu registro en el padrón.'], 403);
         }
 
         $seleccion = Seleccion::with('productoTalla')->where('id', $id)->where('empleado_id', $empleado->id)->first();
@@ -513,13 +545,9 @@ class VestuarioController extends Controller
     public function updateCantidad(Request $request, int $id): JsonResponse
     {
         $user = $request->user();
-        if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
-        }
-
-        $empleado = Empleado::where('nue', $user->nue)->first();
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
         if (! $empleado) {
-            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+            return response()->json(['message' => 'Sin empleado vinculado. Vincula tu NUE en Mi cuenta o revisa tu registro en el padrón.'], 403);
         }
 
         $seleccion = Seleccion::where('id', $id)->where('empleado_id', $empleado->id)->first();
@@ -554,13 +582,9 @@ class VestuarioController extends Controller
     public function guardarCambiosMiVestuario(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (! $user->nue) {
-            return response()->json(['message' => 'Sin NUE vinculado.'], 403);
-        }
-
-        $empleado = Empleado::where('nue', $user->nue)->first();
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
         if (! $empleado) {
-            return response()->json(['message' => 'Empleado no encontrado.'], 404);
+            return response()->json(['message' => 'Sin empleado vinculado. Vincula tu NUE en Mi cuenta o revisa tu registro en el padrón.'], 403);
         }
 
         if ($blocked = $this->verificarEmpleadoPuedeEditarSuVestuario($empleado)) {
