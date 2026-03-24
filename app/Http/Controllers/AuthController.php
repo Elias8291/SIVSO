@@ -40,10 +40,16 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            $redirect = route('dashboard');
+            $user = Auth::user();
+            $redirect = $user->must_change_password
+                ? route('cambiar-contrasena')
+                : route('dashboard');
 
             if ($request->expectsJson()) {
-                return response()->json(['redirect' => $redirect]);
+                return response()->json([
+                    'redirect' => $redirect,
+                    'must_change_password' => (bool) $user->must_change_password,
+                ]);
             }
 
             return redirect()->intended($redirect);
@@ -89,6 +95,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
         $user->password = Hash::make($request->password);
+        $user->must_change_password = false;
         $user->save();
 
         if ($request->expectsJson()) {

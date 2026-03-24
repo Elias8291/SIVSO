@@ -19,6 +19,7 @@ class User extends Authenticatable
         'nue',
         'email',
         'password',
+        'must_change_password',
         'activo',
     ];
 
@@ -31,8 +32,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'activo'            => 'boolean',
+            'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 

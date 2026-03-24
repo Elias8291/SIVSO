@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/cambiar-contrasena', [AuthController::class, 'cambiarContrasena']);
 });
 
-Route::middleware('auth')->prefix('api')->group(function () {
+Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function () {
     // Perfil del usuario autenticado (sin permiso Spatie adicional)
     Route::get('perfil', [ProfileController::class, 'show']);
     Route::put('perfil', [ProfileController::class, 'update']);
@@ -54,7 +54,10 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
 
     // Mi delegación
-    Route::middleware('permission:ver_mi_delegacion')->get('mi-delegacion', [MiDelegacionController::class, 'index']);
+    Route::middleware('permission:ver_mi_delegacion')->group(function () {
+        Route::get('mi-delegacion', [MiDelegacionController::class, 'index']);
+        Route::post('mi-delegacion/empleados/{empleado}/crear-usuario', [MiDelegacionController::class, 'crearUsuarioEmpleado']);
+    });
 
     // Empleados
     Route::middleware('permission:ver_empleados')->group(function () {
@@ -179,7 +182,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     });
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'password.changed'])->group(function () {
     Route::get('/dashboard', fn () => view('spa'))->name('dashboard');
     Route::get('/dashboard/{path}', fn () => view('spa'))->where('path', '.*')->name('dashboard.catch');
 });

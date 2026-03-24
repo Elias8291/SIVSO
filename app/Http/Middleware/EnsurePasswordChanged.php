@@ -17,6 +17,13 @@ class EnsurePasswordChanged
     {
         if (Auth::check() && Auth::user()->must_change_password) {
             if (! $request->routeIs('cambiar-contrasena') && ! $request->routeIs('logout')) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Debe cambiar su contraseña antes de continuar.',
+                        'must_change_password' => true,
+                    ], 403);
+                }
+
                 return redirect()->route('cambiar-contrasena');
             }
         }

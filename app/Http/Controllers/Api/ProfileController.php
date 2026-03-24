@@ -23,12 +23,12 @@ class ProfileController extends Controller
         $empleadoData = null;
         if ($empleado) {
             $empleadoData = [
-                'id'                 => $empleado->id,
-                'nue'                => $empleado->nue,
-                'nombre_completo'    => $empleado->nombre_completo,
-                'dependencia_clave'  => $empleado->dependencia?->clave,
+                'id' => $empleado->id,
+                'nue' => $empleado->nue,
+                'nombre_completo' => $empleado->nombre_completo,
+                'dependencia_clave' => $empleado->dependencia?->clave,
                 'dependencia_nombre' => $empleado->dependencia?->nombre,
-                'delegacion_clave'   => $empleado->delegacion?->clave,
+                'delegacion_clave' => $empleado->delegacion?->clave,
             ];
         }
 
@@ -36,17 +36,17 @@ class ProfileController extends Controller
         $delegado = Delegado::where('user_id', $user->id)->first();
         if ($delegado) {
             $delegadoData = [
-                'id'     => $delegado->id,
+                'id' => $delegado->id,
                 'nombre' => $delegado->nombre,
             ];
         }
 
         return response()->json([
             'user' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'rfc'   => $user->rfc,
-                'nue'   => $user->nue,
+                'id' => $user->id,
+                'name' => $user->name,
+                'rfc' => $user->rfc,
+                'nue' => $user->nue,
                 'email' => $user->email,
             ],
             'empleado' => $empleadoData,
@@ -59,8 +59,8 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $data = $request->validate([
-            'name'  => 'nullable|string|max:255',
-            'rfc'   => ['nullable', 'string', 'max:20', Rule::unique('users', 'rfc')->ignore($user->id)],
+            'name' => 'nullable|string|max:255',
+            'rfc' => ['nullable', 'string', 'max:20', Rule::unique('users', 'rfc')->ignore($user->id)],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
 
@@ -76,7 +76,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'current_password' => 'required|string',
-            'password'         => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         if (! Hash::check($request->current_password, $user->password)) {
@@ -87,6 +87,7 @@ class ProfileController extends Controller
         }
 
         $user->password = Hash::make($request->password);
+        $user->must_change_password = false;
         $user->save();
 
         return response()->json(['message' => 'Contraseña actualizada correctamente.']);

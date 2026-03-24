@@ -40,6 +40,9 @@ async function request(method, url, body) {
     try { json = await res.json(); } catch { json = {}; }
 
     if (!res.ok) {
+        if (json?.must_change_password && typeof window !== 'undefined') {
+            window.location.href = '/cambiar-contrasena';
+        }
         const message = json?.message ?? json?.error ?? `Error ${res.status}`;
         const errors  = json?.errors ?? null;
         const err = new Error(message);
