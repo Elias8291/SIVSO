@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, UserCheck, ArrowRightLeft, ChevronDown, X } from 'lucide-react';
+import { Plus, UserCheck, ArrowRightLeft, ChevronDown, X, Key, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, Card, DataTable,
@@ -11,14 +11,14 @@ import { api } from '../lib/api';
 
 function Sel({ children, ...props }) {
     return (
-        <div className="relative w-full">
+        <div className="relative w-full group">
             <select
-                className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/40 text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-brand-gold/40 focus:ring-1 focus:ring-brand-gold/40 shadow-sm transition-all cursor-pointer appearance-none touch-manipulation"
+                className="w-full bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-[13px] font-medium focus:ring-0 focus:border-brand-gold dark:focus:border-brand-gold transition-colors py-2 pl-0 pr-8 appearance-none cursor-pointer"
                 {...props}
             >
                 {children}
             </select>
-            <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2.5} />
+            <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-300 pointer-events-none group-hover:text-brand-gold transition-colors" strokeWidth={2} />
         </div>
     );
 }
@@ -65,17 +65,16 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
     return (
         <Modal open={!!empleado} onClose={onClose} title="Mover Empleado" size="sm">
             {empleado && (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="p-3 bg-brand-gold/5 border border-brand-gold/20 rounded-xl">
-                        <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">
-                            {empleado.nombre_completo}
-                        </p>
-                        <p className="text-[11px] font-mono text-zinc-500 mt-0.5">NUE: {empleado.nue}</p>
+                <form onSubmit={handleSubmit} className="space-y-8 mt-2">
+                    <div className="border-l-2 border-brand-gold pl-4 py-1">
+                        <p className="text-[12px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Colaborador Seleccionado</p>
+                        <p className="text-zinc-900 dark:text-zinc-100 font-medium">{empleado.nombre_completo}</p>
+                        <p className="text-[11px] font-mono text-zinc-500 mt-1">NUE: {empleado.nue}</p>
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Nueva Dependencia</label>
+                    <div className="space-y-6">
+                        <div className="w-full relative group">
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Nueva Dependencia</label>
                             <Sel value={dep} onChange={e => { setDep(e.target.value); setDel(''); }} required>
                                 <option value="">Seleccionar...</option>
                                 {dependencias.map(d => (
@@ -84,8 +83,8 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
                             </Sel>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Nueva Delegación</label>
+                        <div className="w-full relative group">
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Nueva Delegación</label>
                             <Sel value={del} onChange={e => setDel(e.target.value)} disabled={!dep} required>
                                 <option value="">Seleccionar...</option>
                                 {delegaciones.map(d => (
@@ -95,12 +94,12 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-3">
-                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-zinc-500 dark:text-zinc-400 text-sm font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation min-h-[44px]">
+                    <div className="flex justify-end gap-4 pt-6 mt-4 border-t border-zinc-200 dark:border-zinc-800">
+                        <button type="button" onClick={onClose} className="px-6 py-2.5 text-[11px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={saving || !dep || !del} className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all touch-manipulation min-h-[44px]">
-                            {saving ? 'Guardando...' : 'Guardar Cambios'}
+                        <button type="submit" disabled={saving || !dep || !del} className="px-8 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-zinc-900/10 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all">
+                            {saving ? 'GUARDANDO...' : 'REASIGNAR'}
                         </button>
                     </div>
                 </form>
@@ -112,10 +111,10 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
 /* ── Chip de filtro ────────────────────────────────────────────────────────── */
 function FilterChip({ label, onClear }) {
     return (
-        <span className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-brand-gold/10 dark:bg-brand-gold/15 border border-brand-gold/20 text-[11px] font-bold text-brand-gold uppercase tracking-wider shadow-sm shadow-brand-gold/5">
+        <span className="inline-flex items-center gap-2 pl-3 pr-1 py-1 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest transition-colors">
             {label}
-            <button onClick={onClear} className="size-[18px] rounded-full hover:bg-brand-gold/20 dark:hover:bg-brand-gold/30 flex items-center justify-center transition-colors">
-                <X size={11} strokeWidth={2.5} />
+            <button onClick={onClear} className="size-5 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors">
+                <X size={12} strokeWidth={2.5} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
             </button>
         </span>
     );
@@ -175,9 +174,7 @@ export default function EmpleadosPage() {
             key: 'nue',
             label: 'NUE',
             render: (v) => (
-                <span className="inline-flex items-center px-2 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-700/60 bg-zinc-50/50 dark:bg-zinc-800/40 text-[11px] font-mono font-bold text-zinc-500 dark:text-zinc-400 tracking-widest shadow-sm">
-                    {v}
-                </span>
+                <span className="text-[12px] font-mono font-medium text-zinc-500 dark:text-zinc-400 tracking-widest">{v}</span>
             ),
         },
         {
@@ -185,23 +182,23 @@ export default function EmpleadosPage() {
             label: 'Colaborador',
             render: (v, row) => (
                 <div>
-                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
+                    <p className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 uppercase tracking-wide leading-tight">{v || '—'}</p>
                     {row.user_id && (
-                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] bg-brand-gold/10 border border-brand-gold/20 text-brand-gold font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                            <UserCheck size={10} strokeWidth={2.5} /> Cuenta vinculada
-                        </span>
+                        <p className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-brand-gold uppercase tracking-widest">
+                            <Key size={10} strokeWidth={2.5} /> Credencial asignada
+                        </p>
                     )}
                 </div>
             ),
         },
         {
             key: 'dependencia_clave',
-            label: 'Dependencia',
+            label: 'Adscripción (UR)',
             render: (v, row) => (
                 <div>
-                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
+                    <p className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
                     {row.dependencia_nombre && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[160px] truncate leading-tight">{row.dependencia_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[180px] truncate leading-tight hidden lg:block">{row.dependencia_nombre}</p>
                     )}
                 </div>
             ),
@@ -212,9 +209,9 @@ export default function EmpleadosPage() {
             label: 'Delegación',
             render: (v, row) => (
                 <div>
-                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
+                    <p className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
                     {row.delegacion_nombre && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[140px] truncate leading-tight">{row.delegacion_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[140px] truncate leading-tight hidden lg:block">{row.delegacion_nombre}</p>
                     )}
                 </div>
             ),
@@ -239,8 +236,8 @@ export default function EmpleadosPage() {
                     canEdit ? (
                         <>
                             <button onClick={() => navigate('/dashboard/empleados/nuevo')}
-                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                                <Plus size={13} strokeWidth={2.5} /> Nuevo Empleado
+                                className="hidden sm:flex items-center justify-center gap-2 px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-zinc-900/10 hover:scale-105 active:scale-[0.98] transition-all whitespace-nowrap">
+                                <Plus size={14} strokeWidth={2.5} /> NUEVO EMPLEADO
                             </button>
                             <button onClick={() => navigate('/dashboard/empleados/nuevo')}
                                 className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
@@ -250,30 +247,34 @@ export default function EmpleadosPage() {
                     ) : null
                 }
                 search={
-                    <SearchInput
-                        placeholder="Buscar por NUE, nombre o apellido..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <div className="relative">
+                        <Search size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2.5} />
+                        <input
+                            className="w-full sm:w-80 bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-[14px] placeholder:text-zinc-300 dark:placeholder:text-zinc-600 focus:ring-0 focus:border-brand-gold dark:focus:border-brand-gold transition-colors py-2 pl-7 pr-0"
+                            placeholder="Buscar por NUE o nombre..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 }
             />
 
-            {/* Filtros por dependencia / delegación */}
-            <div className="bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-4 mb-6 shadow-sm shadow-zinc-900/5 dark:shadow-none">
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1 space-y-1.5">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Filtrar por Dependencia</label>
+            {/* Filtros formales */}
+            <div className="mb-10 lg:px-2">
+                <div className="flex flex-col sm:flex-row gap-8">
+                    <div className="flex-1 max-w-md w-full relative group">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Filtrar Unidad Responsable</label>
                         <Sel value={filterDep} onChange={(e) => { setFilterDep(e.target.value); setFilterDel(''); }}>
-                            <option value="">Todas las dependencias</option>
+                            <option value="">Cualquier dependencia...</option>
                             {dependencias.map(d => (
                                 <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
                             ))}
                         </Sel>
                     </div>
-                    <div className="flex-1 space-y-1.5">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Delegación correspondiente</label>
+                    <div className="flex-1 max-w-md w-full relative group">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Filtrar Delegación</label>
                         <Sel value={filterDel} onChange={(e) => setFilterDel(e.target.value)} disabled={!filterDep}>
-                            <option value="">Todas las delegaciones</option>
+                            <option value="">Cualquier delegación...</option>
                             {delegaciones.map(d => (
                                 <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
                             ))}
@@ -300,27 +301,33 @@ export default function EmpleadosPage() {
                 </div>
             )}
 
-            <Card title={`Empleados${meta.total ? ` (${meta.total})` : ''}`}>
-                <DataTable
-                    columns={columns}
-                    data={empleados}
-                    loading={loading}
-                    onEdit={canEdit ? ((row) => navigate(`/dashboard/empleados/${row.id}/editar`)) : undefined}
-                    onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
-                    emptyMessage={search ? `Sin resultados para "${search}".` : 'Sin empleados registrados.'}
-                    extraActions={canEdit ? [{
-                        label: 'Cambiar Delegación',
-                        icon: <ArrowRightLeft size={14} />,
-                        onClick: (row) => setChangeDelegacion(row),
-                        variant: 'primary',
-                    }] : []}
-                />
+            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-sm mt-4 lg:mx-2 rounded-xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-end">
+                    <h3 className="text-[14px] font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Directorio de Colaboradores</h3>
+                    {meta.total > 0 && <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded">{meta.total} registros</span>}
+                </div>
+                <div className="overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={empleados}
+                        loading={loading}
+                        onEdit={canEdit ? ((row) => navigate(`/dashboard/empleados/${row.id}/editar`)) : undefined}
+                        onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
+                        emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay empleados registrados.'}
+                        extraActions={canEdit ? [{
+                            label: 'Reasignar',
+                            icon: <ArrowRightLeft size={14} />,
+                            onClick: (row) => setChangeDelegacion(row),
+                            variant: 'primary',
+                        }] : []}
+                    />
+                </div>
                 {meta.last_page > 1 && (
-                    <div className="px-6 pb-4 pt-2 border-t border-zinc-50 dark:border-zinc-800/40">
+                    <div className="px-6 pb-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-transparent">
                         <Pagination meta={meta} page={page} onPageChange={setPage} />
                     </div>
                 )}
-            </Card>
+            </div>
 
             <ConfirmDialog
                 open={!!confirm}
