@@ -96,11 +96,18 @@ function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, edit
                         {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                     </span>
                 </div>
-                {item._pendiente && (
-                    <span className="shrink-0 text-[8px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
-                        Pendiente
-                    </span>
-                )}
+                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                    {item.heredado_preview && (
+                        <span className="text-[8px] font-black uppercase tracking-wider text-sky-800 dark:text-sky-300 bg-sky-100/90 dark:bg-sky-900/40 px-2 py-0.5 rounded-md">
+                            Año anterior
+                        </span>
+                    )}
+                    {item._pendiente && (
+                        <span className="text-[8px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-100/90 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+                            Pendiente
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Cuerpo */}
@@ -222,7 +229,7 @@ function ModalTalla({ item, onClose, onApply }) {
 }
 
 /* ── Modal cambiar producto ───────────────────────────────────────────────── */
-function ModalCambiarProducto({ item, anio, onClose, onApply }) {
+function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -236,13 +243,13 @@ function ModalCambiarProducto({ item, anio, onClose, onApply }) {
         if (!item) return;
         setLoadingP(true);
         const ctrl = new AbortController();
-        fetch(`/api/productos?all=1&partida=${item.partida}&anio=${anio || ''}&search=${encodeURIComponent(debouncedSearch)}`, {
+        fetch(`/api/productos?all=1&partida=${item.partida}&anio=${anioCatalogo || ''}&search=${encodeURIComponent(debouncedSearch)}`, {
             signal: ctrl.signal, headers: { Accept: 'application/json' }, credentials: 'same-origin',
         })
             .then(r => r.json()).then(j => { setProductos(j.data ?? []); setLoadingP(false); })
             .catch(e => { if (e.name !== 'AbortError') setLoadingP(false); });
         return () => ctrl.abort();
-    }, [debouncedSearch, item]);
+    }, [debouncedSearch, item, anioCatalogo]);
 
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg"
@@ -434,6 +441,15 @@ export default function MiVestuarioPage() {
 
     const pendingCount = Object.keys(pendingEdits).length;
 
+    const aniosSelect = useMemo(() => {
+        const disp = data?.anios_disponibles ?? [];
+        const vig = data?.ejercicio_vigente ?? new Date().getFullYear();
+        return [...new Set([vig, ...disp])].sort((a, b) => b - a);
+    }, [data?.anios_disponibles, data?.ejercicio_vigente]);
+
+    const ejercicioVigente = data?.ejercicio_vigente ?? new Date().getFullYear();
+    const anioCatalogo = ejercicioVigente;
+
     const asignacionesMerged = useMemo(() => {
         const rows = data?.asignaciones ?? [];
         return rows.map((row) => {
@@ -454,25 +470,34 @@ export default function MiVestuarioPage() {
         setSavingBatch(true);
         try {
             for (const idStr of Object.keys(pendingEdits)) {
-                const id = Number(idStr);
-                const orig = baseline.find((x) => x.id === id);
-                const patch = pendingEdits[id];
+                const origIdKey = Number(idStr);
+                let currentId = origIdKey;
+                const applyRemap = (res) => {
+                    if (res?.seleccion_id != null) {
+                        currentId = res.seleccion_id;
+                    }
+                };
+                const orig = baseline.find((x) => x.id === origIdKey);
+                const patch = pendingEdits[idStr];
                 if (!orig || !patch) continue;
 
                 const m = mergedRow(orig, patch);
                 let didProducto = false;
                 if (patch.producto_id != null && patch.producto_id !== orig.producto_id) {
-                    await api.put(`/api/mi-vestuario/${id}/producto`, {
+                    const res = await api.put(`/api/mi-vestuario/${currentId}/producto`, {
                         producto_id: patch.producto_id,
                         talla: (m.talla || '').trim(),
                     });
+                    applyRemap(res);
                     didProducto = true;
                 }
                 if (!didProducto && String(m.talla ?? '') !== String(orig.talla ?? '')) {
-                    await api.put(`/api/mi-vestuario/${id}/talla`, { talla: m.talla });
+                    const res = await api.put(`/api/mi-vestuario/${currentId}/talla`, { talla: m.talla });
+                    applyRemap(res);
                 }
                 if (Number(m.cantidad) !== Number(orig.cantidad)) {
-                    await api.put(`/api/mi-vestuario/${id}/cantidad`, { cantidad: m.cantidad });
+                    const res = await api.put(`/api/mi-vestuario/${currentId}/cantidad`, { cantidad: m.cantidad });
+                    applyRemap(res);
                 }
             }
             showToast('Vestuario actualizado correctamente.');
@@ -560,22 +585,28 @@ export default function MiVestuarioPage() {
                         <h2 className="text-[19px] sm:text-[21px] font-bold tracking-tight text-zinc-800 dark:text-zinc-100 leading-tight">
                             Mi Vestuario
                         </h2>
-                        <div className="flex items-center gap-2 mt-1">
-                            <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 font-normal leading-relaxed">
-                                Ejercicio
+                        <p className="text-[12px] sm:text-[13px] text-zinc-600 dark:text-zinc-300 mt-1 font-medium">
+                            Ejercicio vigente: <span className="text-brand-gold font-bold">{ejercicioVigente}</span>
+                            {(anio ?? data.anio) !== ejercicioVigente && (
+                                <span className="text-zinc-500 font-normal"> · consultando histórico {anio ?? data.anio}</span>
+                            )}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <p className="text-[13px] sm:text-[14px] text-zinc-500 dark:text-zinc-400 font-normal leading-relaxed shrink-0">
+                                Ver año
                             </p>
-                            {(data.anios_disponibles ?? []).length > 1 ? (
+                            {aniosSelect.length > 1 ? (
                                 <select
                                     value={anio ?? data.anio}
                                     onChange={(e) => handleAnioChange(Number(e.target.value))}
                                     className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer"
                                 >
-                                    {(data.anios_disponibles ?? []).map(a => (
-                                        <option key={a} value={a}>{a}</option>
+                                    {aniosSelect.map((a) => (
+                                        <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
                                     ))}
                                 </select>
                             ) : (
-                                <span className="text-[13px] font-bold text-brand-gold">{data.anio}</span>
+                                <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
                             )}
                             <span className="text-[13px] text-zinc-500 dark:text-zinc-400">· NUE {data.empleado.nue} · {data.empleado.delegacion_clave}</span>
                         </div>
@@ -607,10 +638,21 @@ export default function MiVestuarioPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                     </svg>
                     {periodoActivo
-                        ? `Periodo activo hasta el ${(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()} — puedes actualizar tus tallas y artículos. Los cambios se guardan cuando pulsas «Guardar cambios».`
+                        ? `Periodo de actualización (${periodoActivo.anio ?? ejercicioVigente}) activo hasta el ${(() => { const f = periodoActivo.fecha_fin; const d = new Date(f?.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })()} — puedes actualizar tus tallas y artículos al ejercicio vigente. Los cambios se guardan cuando pulsas «Guardar cambios».`
                         : 'No hay periodo activo — la edición no está disponible por el momento.'
                     }
                 </div>
+
+                {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
+                    <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50/90 dark:bg-amber-950/30 px-4 py-3 text-[13px] leading-relaxed text-amber-950 dark:text-amber-100">
+                        <p className="font-bold text-amber-900 dark:text-amber-200 mb-1">Actualiza tu vestuario al ejercicio {ejercicioVigente}</p>
+                        <p>
+                            Lo que ves ahora son tus productos del ejercicio <strong>{data.anio_referencia_vista}</strong>
+                            {' '}(precios y claves de ese año). Necesitas revisarlos y guardar los cambios para registrarlos en el ejercicio <strong>{ejercicioVigente}</strong>
+                            {' '}con el catálogo actual. Al cambiar de artículo, el listado usa precios y claves del ejercicio vigente.
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Grid de prendas */}
@@ -637,7 +679,7 @@ export default function MiVestuarioPage() {
             )}
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
-            <ModalCambiarProducto item={cambiarProd} anio={anio ?? data?.anio} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
+            <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
             <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
 
             {pendingCount > 0 && editable && (

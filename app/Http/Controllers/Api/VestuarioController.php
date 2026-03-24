@@ -8,16 +8,25 @@ use App\Models\Periodo;
 use App\Models\Seleccion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class VestuarioController extends Controller
 {
+    /** Año del ejercicio en curso: periodo abierto, o año calendario si no hay periodo abierto. */
+    private function ejercicioVigenteAnio(): int
+    {
+        $periodo = Periodo::where('estado', 'abierto')->orderByDesc('anio')->first();
+
+        return $periodo ? (int) $periodo->anio : (int) date('Y');
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
         if (! $user->nue) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => []]);
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => [], 'ejercicio_vigente' => (int) date('Y')]);
         }
 
         $empleado = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
@@ -25,7 +34,7 @@ class VestuarioController extends Controller
             ->first();
 
         if (! $empleado) {
-            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => []]);
+            return response()->json(['empleado' => null, 'asignaciones' => [], 'anio' => (int) date('Y'), 'anios_disponibles' => [], 'ejercicio_vigente' => (int) date('Y')]);
         }
 
         $aniosDisponibles = DB::table('selecciones')
@@ -36,59 +45,86 @@ class VestuarioController extends Controller
             ->values()
             ->toArray();
 
+        $ejercicioVigente = $this->ejercicioVigenteAnio();
         $anio = $request->has('anio')
             ? (int) $request->get('anio')
-            : (count($aniosDisponibles) ? max($aniosDisponibles) : (int) date('Y'));
+            : $ejercicioVigente;
 
         $empleadoData = [
-            'nue'                => $empleado->nue,
-            'nombre'             => $empleado->nombre_completo,
-            'delegacion_clave'   => $empleado->delegacion?->clave,
-            'dependencia_clave'  => $empleado->dependencia?->clave,
+            'nue' => $empleado->nue,
+            'nombre' => $empleado->nombre_completo,
+            'delegacion_clave' => $empleado->delegacion?->clave,
+            'dependencia_clave' => $empleado->dependencia?->clave,
             'dependencia_nombre' => $empleado->dependencia?->nombre ?? '',
         ];
 
         $asignaciones = $this->getSelecciones($empleado->id, $anio);
+        $vistaHeredaAnioAnterior = false;
+        $anioReferenciaVista = null;
+
+        if ($anio === $ejercicioVigente && $asignaciones->isEmpty()) {
+            $prevYears = array_values(array_filter($aniosDisponibles, fn ($y) => (int) $y < $ejercicioVigente));
+            if (count($prevYears) > 0) {
+                $anioReferenciaVista = max($prevYears);
+                $asignaciones = $this->getSelecciones($empleado->id, $anioReferenciaVista)
+                    ->map(fn (array $row) => array_merge($row, ['heredado_preview' => true]));
+                $vistaHeredaAnioAnterior = true;
+            }
+        }
 
         $periodoActivo = Periodo::where('estado', 'abierto')
             ->orderByDesc('anio')
             ->first();
 
         return response()->json([
-            'empleado'          => $empleadoData,
-            'asignaciones'      => $asignaciones,
-            'anio'              => $anio,
+            'empleado' => $empleadoData,
+            'asignaciones' => $asignaciones,
+            'anio' => $anio,
+            'ejercicio_vigente' => $ejercicioVigente,
             'anios_disponibles' => $aniosDisponibles,
-            'periodo_activo'    => $periodoActivo ? [
-                'id'        => $periodoActivo->id,
-                'nombre'    => $periodoActivo->nombre,
+            'vista_hereda_anio_anterior' => $vistaHeredaAnioAnterior,
+            'anio_referencia_vista' => $anioReferenciaVista,
+            'periodo_activo' => $periodoActivo ? [
+                'id' => $periodoActivo->id,
+                'anio' => (int) $periodoActivo->anio,
+                'nombre' => $periodoActivo->nombre,
                 'fecha_fin' => $periodoActivo->fecha_fin ? $periodoActivo->fecha_fin->format('Y-m-d') : null,
             ] : null,
         ]);
     }
 
-    private function verificarPeriodoActivo(int $anio): ?JsonResponse
+    private function verificarPeriodoActivoParaEdicion(): ?JsonResponse
     {
-        $periodo = Periodo::where('estado', 'abierto')->first();
+        $periodo = Periodo::where('estado', 'abierto')->orderByDesc('anio')->first();
 
         if (! $periodo) {
             return response()->json(['message' => 'No hay un periodo de actualización activo. No se pueden hacer cambios.'], 403);
         }
+
+        return null;
+    }
+
+    private function verificarSeleccionEsEjercicioVigente(Seleccion $seleccion): ?JsonResponse
+    {
+        $v = $this->ejercicioVigenteAnio();
+        if ((int) $seleccion->anio !== $v) {
+            return response()->json(['message' => "Solo puede actualizar el vestuario del ejercicio vigente ({$v})."], 403);
+        }
+
         return null;
     }
 
     /**
-     * Si la selección es de un año anterior, crea (o reutiliza) la fila equivalente en el año calendario actual
-     * para que el delegado pueda actualizar vestuario arrastrando el ejercicio anterior.
+     * Si la selección es de un año anterior, crea (o reutiliza) la fila equivalente en el ejercicio vigente.
      */
     private function materializarSeleccionAlAnioCalendario(Seleccion $seleccion, int $empleadoId): Seleccion
     {
-        $anioActual = (int) date('Y');
+        $anioDestino = $this->ejercicioVigenteAnio();
         $seleccion->loadMissing('productoTalla');
         if ((int) $seleccion->empleado_id !== $empleadoId) {
             return $seleccion;
         }
-        if ((int) $seleccion->anio === $anioActual) {
+        if ((int) $seleccion->anio === $anioDestino) {
             return $seleccion;
         }
 
@@ -100,25 +136,25 @@ class VestuarioController extends Controller
         $ptRow = DB::table('producto_tallas')
             ->where('producto_id', $ptOld->producto_id)
             ->where('talla_id', $ptOld->talla_id)
-            ->where('anio', $anioActual)
+            ->where('anio', $anioDestino)
             ->first();
 
         if (! $ptRow) {
             $ptNewId = DB::table('producto_tallas')->insertGetId([
-                'producto_id'         => $ptOld->producto_id,
-                'talla_id'            => $ptOld->talla_id,
-                'anio'                => $anioActual,
-                'medidas'             => null,
+                'producto_id' => $ptOld->producto_id,
+                'talla_id' => $ptOld->talla_id,
+                'anio' => $anioDestino,
+                'medidas' => null,
                 'cantidad_disponible' => 0,
-                'created_at'          => now(),
-                'updated_at'          => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         } else {
             $ptNewId = $ptRow->id;
         }
 
         $existing = Seleccion::where('empleado_id', $empleadoId)
-            ->where('anio', $anioActual)
+            ->where('anio', $anioDestino)
             ->where('producto_talla_id', $ptNewId)
             ->first();
 
@@ -127,13 +163,31 @@ class VestuarioController extends Controller
         }
 
         $nueva = Seleccion::create([
-            'empleado_id'       => $empleadoId,
+            'empleado_id' => $empleadoId,
             'producto_talla_id' => $ptNewId,
-            'anio'              => $anioActual,
-            'cantidad'          => $seleccion->cantidad,
+            'anio' => $anioDestino,
+            'cantidad' => $seleccion->cantidad,
         ]);
 
         return $nueva->load('productoTalla');
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function jsonActualizacionSeleccion(string $message, Seleccion $seleccion, int $origId, array $extra = []): JsonResponse
+    {
+        $payload = array_merge([
+            'message' => $message,
+            'seleccion_id' => $seleccion->id,
+            'ejercicio' => (int) $seleccion->anio,
+        ], $extra);
+
+        if ($origId !== (int) $seleccion->id) {
+            $payload['remapped_from'] = $origId;
+        }
+
+        return response()->json($payload);
     }
 
     /** Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio. */
@@ -158,7 +212,7 @@ class VestuarioController extends Controller
         $total = round((float) $raw, 2);
 
         return [
-            'total'     => $total,
+            'total' => $total,
             'total_iva' => round($total * 1.16, 2),
         ];
     }
@@ -180,7 +234,13 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+        $origId = (int) $seleccion->id;
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
+
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+        if ($blocked = $this->verificarSeleccionEsEjercicioVigente($seleccion)) {
             return $blocked;
         }
 
@@ -202,18 +262,18 @@ class VestuarioController extends Controller
         if (! $newPt) {
             $newPt = (object) ['id' => DB::table('producto_tallas')->insertGetId([
                 'producto_id' => $seleccion->productoTalla->producto_id,
-                'talla_id'    => $tallaId,
-                'anio'        => $seleccion->anio,
-                'medidas'     => null,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
                 'cantidad_disponible' => 0,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ])];
         }
 
         $seleccion->update(['producto_talla_id' => $newPt->id]);
 
-        return response()->json(['message' => 'Talla actualizada correctamente.']);
+        return $this->jsonActualizacionSeleccion('Talla actualizada correctamente.', $seleccion, $origId);
     }
 
     public function updateProducto(Request $request, int $id): JsonResponse
@@ -233,13 +293,19 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+        $origId = (int) $seleccion->id;
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
+
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+        if ($blocked = $this->verificarSeleccionEsEjercicioVigente($seleccion)) {
             return $blocked;
         }
 
         $request->validate([
             'producto_id' => 'required|integer|exists:productos,id',
-            'talla'       => 'nullable|string|max:30',
+            'talla' => 'nullable|string|max:30',
         ]);
 
         $tallaId = $seleccion->productoTalla->talla_id;
@@ -259,12 +325,12 @@ class VestuarioController extends Controller
         if (! $pt) {
             $ptId = DB::table('producto_tallas')->insertGetId([
                 'producto_id' => $request->producto_id,
-                'talla_id'    => $tallaId,
-                'anio'        => $seleccion->anio,
-                'medidas'     => null,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
                 'cantidad_disponible' => 0,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         } else {
             $ptId = $pt->id;
@@ -272,7 +338,7 @@ class VestuarioController extends Controller
 
         $seleccion->update(['producto_talla_id' => $ptId]);
 
-        return response()->json(['message' => 'Artículo actualizado correctamente.']);
+        return $this->jsonActualizacionSeleccion('Artículo actualizado correctamente.', $seleccion, $origId);
     }
 
     public function updateCantidad(Request $request, int $id): JsonResponse
@@ -292,7 +358,13 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
-        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+        $origId = (int) $seleccion->id;
+        $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
+
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+        if ($blocked = $this->verificarSeleccionEsEjercicioVigente($seleccion)) {
             return $blocked;
         }
 
@@ -300,7 +372,7 @@ class VestuarioController extends Controller
 
         $seleccion->update(['cantidad' => $request->cantidad]);
 
-        return response()->json(['message' => 'Cantidad actualizada correctamente.']);
+        return $this->jsonActualizacionSeleccion('Cantidad actualizada correctamente.', $seleccion, $origId);
     }
 
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
@@ -318,20 +390,18 @@ class VestuarioController extends Controller
             ->values()
             ->toArray();
 
-        // Por defecto: año calendario actual (Mi delegación muestra primero el ejercicio en curso).
+        $anioCalendario = $this->ejercicioVigenteAnio();
         $anio = $request->has('anio')
             ? (int) $request->get('anio')
-            : (int) date('Y');
+            : $anioCalendario;
 
         $empleadoData = [
-            'nue'                => $emp->nue,
-            'nombre'             => $emp->nombre_completo,
-            'delegacion_clave'   => $emp->delegacion?->clave,
-            'dependencia_clave'  => $emp->dependencia?->clave,
+            'nue' => $emp->nue,
+            'nombre' => $emp->nombre_completo,
+            'delegacion_clave' => $emp->delegacion?->clave,
+            'dependencia_clave' => $emp->dependencia?->clave,
             'dependencia_nombre' => $emp->dependencia?->nombre ?? '',
         ];
-
-        $anioCalendario = (int) date('Y');
         $asignaciones = $this->getSelecciones($emp->id, $anio);
 
         $anioReferenciaVista = null;
@@ -382,15 +452,15 @@ class VestuarioController extends Controller
         ];
 
         return response()->json([
-            'empleado'                       => $empleadoData,
-            'asignaciones'                   => $asignaciones,
-            'anio'                           => $anio,
-            'anios_disponibles'              => $aniosDisponibles,
-            'anio_calendario'                => $anioCalendario,
-            'vista_hereda_anio_anterior'     => $vistaHeredaAnioAnterior,
-            'anio_referencia_vista'          => $anioReferenciaVista,
+            'empleado' => $empleadoData,
+            'asignaciones' => $asignaciones,
+            'anio' => $anio,
+            'anios_disponibles' => $aniosDisponibles,
+            'anio_calendario' => $anioCalendario,
+            'vista_hereda_anio_anterior' => $vistaHeredaAnioAnterior,
+            'anio_referencia_vista' => $anioReferenciaVista,
             'estado_actualizacion_ejercicio' => $estadoActualizacionEjercicio,
-            'presupuesto_comparativo'        => $presupuestoComparativo,
+            'presupuesto_comparativo' => $presupuestoComparativo,
         ]);
     }
 
@@ -419,12 +489,12 @@ class VestuarioController extends Controller
         if (! $newPt) {
             $newPt = (object) ['id' => DB::table('producto_tallas')->insertGetId([
                 'producto_id' => $seleccion->productoTalla->producto_id,
-                'talla_id'    => $tallaId,
-                'anio'        => $seleccion->anio,
-                'medidas'     => null,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
                 'cantidad_disponible' => 0,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ])];
         }
 
@@ -444,7 +514,7 @@ class VestuarioController extends Controller
 
         $request->validate([
             'producto_id' => 'required|integer|exists:productos,id',
-            'talla'       => 'nullable|string|max:30',
+            'talla' => 'nullable|string|max:30',
         ]);
 
         $tallaId = $seleccion->productoTalla->talla_id;
@@ -464,12 +534,12 @@ class VestuarioController extends Controller
         if (! $pt) {
             $ptId = DB::table('producto_tallas')->insertGetId([
                 'producto_id' => $request->producto_id,
-                'talla_id'    => $tallaId,
-                'anio'        => $seleccion->anio,
-                'medidas'     => null,
+                'talla_id' => $tallaId,
+                'anio' => $seleccion->anio,
+                'medidas' => null,
                 'cantidad_disponible' => 0,
-                'created_at'  => now(),
-                'updated_at'  => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         } else {
             $ptId = $pt->id;
@@ -487,9 +557,13 @@ class VestuarioController extends Controller
             return response()->json(['message' => 'Registro no encontrado.'], 404);
         }
 
+        $origId = (int) $seleccion->id;
         $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado);
 
-        if ($blocked = $this->verificarPeriodoActivo($seleccion->anio)) {
+        if ($blocked = $this->verificarPeriodoActivoParaEdicion()) {
+            return $blocked;
+        }
+        if ($blocked = $this->verificarSeleccionEsEjercicioVigente($seleccion)) {
             return $blocked;
         }
 
@@ -497,10 +571,10 @@ class VestuarioController extends Controller
 
         $seleccion->update(['cantidad' => $request->cantidad]);
 
-        return response()->json(['message' => 'Cantidad actualizada correctamente.']);
+        return $this->jsonActualizacionSeleccion('Cantidad actualizada correctamente.', $seleccion, $origId);
     }
 
-    private function getSelecciones(int $empleadoId, int $anio): \Illuminate\Support\Collection
+    private function getSelecciones(int $empleadoId, int $anio): Collection
     {
         return DB::table('selecciones AS s')
             ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
@@ -523,21 +597,21 @@ class VestuarioController extends Controller
             ->orderBy('p.descripcion')
             ->get()
             ->map(fn ($c) => [
-                'id'              => $c->id,
-                'producto_id'     => $c->producto_id,
-                'anio'            => (int) $c->anio,
-                'cantidad'        => (int) $c->cantidad,
-                'talla'           => $c->talla,
-                'talla_id'        => $c->talla_id,
+                'id' => $c->id,
+                'producto_id' => $c->producto_id,
+                'anio' => (int) $c->anio,
+                'cantidad' => (int) $c->cantidad,
+                'talla' => $c->talla,
+                'talla_id' => $c->talla_id,
                 'clave_vestuario' => $c->codigo,
-                'codigo'          => $c->codigo,
+                'codigo' => $c->codigo,
                 'precio_unitario' => $c->precio_unitario,
-                'importe'         => $c->precio_unitario ? round($c->cantidad * $c->precio_unitario, 2) : null,
-                'descripcion'     => $c->descripcion,
-                'marca'           => $c->marca,
-                'unidad'          => $c->unidad,
-                'medida'          => $c->medida,
-                'partida'         => $c->partida,
+                'importe' => $c->precio_unitario ? round($c->cantidad * $c->precio_unitario, 2) : null,
+                'descripcion' => $c->descripcion,
+                'marca' => $c->marca,
+                'unidad' => $c->unidad,
+                'medida' => $c->medida,
+                'partida' => $c->partida,
             ]);
     }
 }
