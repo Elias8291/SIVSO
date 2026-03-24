@@ -374,11 +374,13 @@ export default function MiVestuarioPage() {
                 </div>
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                    <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50/90 dark:bg-amber-950/30 px-4 py-3 text-[13px] leading-relaxed text-amber-950 dark:text-amber-100">
-                        <p className="font-bold text-amber-900 dark:text-amber-200 mb-1">Actualiza tu vestuario al ejercicio {ejercicioVigente}</p>
+                    <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
+                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex items-center gap-2">
+                            Actualiza tu vestuario al ejercicio {ejercicioVigente}
+                        </p>
                         <p>
-                            Lo que ves ahora son tus productos del ejercicio <strong>{data.anio_referencia_vista}</strong>
-                            {' '}(precios y claves de ese año). Necesitas revisarlos y guardar los cambios para registrarlos en el ejercicio <strong>{ejercicioVigente}</strong>
+                            Lo que ves ahora son tus productos del ejercicio <strong className="text-zinc-900 dark:text-white">{data.anio_referencia_vista}</strong>
+                            {' '}(precios y claves de ese año). Necesitas revisarlos y guardar los cambios para registrarlos en el ejercicio <strong className="text-zinc-900 dark:text-white">{ejercicioVigente}</strong>
                             {' '}con el catálogo actual. Al cambiar de artículo, el listado usa precios y claves del ejercicio vigente.
                         </p>
                     </div>

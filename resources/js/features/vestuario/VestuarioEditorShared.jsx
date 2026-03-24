@@ -129,7 +129,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                 <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2 min-w-0">
                         <span className={`size-1.5 rounded-full shrink-0 ${st.dot}`} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 truncate">
+                        <span className="text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 truncate">
                             {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                         </span>
                     </div>

@@ -398,10 +398,12 @@ export default function MiDelegacionVestuarioPage() {
                 </div>
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                    <div className="mt-3 rounded-xl border border-amber-200 dark:border-amber-700/50 bg-amber-50/90 dark:bg-amber-950/30 px-4 py-3 text-[13px] leading-relaxed text-amber-950 dark:text-amber-100">
-                        <p className="font-bold text-amber-900 dark:text-amber-200 mb-1">Referencia ejercicio {data.anio_referencia_vista}</p>
+                    <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
+                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex items-center gap-2">
+                            Referencia ejercicio {data.anio_referencia_vista}
+                        </p>
                         <p>
-                            Parte del listado puede venir del año anterior hasta completar la actualización al ejercicio <strong>{ejercicioVigente}</strong>.
+                            Parte del listado puede venir del año anterior hasta completar la actualización al ejercicio <strong className="text-zinc-900 dark:text-white">{ejercicioVigente}</strong>.
                         </p>
                     </div>
                 )}
