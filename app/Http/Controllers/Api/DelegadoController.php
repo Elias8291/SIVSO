@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DelegadoController extends Controller
 {
@@ -96,21 +97,37 @@ class DelegadoController extends Controller
     public function resumen(Request $request): JsonResponse
     {
         $search = trim((string) $request->get('search', ''));
+        $tieneEmpleadoId = Schema::hasColumn('delegados', 'empleado_id');
 
-        $delegados = DB::table('delegados AS d')
+        $base = DB::table('delegados AS d')
             ->join('delegado_delegacion AS dd', 'dd.delegado_id', '=', 'd.id')
             ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
-            ->leftJoin('users AS u', 'u.id', '=', 'd.user_id')
-            ->leftJoin('empleados AS emp', 'emp.id', '=', 'd.empleado_id')
-            ->select([
-                'd.id', 'd.nombre', 'd.user_id', 'd.empleado_id',
-                'u.name AS user_name', 'u.rfc AS user_rfc',
-                'emp.nue AS empleado_nue',
-                DB::raw("TRIM(CONCAT(COALESCE(emp.nombre,''),' ',COALESCE(emp.apellido_paterno,''),' ',COALESCE(emp.apellido_materno,''))) AS empleado_nombre_completo"),
-                'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
-            ])
-            ->orderBy('d.nombre')
-            ->get();
+            ->leftJoin('users AS u', 'u.id', '=', 'd.user_id');
+
+        if ($tieneEmpleadoId) {
+            $base->leftJoin('empleados AS emp', 'emp.id', '=', 'd.empleado_id');
+            $delegados = $base
+                ->select([
+                    'd.id', 'd.nombre', 'd.user_id', 'd.empleado_id',
+                    'u.name AS user_name', 'u.rfc AS user_rfc',
+                    'emp.nue AS empleado_nue',
+                    'emp.nombre AS emp_nombre',
+                    'emp.apellido_paterno AS emp_ap_pat',
+                    'emp.apellido_materno AS emp_ap_mat',
+                    'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
+                ])
+                ->orderBy('d.nombre')
+                ->get();
+        } else {
+            $delegados = $base
+                ->select([
+                    'd.id', 'd.nombre', 'd.user_id',
+                    'u.name AS user_name', 'u.rfc AS user_rfc',
+                    'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
+                ])
+                ->orderBy('d.nombre')
+                ->get();
+        }
 
         $trabCounts = DB::table('empleados')
             ->whereNotNull('delegacion_id')
@@ -121,16 +138,27 @@ class DelegadoController extends Controller
         $byId = [];
         foreach ($delegados as $d) {
             if (! isset($byId[$d->id])) {
+                $empleadoId = $tieneEmpleadoId ? $d->empleado_id : null;
+                $empleadoPayload = null;
+                if ($tieneEmpleadoId && $empleadoId) {
+                    $nombreCompleto = trim(implode(' ', array_filter([
+                        $d->emp_nombre ?? '',
+                        $d->emp_ap_pat ?? '',
+                        $d->emp_ap_mat ?? '',
+                    ])));
+                    $empleadoPayload = [
+                        'id' => (int) $empleadoId,
+                        'nue' => $d->empleado_nue ?? null,
+                        'nombre_completo' => $nombreCompleto !== '' ? $nombreCompleto : null,
+                    ];
+                }
+
                 $byId[$d->id] = [
                     'id' => $d->id,
                     'nombre' => $d->nombre,
                     'user_id' => $d->user_id,
-                    'empleado_id' => $d->empleado_id,
-                    'empleado' => $d->empleado_id ? [
-                        'id' => (int) $d->empleado_id,
-                        'nue' => $d->empleado_nue,
-                        'nombre_completo' => trim((string) $d->empleado_nombre_completo) ?: null,
-                    ] : null,
+                    'empleado_id' => $empleadoId,
+                    'empleado' => $empleadoPayload,
                     'user' => $d->user_id ? [
                         'id' => $d->user_id,
                         'name' => $d->user_name,
@@ -152,11 +180,20 @@ class DelegadoController extends Controller
             $byId[$d->id]['trabajadores_total'] += $cnt;
         }
 
-        if ($search) {
-            $byId = array_filter($byId, fn ($v) => stripos($v['nombre'], $search) !== false ||
-                ($v['user'] && stripos($v['user']['rfc'], $search) !== false) ||
-                collect($v['delegaciones'])->contains(fn ($del) => stripos($del['clave'], $search) !== false)
-            );
+        if ($search !== '') {
+            $byId = array_filter($byId, function ($v) use ($search) {
+                if (stripos((string) ($v['nombre'] ?? ''), $search) !== false) {
+                    return true;
+                }
+                $rfc = (string) (($v['user'] ?? [])['rfc'] ?? '');
+                if ($rfc !== '' && stripos($rfc, $search) !== false) {
+                    return true;
+                }
+
+                return collect($v['delegaciones'] ?? [])->contains(
+                    fn ($del) => stripos((string) ($del['clave'] ?? ''), $search) !== false
+                );
+            });
         }
 
         return response()->json(['data' => array_values($byId)]);
