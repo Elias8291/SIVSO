@@ -168,15 +168,6 @@ export function DelegadoModal({
         >
             <form id="form-del" onSubmit={save} className="space-y-4">
                 {formErrors.general && <ErrMsg msg={formErrors.general} />}
-                <Field label="Nombre completo" error={formErrors.nombre?.[0]}>
-                    <ExplorerInput
-                        value={form.nombre}
-                        onChange={(v) => setForm({ ...form, nombre: v.toUpperCase() })}
-                        placeholder="Ej. JUAN PÉREZ LÓPEZ"
-                        maxLength={120}
-                        required
-                    />
-                </Field>
                 <Field label="Código de delegación (sin guión)" error={formErrors.delegacion?.[0]}>
                     <ExplorerInput
                         value={form.delegacion}
@@ -199,7 +190,7 @@ export function ConfirmDeleteModal({ open, onClose, type, item, onConfirm, savin
     const message =
         type === 'dep'
             ? `¿Eliminar la dependencia UR "${item?.clave}"? Solo es posible si no tiene delegados ni trabajadores.`
-            : `¿Eliminar al delegado "${item?.nombre}"?`;
+            : `¿Eliminar el registro de delegación "${item?.clave ?? item?.nombre ?? '—'}"?`;
 
     return (
         <ConfirmDialog

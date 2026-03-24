@@ -21,10 +21,9 @@ class MiDelegacionController extends Controller
         $delegado = Delegado::where('user_id', $user->id)->first();
         $ids = collect();
         if ($delegado) {
-            $ids = DB::table('delegado_delegacion AS dd')
-                ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
-                ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
-                ->pluck('dd.delegacion_id');
+            $ids = DB::table('delegado_delegacion')
+                ->where('delegado_id', $delegado->id)
+                ->pluck('delegacion_id');
         }
         if ($ids->isEmpty()) {
             $emp = null;
@@ -142,7 +141,7 @@ class MiDelegacionController extends Controller
             $delegaciones = DB::table('delegado_delegacion AS dd')
                 ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
                 ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
-                ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
+                ->where('dd.delegado_id', $delegado->id)
                 ->select(['dd.delegado_id', 'd.nombre', 'dl.id AS delegacion_id', 'dl.clave'])
                 ->orderBy('dl.clave')
                 ->get();
@@ -207,7 +206,9 @@ class MiDelegacionController extends Controller
         $data = $delegaciones->map(fn ($d) => [
             'id' => $d->delegacion_id,
             'clave' => $d->clave,
-            'delegado_nombre' => $d->nombre,
+            'delegado_nombre' => trim((string) ($d->nombre ?? '')) !== ''
+                ? trim($d->nombre)
+                : ('Delegado #'.$d->delegado_id),
             'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
             'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion[$d->delegacion_id] ?? 0),
         ])->values()->all();

@@ -15,7 +15,7 @@ class DelegacionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $delegadoId = $request->get('delegado_id');
-        $search     = trim((string) $request->get('search', ''));
+        $search = trim((string) $request->get('search', ''));
 
         $query = Delegacion::query()->withCount('empleados');
 
@@ -26,32 +26,55 @@ class DelegacionController extends Controller
             $query->whereIn('id', $delegacionIds);
         }
 
-        $query->when($search, fn ($q) => $q->where(fn ($q2) =>
-            $q2->where('clave', 'like', "%{$search}%")
-               ->orWhere('nombre', 'like', "%{$search}%")
+        $query->when($search !== '' && ! $delegadoId, fn ($q) => $q->where(fn ($q2) => $q2->where('clave', 'like', "%{$search}%")
+            ->orWhere('nombre', 'like', "%{$search}%")
         ));
 
         $rows = $query->orderBy('clave')->get();
 
         if ($delegadoId) {
-            $data = $rows->map(fn ($d) => [
-                'id'              => $d->id,
-                'nue'             => null,
-                'nombre_completo' => $d->clave . ($d->nombre ? " — {$d->nombre}" : ''),
-                'nombre_trab'     => $d->clave,
-                'apellp_trab'     => $d->nombre,
-                'apellm_trab'     => null,
-                'delegacion'      => $d->clave,
-                'ur'              => null,
+            $delegacionIds = $rows->pluck('id')->all();
+            if ($delegacionIds === []) {
+                return response()->json(['data' => []]);
+            }
+
+            $delegadoRow = DB::table('delegados')->where('id', (int) $delegadoId)->first();
+            $delegadoLabel = $delegadoRow && trim((string) ($delegadoRow->nombre ?? '')) !== ''
+                ? trim($delegadoRow->nombre)
+                : ('Delegado #'.(int) $delegadoId);
+
+            $empQuery = Empleado::query()
+                ->with(['delegacion:id,clave'])
+                ->whereIn('delegacion_id', $delegacionIds);
+
+            $empQuery->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('nue', 'like', "%{$search}%")
+                ->orWhere('nombre', 'like', "%{$search}%")
+                ->orWhere('apellido_paterno', 'like', "%{$search}%")
+                ->orWhere('apellido_materno', 'like', "%{$search}%")
+            )
+            );
+
+            $empleados = $empQuery
+                ->orderByRaw('apellido_paterno, apellido_materno, nombre')
+                ->limit(500)
+                ->get();
+
+            $data = $empleados->map(fn (Empleado $e) => [
+                'id' => $e->id,
+                'nue' => $e->nue,
+                'nombre_completo' => $e->nombre_completo,
+                'delegacion' => $e->delegacion?->clave ?? '',
+                'delegado_label' => $delegadoLabel,
             ]);
+
             return response()->json(['data' => $data]);
         }
 
         $data = $rows->map(fn ($d) => [
-            'id'                 => $d->id,
-            'clave'              => $d->clave,
-            'nombre'             => $d->nombre,
-            'empleados_count'    => $d->empleados_count,
+            'id' => $d->id,
+            'clave' => $d->clave,
+            'nombre' => $d->nombre,
+            'empleados_count' => $d->empleados_count,
         ]);
 
         return response()->json(['data' => $data]);
@@ -60,12 +83,12 @@ class DelegacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'clave'  => 'required|string|max:20|unique:delegaciones,clave',
+            'clave' => 'required|string|max:20|unique:delegaciones,clave',
             'nombre' => 'nullable|string|max:255',
         ]);
 
         $del = Delegacion::create([
-            'clave'  => strtoupper(trim($data['clave'])),
+            'clave' => strtoupper(trim($data['clave'])),
             'nombre' => $data['nombre'] ?? null,
         ]);
 
@@ -77,12 +100,12 @@ class DelegacionController extends Controller
         $del = Delegacion::findOrFail($id);
 
         $data = $request->validate([
-            'clave'  => ['required', 'string', 'max:20', Rule::unique('delegaciones', 'clave')->ignore($del->id)],
+            'clave' => ['required', 'string', 'max:20', Rule::unique('delegaciones', 'clave')->ignore($del->id)],
             'nombre' => 'nullable|string|max:255',
         ]);
 
         $del->update([
-            'clave'  => strtoupper(trim($data['clave'])),
+            'clave' => strtoupper(trim($data['clave'])),
             'nombre' => $data['nombre'] ?? null,
         ]);
 
@@ -126,9 +149,9 @@ class DelegacionController extends Controller
             ->get();
 
         $data = $rows->map(fn ($r) => [
-            'id'                 => $r->id,
-            'clave'              => $r->clave,
-            'nombre'             => $r->nombre,
+            'id' => $r->id,
+            'clave' => $r->clave,
+            'nombre' => $r->nombre,
             'trabajadores_count' => (int) $r->trabajadores_count,
         ]);
 

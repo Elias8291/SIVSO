@@ -66,7 +66,7 @@ export function useOrganizacion() {
     );
     const progCtx = useApiSearch(
         '/api/programas',
-        selTrab ? { nue: selTrab.nue } : {},
+        selTrab ? { empleado_id: selTrab.id } : {},
         !!selTrab || panel4Activated
     );
 

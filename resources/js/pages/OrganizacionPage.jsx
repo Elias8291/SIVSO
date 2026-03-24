@@ -128,7 +128,7 @@ export default function OrganizacionPage() {
                 {selDep && !selDel && (
                     <MobileLevel
                         title={`Delegaciones — UR ${selDep.clave}`}
-                        subtitle={selDep.nombre}
+                        subtitle={selDep.nombre ?? ''}
                         icon={UserCheck}
                         search={delCtx.search}
                         onSearch={delCtx.setSearch}
@@ -146,7 +146,7 @@ export default function OrganizacionPage() {
                             <MobileCard
                                 key={del.id}
                                 badge={del.clave}
-                                title={del.nombre}
+                                title={del.nombre?.trim() ? del.nombre : `Delegación ${del.clave}`}
                                 stats={[{ icon: Users, value: del.trabajadores_count, label: 'trabajadores' }]}
                                 onClick={() => ctx.selectDel(del)}
                                 onEdit={() => openEditDel(del)}
@@ -159,7 +159,7 @@ export default function OrganizacionPage() {
                 {selDep && selDel && !selTrab && (
                     <MobileLevel
                         title={`Trabajadores — ${selDel.clave}`}
-                        subtitle={selDel.nombre}
+                        subtitle={selDel.nombre?.trim() ? selDel.nombre : `Registro delegado #${selDel.id}`}
                         icon={Users}
                         search={trabCtx.search}
                         onSearch={trabCtx.setSearch}
@@ -185,7 +185,7 @@ export default function OrganizacionPage() {
                 {selDep && selDel && selTrab && (
                     <MobileLevel
                         title={`Programas — ${selTrab.nombre_completo}`}
-                        subtitle={`NUE: ${selTrab.nue}`}
+                        subtitle={`NUE: ${selTrab.nue ?? '—'} · ${selTrab.delegacion || ''}`}
                         icon={ClipboardList}
                         search={progCtx.search}
                         onSearch={progCtx.setSearch}

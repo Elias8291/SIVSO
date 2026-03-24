@@ -41,7 +41,7 @@ export function ItemCard({ item, selected, onClick, onEdit, onDelete, stats }) {
                         </span>
                     </div>
                     <p className={`text-[12px] font-semibold leading-tight truncate ${selected ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                        {item.nombre}
+                        {item.nombre?.trim() ? item.nombre : `Delegación ${item.clave}`}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                         {stats.map(({ icon: StatIcon, value, label }) => (
@@ -129,9 +129,12 @@ export function TrabajadorCard({ trab, selected, onClick }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 truncate">{trab.nombre_completo}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-[9px] font-mono font-bold text-zinc-400">NUE: {trab.nue}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                        <span className="text-[9px] font-mono font-bold text-zinc-400">NUE: {trab.nue ?? '—'}</span>
                         <span className="text-[9px] text-zinc-400">{trab.delegacion}</span>
+                        {trab.delegado_label && (
+                            <span className="text-[9px] text-zinc-500 dark:text-zinc-400">Delegado: {trab.delegado_label}</span>
+                        )}
                     </div>
                 </div>
                 {selected && <ChevronRight size={14} className="text-brand-gold shrink-0" strokeWidth={2.5} />}

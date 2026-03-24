@@ -29,7 +29,7 @@ const EMPTY_CREAR_USUARIO = {
 
 function FormModal({ item, onClose, onSaved }) {
     const isEdit = !!item?.id;
-    const [form, setForm] = useState({ nombre: '', delegacion_id: '', user_id: '', empleado_id: '' });
+    const [form, setForm] = useState({ delegacion_id: '', user_id: '', empleado_id: '' });
     const [delegaciones, setDelegaciones] = useState([]);
     const [candidatosEmpleados, setCandidatosEmpleados] = useState([]);
     const [errors, setErrors] = useState({});
@@ -52,7 +52,6 @@ function FormModal({ item, onClose, onSaved }) {
     useEffect(() => {
         if (item && item !== 'new') {
             setForm({
-                nombre: item.nombre ?? '',
                 user_id: item.user_id ?? '',
                 empleado_id: item.empleado_id != null ? String(item.empleado_id) : '',
             });
@@ -62,7 +61,7 @@ function FormModal({ item, onClose, onSaved }) {
                 setUserLinked(null);
             }
         } else {
-            setForm({ nombre: '', delegacion_id: '', user_id: '', empleado_id: '' });
+            setForm({ delegacion_id: '', user_id: '', empleado_id: '' });
             setUserLinked(null);
         }
         setErrors({});
@@ -130,7 +129,6 @@ function FormModal({ item, onClose, onSaved }) {
         setErrors({});
         try {
             const payload = {
-                nombre: form.nombre,
                 user_id: form.user_id || null,
                 empleado_id: form.empleado_id ? parseInt(form.empleado_id, 10) : null,
             };
@@ -149,7 +147,7 @@ function FormModal({ item, onClose, onSaved }) {
     const abrirModalCrearUsuario = () => {
         setCrearUsuarioForm({
             ...EMPTY_CREAR_USUARIO,
-            name: form.nombre || '',
+            name: item?.empleado?.nombre_completo || item?.delegaciones?.[0]?.clave || '',
             rfc: '',
         });
         setErrorsCrearUsuario({});
@@ -182,10 +180,6 @@ function FormModal({ item, onClose, onSaved }) {
             <Modal open={!!item && !modalCrearUsuario} onClose={onClose} title={isEdit ? 'Editar Delegado' : 'Nuevo Delegado'} size="md">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {errors.general && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">{errors.general}</p>}
-                    <Field label="Nombre completo" error={errors.nombre?.[0]}>
-                        <input type="text" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value.toUpperCase() })}
-                            placeholder="Ej. JUAN PÉREZ LÓPEZ" maxLength={120} required className={inputClass} />
-                    </Field>
                     {!isEdit && (
                         <Field label="Delegación asignada" error={errors.delegacion_id?.[0]}>
                             <select value={form.delegacion_id} onChange={(e) => setForm({ ...form, delegacion_id: e.target.value, empleado_id: '' })}
@@ -447,14 +441,21 @@ export default function DelegadosPage() {
 
     const columns = [
         {
-            key: 'nombre',
-            label: 'Nombre',
+            key: 'delegaciones',
+            label: 'Delegación / usuario',
             render: (v, row) => (
                 <div>
-                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{v}</p>
+                    <div className="flex flex-wrap gap-1">
+                        {(v ?? []).slice(0, 6).map((d, i) => (
+                            <span key={i} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-gold/10 text-brand-gold">{d.clave}</span>
+                        ))}
+                    </div>
                     {row.user && (
-                        <p className="text-[11px] text-brand-gold font-mono mt-0.5">{row.user.rfc || row.user.email}</p>
+                        <p className="text-[11px] text-brand-gold font-mono mt-1">{row.user.rfc || row.user.email}</p>
                     )}
+                    {row.nombre?.trim() ? (
+                        <p className="text-[11px] text-zinc-400 mt-0.5">{row.nombre}</p>
+                    ) : null}
                 </div>
             ),
         },
@@ -467,19 +468,6 @@ export default function DelegadosPage() {
             key: 'trabajadores_total',
             label: 'Trabajadores',
             render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">{v}</span>,
-        },
-        {
-            key: 'delegaciones',
-            label: 'Claves',
-            render: (v) => (
-                <div className="flex flex-wrap gap-1">
-                    {(v ?? []).slice(0, 5).map((d, i) => (
-                        <span key={i} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-gold/10 text-brand-gold">{d.clave}</span>
-                    ))}
-                    {(v ?? []).length > 5 && <span className="text-[10px] text-zinc-400">+{v.length - 5}</span>}
-                </div>
-            ),
-            hideOnMobile: true,
         },
     ];
 
@@ -528,7 +516,7 @@ export default function DelegadosPage() {
                 onConfirm={handleDelete}
                 loading={saving}
                 title="Eliminar Delegado"
-                message={`¿Eliminar delegado "${confirm?.nombre}"? Esta acción no se puede deshacer.`}
+                message={`¿Eliminar el registro de delegado #${confirm?.id}${confirm?.delegaciones?.length ? ` (${confirm.delegaciones.map((d) => d.clave).join(', ')})` : ''}? Esta acción no se puede deshacer.`}
             />
         </div>
     );

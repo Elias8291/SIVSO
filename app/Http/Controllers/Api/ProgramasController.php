@@ -11,11 +11,12 @@ class ProgramasController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $nue    = trim((string) $request->get('nue', ''));
+        $nue = trim((string) $request->get('nue', ''));
+        $empleadoId = (int) $request->get('empleado_id', 0);
         $search = trim((string) $request->get('search', ''));
-        $anio   = (int) ($request->get('anio', date('Y')));
+        $anio = (int) ($request->get('anio', date('Y')));
 
-        if (! $nue && ! $search) {
+        if ($empleadoId <= 0 && $nue === '' && $search === '') {
             return response()->json(['data' => []]);
         }
 
@@ -30,33 +31,34 @@ class ProgramasController extends Controller
             ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
             ->where('s.anio', $anio);
 
-        if ($nue) {
+        if ($empleadoId > 0) {
+            $query->where('e.id', $empleadoId);
+        } elseif ($nue !== '') {
             $query->where('e.nue', $nue);
         }
 
         if ($search) {
-            $query->where(fn ($q2) =>
-                $q2->where('p.descripcion', 'like', "%{$search}%")
-                   ->orWhere('pp.clave', 'like', "%{$search}%")
+            $query->where(fn ($q2) => $q2->where('p.descripcion', 'like', "%{$search}%")
+                ->orWhere('pp.clave', 'like', "%{$search}%")
             );
         }
 
         $rows = $query->select([
-                's.id', 'e.nue', 'p.descripcion', 'pp.clave',
-                'pa.numero AS partida', 's.cantidad', 't.nombre AS talla',
-            ])
+            's.id', 'e.nue', 'p.descripcion', 'pp.clave',
+            'pa.numero AS partida', 's.cantidad', 't.nombre AS talla',
+        ])
             ->orderBy('pa.numero')
             ->orderBy('p.descripcion')
             ->limit(200)
             ->get();
 
         $data = $rows->map(fn ($r) => [
-            'id'          => $r->id,
-            'clave'       => $r->clave ?? '-',
+            'id' => $r->id,
+            'clave' => $r->clave ?? '-',
             'descripcion' => $r->descripcion ?? '',
-            'partida'     => $r->partida,
-            'cantidad'    => (int) $r->cantidad,
-            'talla'       => $r->talla,
+            'partida' => $r->partida,
+            'cantidad' => (int) $r->cantidad,
+            'talla' => $r->talla,
         ]);
 
         return response()->json(['data' => $data->values()->all()]);

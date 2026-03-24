@@ -72,7 +72,8 @@ class DelegadoController extends Controller
         $rows = $query->select([
             'd.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
         ])
-            ->orderBy('d.nombre')
+            ->orderBy('dl.clave')
+            ->orderBy('d.id')
             ->limit(200)
             ->get();
 
@@ -116,7 +117,8 @@ class DelegadoController extends Controller
                     'emp.apellido_materno AS emp_ap_mat',
                     'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
                 ])
-                ->orderBy('d.nombre')
+                ->orderBy('dl.clave')
+                ->orderBy('d.id')
                 ->get();
         } else {
             $delegados = $base
@@ -125,7 +127,8 @@ class DelegadoController extends Controller
                     'u.name AS user_name', 'u.rfc AS user_rfc',
                     'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
                 ])
-                ->orderBy('d.nombre')
+                ->orderBy('dl.clave')
+                ->orderBy('d.id')
                 ->get();
         }
 
@@ -202,17 +205,44 @@ class DelegadoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'nombre' => 'required|string|max:120',
-            'delegacion_id' => 'required|integer|exists:delegaciones,id',
+            'nombre' => 'nullable|string|max:120',
+            'delegacion_id' => 'nullable|integer|exists:delegaciones,id',
+            'ur' => 'nullable|string|max:5',
+            'delegacion' => 'nullable|string|max:20',
             'user_id' => 'nullable|integer|exists:users,id',
             'empleado_id' => 'nullable|integer|exists:empleados,id',
         ]);
+
+        $delegacionId = $data['delegacion_id'] ?? null;
+        if (! $delegacionId) {
+            $urClave = strtoupper(trim((string) ($data['ur'] ?? '')));
+            $delClave = strtoupper(preg_replace('/\s+/', '', trim((string) ($data['delegacion'] ?? ''))));
+            if ($urClave !== '' && $delClave !== '') {
+                $depId = DB::table('dependencias')->where('clave', $urClave)->value('id');
+                $delRowId = DB::table('delegaciones')->where('clave', $delClave)->value('id');
+                if ($depId && $delRowId) {
+                    $enUr = DB::table('dependencia_delegacion')
+                        ->where('dependencia_id', $depId)
+                        ->where('delegacion_id', $delRowId)
+                        ->exists();
+                    if ($enUr) {
+                        $delegacionId = (int) $delRowId;
+                    }
+                }
+            }
+        }
+
+        if (! $delegacionId) {
+            return response()->json([
+                'message' => 'Indica delegación válida: delegacion_id o pareja UR + código de delegación.',
+            ], 422);
+        }
 
         if ($blocked = $this->validarEmpleadoIdParaDelegado(
             new Delegado,
             $data['empleado_id'] ?? null,
             $data['user_id'] ?? null,
-            (int) $data['delegacion_id']
+            (int) $delegacionId
         )) {
             return $blocked;
         }
@@ -221,13 +251,15 @@ class DelegadoController extends Controller
             Delegado::where('user_id', $data['user_id'])->update(['user_id' => null]);
         }
 
+        $nombreNorm = strtoupper(trim((string) ($data['nombre'] ?? '')));
+
         $delegado = Delegado::create([
-            'nombre' => strtoupper(trim($data['nombre'])),
+            'nombre' => $nombreNorm,
             'user_id' => $data['user_id'] ?? null,
             'empleado_id' => $data['empleado_id'] ?? null,
         ]);
 
-        $delegado->delegaciones()->attach($data['delegacion_id']);
+        $delegado->delegaciones()->attach($delegacionId);
 
         return response()->json(['message' => 'Delegado creado correctamente.', 'id' => $delegado->id], 201);
     }
@@ -240,7 +272,7 @@ class DelegadoController extends Controller
         }
 
         $data = $request->validate([
-            'nombre' => 'required|string|max:120',
+            'nombre' => 'nullable|string|max:120',
             'user_id' => 'nullable|integer|exists:users,id',
             'empleado_id' => 'nullable|integer|exists:empleados,id',
         ]);
@@ -263,9 +295,13 @@ class DelegadoController extends Controller
             Delegado::where('user_id', $data['user_id'])->where('id', '!=', $delegado->id)->update(['user_id' => null]);
         }
 
+        $nombreNuevo = array_key_exists('nombre', $data)
+            ? strtoupper(trim((string) $data['nombre']))
+            : $delegado->nombre;
+
         $delegado->update([
-            'nombre' => strtoupper(trim($data['nombre'])),
-            'user_id' => $data['user_id'] ?? null,
+            'nombre' => $nombreNuevo,
+            'user_id' => array_key_exists('user_id', $data) ? $data['user_id'] : $delegado->user_id,
             'empleado_id' => array_key_exists('empleado_id', $data) ? $data['empleado_id'] : $delegado->empleado_id,
         ]);
 

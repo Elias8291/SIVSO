@@ -28,7 +28,7 @@ export default function DelegadoFormPage() {
     const urClave = state?.ur ?? state?.dep?.clave ?? new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('ur');
     const initialItem = state?.item;
 
-    const [form, setForm] = useState({ nombre: '', delegacion: '' });
+    const [form, setForm] = useState({ delegacion: '' });
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(isEdit && !initialItem);
@@ -39,7 +39,7 @@ export default function DelegadoFormPage() {
             return;
         }
         if (initialItem) {
-            setForm({ nombre: initialItem.nombre, delegacion: initialItem.clave });
+            setForm({ delegacion: initialItem.clave });
             setLoading(false);
             return;
         }
@@ -47,7 +47,7 @@ export default function DelegadoFormPage() {
         api.get(ur ? `/api/delegados?ur=${ur}` : '/api/delegados')
             .then((res) => {
                 const del = (res.data ?? []).find((d) => String(d.id) === id);
-                if (del) setForm({ nombre: del.nombre, delegacion: del.clave });
+                if (del) setForm({ delegacion: del.clave });
                 else navigate('/dashboard/organizacion', { replace: true });
             })
             .catch(() => navigate('/dashboard/organizacion', { replace: true }))
@@ -61,7 +61,7 @@ export default function DelegadoFormPage() {
         setErrors({});
         try {
             if (isEdit) {
-                await api.put(`/api/delegados/${id}`, form);
+                await api.put(`/api/delegados/${id}`, {});
             } else {
                 await api.post('/api/delegados', { ...form, ur: urClave });
             }
@@ -111,18 +111,6 @@ export default function DelegadoFormPage() {
                             {errors.general}
                         </p>
                     )}
-
-                    <Field label="Nombre completo" error={errors.nombre?.[0]}>
-                        <input
-                            type="text"
-                            value={form.nombre}
-                            onChange={(e) => setForm({ ...form, nombre: e.target.value.toUpperCase() })}
-                            placeholder="Ej. JUAN PÉREZ LÓPEZ"
-                            maxLength={120}
-                            required
-                            className="w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation"
-                        />
-                    </Field>
 
                     <Field label="Código de delegación (sin guión)" error={errors.delegacion?.[0]}>
                         <input

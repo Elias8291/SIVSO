@@ -80,10 +80,9 @@ class VestuarioController extends Controller
         $delegado = Delegado::where('user_id', $user->id)->first();
         $ids = collect();
         if ($delegado) {
-            $ids = DB::table('delegado_delegacion AS dd')
-                ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
-                ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
-                ->pluck('dd.delegacion_id');
+            $ids = DB::table('delegado_delegacion')
+                ->where('delegado_id', $delegado->id)
+                ->pluck('delegacion_id');
         }
         if ($ids->isEmpty()) {
             $emp = null;
