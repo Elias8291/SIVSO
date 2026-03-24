@@ -47,10 +47,10 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
                     <button
                         type="button"
                         onClick={onClose}
-                        className="size-9 shrink-0 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation"
+                        className="size-10 sm:size-9 shrink-0 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 sm:bg-transparent sm:dark:bg-transparent hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all touch-manipulation ml-2"
                         aria-label="Cerrar"
                     >
-                        <X size={18} strokeWidth={2} />
+                        <X size={20} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
                     </button>
                 </div>
 

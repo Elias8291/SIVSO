@@ -356,9 +356,9 @@ export default function MiDelegacionVestuarioPage() {
 
                     <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 border border-zinc-200/60 dark:border-zinc-800/80 rounded-2xl px-5 py-3 shadow-sm shrink-0 mt-2 sm:mt-0">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-0.5">Artículos en lista</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-0.5">Cantidad</p>
                             <p className="text-xl font-black text-zinc-900 dark:text-white leading-none">
-                                {asignaciones.length} <span className="text-[13px] font-semibold text-zinc-400">ítems</span>
+                                {asignaciones.length} <span className="text-[13px] font-semibold text-zinc-400">artículos</span>
                             </p>
                         </div>
                     </div>
