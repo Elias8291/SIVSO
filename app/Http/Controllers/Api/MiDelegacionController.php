@@ -26,8 +26,21 @@ class MiDelegacionController extends Controller
                 ->whereRaw('TRIM(d.nombre) = ?', [trim($delegado->nombre)])
                 ->pluck('dd.delegacion_id');
         }
-        if ($ids->isEmpty() && $user->nue) {
-            $emp = Empleado::where('nue', $user->nue)->first();
+        if ($ids->isEmpty()) {
+            $emp = null;
+            $nueTrim = trim((string) ($user->nue ?? ''));
+            if ($nueTrim !== '') {
+                $emp = Empleado::where('nue', $nueTrim)->first();
+            }
+            if (! $emp && $user instanceof User) {
+                $emp = Empleado::where('user_id', $user->id)->first();
+            }
+            if (! $emp && $user instanceof User) {
+                $del = Delegado::where('user_id', $user->id)->whereNotNull('empleado_id')->first();
+                if ($del) {
+                    $emp = Empleado::find($del->empleado_id);
+                }
+            }
             if ($emp && $emp->delegacion_id) {
                 $ids = DB::table('delegado_delegacion AS dd')
                     ->where('dd.delegacion_id', $emp->delegacion_id)

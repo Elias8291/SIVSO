@@ -52,13 +52,19 @@ class VestuarioController extends Controller
             ->delete();
     }
 
-    /** Si el usuario solo está ligado por `empleados.user_id`, refleja el NUE en el perfil (Mi delegación / permisos). */
+    /** Refleja el NUE en el perfil si ya hay vínculo por `empleados.user_id` o por `delegados.empleado_id`. */
     private function asegurarNueUsuarioDesdeEmpleadoSiFalta(User $user): void
     {
         if (trim((string) ($user->nue ?? '')) !== '') {
             return;
         }
         $emp = Empleado::where('user_id', $user->id)->first();
+        if (! $emp) {
+            $delegado = Delegado::where('user_id', $user->id)->whereNotNull('empleado_id')->first();
+            if ($delegado) {
+                $emp = Empleado::find($delegado->empleado_id);
+            }
+        }
         if ($emp && $emp->nue) {
             $user->nue = trim((string) $emp->nue);
             $user->save();
@@ -87,6 +93,12 @@ class VestuarioController extends Controller
             }
             if (! $emp && $user instanceof User) {
                 $emp = Empleado::where('user_id', $user->id)->first();
+            }
+            if (! $emp && $user instanceof User) {
+                $del = Delegado::where('user_id', $user->id)->whereNotNull('empleado_id')->first();
+                if ($del) {
+                    $emp = Empleado::find($del->empleado_id);
+                }
             }
             if ($emp && $emp->delegacion_id) {
                 $ids = DB::table('delegado_delegacion AS dd')
@@ -138,9 +150,8 @@ class VestuarioController extends Controller
     }
 
     /**
-     * Empleado asociado al usuario autenticado: primero por NUE en el perfil, si no por user_id en el padrón
-     * (p. ej. delegado vinculado solo en empleados o cuenta creada desde Mi delegación).
-     * Si solo hay vínculo por user_id, copia el NUE al usuario para alinear perfil y vestuario.
+     * Empleado del usuario: (1) NUE en perfil → padrón, (2) `empleados.user_id`, (3) delegado con `empleado_id`
+     * (misma persona en catálogo de delegados sin NUE o sin fila user_id aún). Alinea NUE en perfil cuando aplique.
      */
     private function resolverEmpleadoDelUsuarioAutenticado(User $user): ?Empleado
     {
@@ -160,6 +171,24 @@ class VestuarioController extends Controller
             }
 
             return $porUserId;
+        }
+
+        $delegado = Delegado::where('user_id', $user->id)->whereNotNull('empleado_id')->first();
+        if ($delegado) {
+            $porDelegado = Empleado::find($delegado->empleado_id);
+            if ($porDelegado && ($porDelegado->user_id === null || (int) $porDelegado->user_id === (int) $user->id)) {
+                if ($porDelegado->user_id === null) {
+                    Empleado::where('user_id', $user->id)->where('id', '!=', $porDelegado->id)->update(['user_id' => null]);
+                    $porDelegado->user_id = $user->id;
+                    $porDelegado->save();
+                }
+                if ($nueTrim === '' && $porDelegado->nue) {
+                    $user->nue = trim((string) $porDelegado->nue);
+                    $user->save();
+                }
+
+                return $porDelegado;
+            }
         }
 
         return null;
