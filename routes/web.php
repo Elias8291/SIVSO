@@ -17,11 +17,16 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VestuarioController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PublicAcuseVestuarioController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/acuse-vestuario/consulta', [PublicAcuseVestuarioController::class, 'show'])
+    ->middleware('signed')
+    ->name('public.acuse-vestuario');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
