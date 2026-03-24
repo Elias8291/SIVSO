@@ -738,27 +738,56 @@ class VestuarioController extends Controller
             'dependencia_clave' => $emp->dependencia?->clave,
             'dependencia_nombre' => $emp->dependencia?->nombre ?? '',
         ];
-        $asignaciones = $this->getSelecciones($emp->id, $anio);
 
         $anioReferenciaVista = null;
         $vistaHeredaAnioAnterior = false;
         $estadoActualizacionEjercicio = 'actualizado';
+        $asignaciones = collect();
 
-        if ($anio === $anioCalendario && $asignaciones->isEmpty()) {
-            $prevYears = array_values(array_filter($aniosDisponibles, fn ($y) => (int) $y < $anioCalendario));
-            if (count($prevYears) > 0) {
-                $anioReferenciaVista = max($prevYears);
-                $asignaciones = $this->getSelecciones($emp->id, $anioReferenciaVista)
-                    ->map(fn (array $row) => array_merge($row, ['heredado_preview' => true]));
-                $vistaHeredaAnioAnterior = true;
-                $estadoActualizacionEjercicio = 'pendiente_actualizar';
-            } else {
-                $estadoActualizacionEjercicio = 'sin_historial';
-            }
-        } elseif ($anio !== $anioCalendario) {
+        if ($anio !== $anioCalendario) {
+            $asignaciones = $this->getSelecciones($emp->id, $anio);
             $estadoActualizacionEjercicio = $asignaciones->isEmpty() ? 'sin_historial' : 'historico';
-        } elseif ($anio === $anioCalendario && $asignaciones->isNotEmpty()) {
-            $estadoActualizacionEjercicio = 'actualizado';
+        } else {
+            $prevYears = array_values(array_filter($aniosDisponibles, fn ($y) => (int) $y < $anioCalendario));
+            $anioRef = count($prevYears) > 0 ? max($prevYears) : null;
+            $vigente = $this->getSelecciones($emp->id, $anioCalendario);
+
+            if ($vigente->isEmpty()) {
+                if ($anioRef !== null) {
+                    $anioReferenciaVista = $anioRef;
+                    $asignaciones = $this->getSelecciones($emp->id, $anioRef)
+                        ->map(fn (array $row) => array_merge($row, ['heredado_preview' => true]));
+                    $vistaHeredaAnioAnterior = true;
+                    $estadoActualizacionEjercicio = 'pendiente_actualizar';
+                } else {
+                    $estadoActualizacionEjercicio = 'sin_historial';
+                }
+            } elseif ($anioRef !== null) {
+                $prevRows = $this->getSelecciones($emp->id, $anioRef);
+                $lineaKey = static fn (array $r): string => (string) $r['partida'].'|'.(string) $r['producto_id'];
+                $keysVigente = $vigente->map($lineaKey)->flip()->all();
+
+                $extras = $prevRows
+                    ->filter(fn (array $row) => ! isset($keysVigente[$lineaKey($row)]))
+                    ->map(fn (array $row) => array_merge($row, ['heredado_preview' => true]))
+                    ->values();
+
+                if ($extras->isNotEmpty()) {
+                    $asignaciones = $vigente
+                        ->concat($extras)
+                        ->sortBy(fn (array $r) => sprintf('%06d-%s', (int) $r['partida'], (string) $r['descripcion']))
+                        ->values();
+                    $anioReferenciaVista = $anioRef;
+                    $vistaHeredaAnioAnterior = true;
+                    $estadoActualizacionEjercicio = 'pendiente_actualizar';
+                } else {
+                    $asignaciones = $vigente;
+                    $estadoActualizacionEjercicio = 'actualizado';
+                }
+            } else {
+                $asignaciones = $vigente;
+                $estadoActualizacionEjercicio = 'actualizado';
+            }
         }
 
         $depId = $emp->dependencia_id;
