@@ -69,9 +69,12 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         [VestuarioController::class, 'empleadoGuardarCambiosVestuario']
     );
 
-    // Empleados
+    // Empleados (listado: también delegados con ver_mi_delegacion y filtro por delegación)
+    Route::middleware('permission:ver_empleados|ver_mi_delegacion')->get(
+        'empleados',
+        [EmpleadoController::class, 'index']
+    );
     Route::middleware('permission:ver_empleados')->group(function () {
-        Route::get('empleados', [EmpleadoController::class, 'index']);
         Route::get('empleados/{empleado}', [EmpleadoController::class, 'show']);
     });
     Route::middleware('permission:ver_empleados|ver_mi_delegacion')->get(
