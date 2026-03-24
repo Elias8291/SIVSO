@@ -99,11 +99,6 @@ export default function DelegacionesPage() {
             render: (v) => <span className="text-[13px] font-black text-brand-gold uppercase tracking-wider">{v}</span>,
         },
         {
-            key: 'nombre',
-            label: 'Nombre',
-            render: (v) => <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 max-w-xs truncate">{v || '—'}</p>,
-        },
-        {
             key: 'empleados_count',
             label: 'Empleados',
             render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">{v}</span>,

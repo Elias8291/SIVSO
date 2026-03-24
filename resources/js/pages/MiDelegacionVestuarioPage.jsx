@@ -382,15 +382,12 @@ export default function MiDelegacionVestuarioPage() {
                         ) : !periodoActivo ? (
                             <>No hay periodo activo — no se pueden aplicar cambios por el momento.</>
                         ) : puedeEditar ? (
-                            <>
+                            <span>
                                 {edicionCerradaEmp ? (
-                                    <>El colaborador ya confirmó su vestuario para {ejercicioVigente}. Puede seguir ajustando desde aquí y usar <strong>Guardar cambios</strong> (los cambios no se envían hasta entonces). </>
+                                    <span className="font-semibold text-amber-800 dark:text-amber-300 mr-1">El colaborador ya confirmó su vestuario. Modifica con cautela. </span>
                                 ) : null}
-                                Use «Cambiar talla / artículo / cantidad» para marcar cambios; pulse <strong>Guardar cambios</strong> al final para enviar todo junto (no se guarda al pulsar «Aceptar» en cada ventana).
-                                {periodoActivo?.fecha_fin && (
-                                    <> Periodo hasta {new Date(periodoActivo.fecha_fin.length === 10 ? `${periodoActivo.fecha_fin}T00:00:00` : periodoActivo.fecha_fin).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.</>
-                                )}
-                            </>
+                                Periodo ({periodoActivo?.anio ?? ejercicioVigente}) hasta el {periodoActivo?.fecha_fin ? (() => { const f = periodoActivo.fecha_fin; const d = new Date(f.length === 10 ? f + 'T00:00:00' : f); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); })() : ''}. «Guardar cambios» aplica todo y cierra tu edición para este ejercicio (no podrás volver a editar salvo reactivación del delegado).
+                            </span>
                         ) : (
                             <>No puede editar el vestuario de este colaborador en este momento (periodo o permisos).</>
                         )}
