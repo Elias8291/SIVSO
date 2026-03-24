@@ -373,17 +373,41 @@ export default function MiDelegacionVestuarioPage() {
                         className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
                     />
                 </div>
-
-                {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                    <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
-                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex items-center gap-2">
-                            Referencia ejercicio {data.anio_referencia_vista}
-                        </p>
-                        <p>
-                            Parte del listado puede venir del año anterior hasta completar la actualización al ejercicio <strong className="text-zinc-900 dark:text-white">{ejercicioVigente}</strong>.
-                        </p>
+                <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
+                    <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 mr-2 mt-0.5 shrink-0" strokeWidth={1.5} />
+                        <div>
+                            {viendoHistorico ? (
+                                <>Ejercicio {anio ?? data.anio}: solo consulta. Para editar, elija el ejercicio vigente ({ejercicioVigente}).</>
+                            ) : !periodoActivo ? (
+                                <>No hay periodo activo — no se pueden aplicar cambios por el momento.</>
+                            ) : puedeEditar ? (
+                                <>
+                                    {edicionCerradaEmp ? (
+                                        <>El colaborador ya confirmó su vestuario para {ejercicioVigente}. Puede seguir ajustando desde aquí y usar <strong>Guardar cambios</strong> (los cambios no se envían hasta entonces). </>
+                                    ) : null}
+                                    Use «Cambiar talla / artículo / cantidad» para marcar cambios; pulse <strong>Guardar cambios</strong> al final para enviar todo junto (no se guarda al pulsar «Aceptar» en cada ventana).
+                                    {periodoActivo?.fecha_fin && (
+                                        <> Periodo hasta {new Date(periodoActivo.fecha_fin.length === 10 ? `${periodoActivo.fecha_fin}T00:00:00` : periodoActivo.fecha_fin).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}.</>
+                                    )}
+                                </>
+                            ) : (
+                                <>No puede editar el vestuario de este colaborador en este momento (periodo o permisos).</>
+                            )}
+                        </div>
                     </div>
-                )}
+
+                    {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
+                        <div className="mt-3 border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                            <p className="font-bold text-zinc-900 dark:text-white mb-1.5">
+                                Referencia ejercicio {data.anio_referencia_vista}
+                            </p>
+                            <p>
+                                Parte del listado puede venir del año anterior hasta completar la actualización al ejercicio <strong className="text-zinc-900 dark:text-white">{ejercicioVigente}</strong>.
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {asignaciones.length === 0 ? (
