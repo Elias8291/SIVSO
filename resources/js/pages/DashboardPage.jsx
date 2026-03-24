@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Layers,
+    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Layers, CircleAlert,
 } from 'lucide-react';
 import { StatCard, PageHeader } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +41,14 @@ function Spinner({ label }) {
     );
 }
 
+/** Nombres técnicos o genéricos del periodo: no mostrar como título legible */
+function nombrePeriodoLegible(nombre) {
+    const raw = String(nombre ?? '').trim();
+    if (!raw) return null;
+    if (/^(activate|active|activo|abierto|open|enabled)$/i.test(raw)) return null;
+    return raw;
+}
+
 /** Panel colaborador: acentos brand-gold y zinc (identidad SIVSO) */
 function DashboardEmpleado() {
     const { user } = useAuth();
@@ -62,57 +70,88 @@ function DashboardEmpleado() {
     const preview = asignaciones.slice(0, 6);
     const totalPiezas = asignaciones.reduce((acc, a) => acc + (Number(a.cantidad) || 0), 0);
     const periodo = data?.periodo_activo;
+    const ejercicio = data?.ejercicio_vigente ?? new Date().getFullYear();
+    const edicionCerrada = data?.edicion_cerrada_ejercicio_vigente ?? false;
+    const puedeEditar = data?.puede_editar_vestuario ?? false;
+    const periodoTitulo = periodo ? nombrePeriodoLegible(periodo.nombre) : null;
+    const enPeriodoSinCerrar = Boolean(empleado && periodo && !edicionCerrada && puedeEditar);
+    const enPeriodoYaEnviado = Boolean(empleado && periodo && edicionCerrada);
 
     if (loading) {
         return <Spinner label="Cargando tu vestuario…" />;
     }
 
     return (
-        <div className="mx-auto w-full max-w-lg pb-16 pt-1">
-            <div className="rounded-3xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.07] to-white px-6 py-8 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.06] dark:to-zinc-900/40 sm:px-8">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-gold">
+        <div className="mx-auto w-full max-w-md pb-12 pt-0">
+            <div className="rounded-2xl border border-zinc-200/90 bg-gradient-to-b from-brand-gold/[0.06] to-white px-5 py-5 shadow-sm dark:border-zinc-800/90 dark:from-brand-gold/[0.05] dark:to-zinc-900/40">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-gold">
                     Tu vestuario
                 </p>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                <h1 className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                     {empleado?.nombre || user?.name || 'Colaborador'}
                 </h1>
                 {(empleado?.dependencia_clave || empleado?.delegacion_clave) && (
-                    <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                         {[empleado.dependencia_clave, empleado.delegacion_clave ? `Deleg. ${empleado.delegacion_clave}` : null]
                             .filter(Boolean)
                             .join(' · ')}
                     </p>
                 )}
 
-                <div className="mt-6">
+                <div className="mt-4">
                     <Link
                         to={ROUTES.MI_VESTUARIO}
-                        className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                        className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                     >
-                        Ver y gestionar prendas
-                        <ArrowRight size={16} strokeWidth={2} />
+                        Mi vestuario
+                        <ArrowRight size={15} strokeWidth={2} />
                     </Link>
                 </div>
 
-                {periodo && (
-                    <p className="mt-6 flex items-start gap-2 border-t border-zinc-200/70 pt-5 text-sm text-zinc-600 dark:border-zinc-800/80 dark:text-zinc-400">
-                        <Calendar size={16} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={1.8} />
-                        <span>
-                            <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo activo:</span>{' '}
-                            {periodo.nombre}
-                            {periodo.fecha_fin ? (
-                                <span className="block text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
-                                    Hasta {periodo.fecha_fin}
+                {periodo && empleado && (
+                    <div className="mt-4 space-y-2 border-t border-zinc-200/70 pt-4 dark:border-zinc-800/80">
+                        <p className="flex items-start gap-2 text-xs leading-snug text-zinc-600 dark:text-zinc-400">
+                            <Calendar size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                            <span>
+                                {periodoTitulo ? (
+                                    <>
+                                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{periodoTitulo}</span>
+                                        {periodo.fecha_fin ? (
+                                            <span className="text-zinc-500 dark:text-zinc-500"> · Hasta {periodo.fecha_fin}</span>
+                                        ) : null}
+                                    </>
+                                ) : periodo.fecha_fin ? (
+                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Hasta {periodo.fecha_fin}</span>
+                                ) : (
+                                    <span className="font-medium text-zinc-800 dark:text-zinc-200">Periodo de actualización abierto</span>
+                                )}
+                            </span>
+                        </p>
+                        {enPeriodoSinCerrar && (
+                            <p className="flex items-start gap-2 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-2.5 py-2 text-[11px] leading-snug text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
+                                <CircleAlert size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                                <span>
+                                    Actualiza o confirma tus prendas en{' '}
+                                    <Link to={ROUTES.MI_VESTUARIO} className="font-medium text-brand-gold underline-offset-2 hover:underline">
+                                        Mi vestuario
+                                    </Link>
+                                    {' '}y guarda los cambios antes del cierre.
                                 </span>
-                            ) : null}
-                        </span>
-                    </p>
+                            </p>
+                        )}
+                        {enPeriodoYaEnviado && (
+                            <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                                <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                                <span>Ya enviaste tu vestuario para el ejercicio {ejercicio}.</span>
+                            </p>
+                        )}
+                    </div>
                 )}
             </div>
 
-            <div className="mt-8">
+            <div className="mt-5">
                 {!empleado ? (
-                    <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/80 px-5 py-10 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+                    <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/80 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
                         <Users size={22} className="mx-auto text-zinc-400" strokeWidth={1.5} />
                         <p className="mt-3 text-sm font-medium text-zinc-800 dark:text-zinc-200">Sin vinculación</p>
                         <p className="mx-auto mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
@@ -131,23 +170,23 @@ function DashboardEmpleado() {
                     </p>
                 ) : (
                     <>
-                        <div className="mb-3 flex items-baseline justify-between gap-2">
-                            <h2 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                                Resumen
+                        <div className="mb-2 flex items-baseline justify-between gap-2">
+                            <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                Prendas
                             </h2>
-                            <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                            <span className="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
                                 {totalPiezas} pieza{totalPiezas !== 1 ? 's' : ''}
                                 {asignaciones.length > preview.length ? ` · ${asignaciones.length} ítems` : ''}
                             </span>
                         </div>
-                        <ul className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white dark:border-zinc-800 dark:bg-zinc-900/60">
+                        <ul className="overflow-hidden rounded-xl border border-zinc-200/90 bg-white dark:border-zinc-800 dark:bg-zinc-900/60">
                             {preview.map((item) => (
                                 <li
                                     key={item.id}
-                                    className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3.5 last:border-0 dark:border-zinc-800/80"
+                                    className="flex items-center gap-2.5 border-b border-zinc-100 px-3 py-2.5 last:border-0 dark:border-zinc-800/80"
                                 >
-                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-gold/10 text-brand-gold">
-                                        <Shirt size={16} strokeWidth={1.7} />
+                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-gold/10 text-brand-gold">
+                                        <Shirt size={14} strokeWidth={1.7} />
                                     </span>
                                     <div className="min-w-0 flex-1">
                                         <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
