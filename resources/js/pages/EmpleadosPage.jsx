@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, UserCheck, ArrowRightLeft } from 'lucide-react';
+import { Plus, UserCheck, ArrowRightLeft, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, Card, DataTable,
@@ -11,12 +11,15 @@ import { api } from '../lib/api';
 
 function Sel({ children, ...props }) {
     return (
-        <select
-            className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-800/50 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/50 transition-all"
-            {...props}
-        >
-            {children}
-        </select>
+        <div className="relative w-full">
+            <select
+                className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/40 text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-brand-gold/40 focus:ring-1 focus:ring-brand-gold/40 shadow-sm transition-all cursor-pointer appearance-none touch-manipulation"
+                {...props}
+            >
+                {children}
+            </select>
+            <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2.5} />
+        </div>
     );
 }
 
@@ -92,9 +95,11 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
                         </div>
                     </div>
 
-                    <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">Cancelar</button>
-                        <button type="submit" disabled={saving || !dep || !del} className="w-full sm:flex-1 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all">
+                    <div className="flex justify-end gap-2 pt-3">
+                        <button type="button" onClick={onClose} className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-zinc-500 dark:text-zinc-400 text-sm font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all touch-manipulation min-h-[44px]">
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={saving || !dep || !del} className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all touch-manipulation min-h-[44px]">
                             {saving ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
                     </div>
@@ -107,10 +112,10 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
 /* ── Chip de filtro ────────────────────────────────────────────────────────── */
 function FilterChip({ label, onClear }) {
     return (
-        <span className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/25 text-[12px] font-bold text-brand-gold">
+        <span className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-brand-gold/10 dark:bg-brand-gold/15 border border-brand-gold/20 text-[11px] font-bold text-brand-gold uppercase tracking-wider shadow-sm shadow-brand-gold/5">
             {label}
-            <button onClick={onClear} className="size-4 rounded-full hover:bg-brand-gold/20 flex items-center justify-center transition-all">
-                ×
+            <button onClick={onClear} className="size-[18px] rounded-full hover:bg-brand-gold/20 dark:hover:bg-brand-gold/30 flex items-center justify-center transition-colors">
+                <X size={11} strokeWidth={2.5} />
             </button>
         </span>
     );
@@ -170,18 +175,20 @@ export default function EmpleadosPage() {
             key: 'nue',
             label: 'NUE',
             render: (v) => (
-                <span className="text-[12px] font-mono font-bold text-zinc-700 dark:text-zinc-300 tracking-wider">{v}</span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded border border-zinc-200/60 dark:border-zinc-700/60 bg-zinc-50/50 dark:bg-zinc-800/40 text-[11px] font-mono font-bold text-zinc-500 dark:text-zinc-400 tracking-widest shadow-sm">
+                    {v}
+                </span>
             ),
         },
         {
             key: 'nombre_completo',
-            label: 'Nombre',
+            label: 'Colaborador',
             render: (v, row) => (
                 <div>
-                    <p className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
+                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{v || '—'}</p>
                     {row.user_id && (
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-[11px] text-brand-gold font-semibold">
-                            <UserCheck size={9} strokeWidth={2.5} /> Vinculado
+                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] bg-brand-gold/10 border border-brand-gold/20 text-brand-gold font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                            <UserCheck size={10} strokeWidth={2.5} /> Cuenta vinculada
                         </span>
                     )}
                 </div>
@@ -192,9 +199,9 @@ export default function EmpleadosPage() {
             label: 'Dependencia',
             render: (v, row) => (
                 <div>
-                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
+                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
                     {row.dependencia_nombre && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[160px] truncate">{row.dependencia_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[160px] truncate leading-tight">{row.dependencia_nombre}</p>
                     )}
                 </div>
             ),
@@ -205,9 +212,9 @@ export default function EmpleadosPage() {
             label: 'Delegación',
             render: (v, row) => (
                 <div>
-                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{v}</p>
+                    <p className="text-[12px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">{v}</p>
                     {row.delegacion_nombre && (
-                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[140px] truncate">{row.delegacion_nombre}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 max-w-[140px] truncate leading-tight">{row.delegacion_nombre}</p>
                     )}
                 </div>
             ),
@@ -252,22 +259,26 @@ export default function EmpleadosPage() {
             />
 
             {/* Filtros por dependencia / delegación */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <div className="flex-1">
-                    <Sel value={filterDep} onChange={(e) => { setFilterDep(e.target.value); setFilterDel(''); }}>
-                        <option value="">Todas las dependencias</option>
-                        {dependencias.map(d => (
-                            <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
-                        ))}
-                    </Sel>
-                </div>
-                <div className="flex-1">
-                    <Sel value={filterDel} onChange={(e) => setFilterDel(e.target.value)} disabled={!filterDep}>
-                        <option value="">Todas las delegaciones</option>
-                        {delegaciones.map(d => (
-                            <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
-                        ))}
-                    </Sel>
+            <div className="bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-100 dark:border-zinc-800/80 rounded-2xl p-4 mb-6 shadow-sm shadow-zinc-900/5 dark:shadow-none">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1 space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Filtrar por Dependencia</label>
+                        <Sel value={filterDep} onChange={(e) => { setFilterDep(e.target.value); setFilterDel(''); }}>
+                            <option value="">Todas las dependencias</option>
+                            {dependencias.map(d => (
+                                <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
+                            ))}
+                        </Sel>
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 pl-1">Delegación correspondiente</label>
+                        <Sel value={filterDel} onChange={(e) => setFilterDel(e.target.value)} disabled={!filterDep}>
+                            <option value="">Todas las delegaciones</option>
+                            {delegaciones.map(d => (
+                                <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
+                            ))}
+                        </Sel>
+                    </div>
                 </div>
             </div>
 
