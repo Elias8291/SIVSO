@@ -29,8 +29,9 @@ const EMPTY_CREAR_USUARIO = {
 
 function FormModal({ item, onClose, onSaved }) {
     const isEdit = !!item?.id;
-    const [form, setForm] = useState({ nombre: '', delegacion_id: '', user_id: '' });
+    const [form, setForm] = useState({ nombre: '', delegacion_id: '', user_id: '', empleado_id: '' });
     const [delegaciones, setDelegaciones] = useState([]);
+    const [candidatosEmpleados, setCandidatosEmpleados] = useState([]);
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
@@ -50,20 +51,66 @@ function FormModal({ item, onClose, onSaved }) {
 
     useEffect(() => {
         if (item && item !== 'new') {
-            setForm({ nombre: item.nombre ?? '', user_id: item.user_id ?? '' });
+            setForm({
+                nombre: item.nombre ?? '',
+                user_id: item.user_id ?? '',
+                empleado_id: item.empleado_id != null ? String(item.empleado_id) : '',
+            });
             if (item.user) {
                 setUserLinked(item.user);
             } else {
                 setUserLinked(null);
             }
         } else {
-            setForm({ nombre: '', delegacion_id: '', user_id: '' });
+            setForm({ nombre: '', delegacion_id: '', user_id: '', empleado_id: '' });
             setUserLinked(null);
         }
         setErrors({});
         setUserSearch('');
         setUserResults([]);
     }, [item]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (isEdit && item?.delegaciones?.length > 0) {
+            Promise.all(
+                item.delegaciones.map((d) =>
+                    api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(d.clave)}&per_page=200`)
+                )
+            )
+                .then((results) => {
+                    if (cancelled) return;
+                    const map = new Map();
+                    results.forEach((r) => (r.data ?? []).forEach((e) => map.set(e.id, e)));
+                    setCandidatosEmpleados(
+                        [...map.values()].sort((a, b) =>
+                            (a.nombre_completo || '').localeCompare(b.nombre_completo || '', 'es')
+                        )
+                    );
+                })
+                .catch(() => {
+                    if (!cancelled) setCandidatosEmpleados([]);
+                });
+        } else if (!isEdit && form.delegacion_id) {
+            const del = delegaciones.find((d) => String(d.id) === String(form.delegacion_id));
+            if (del?.clave) {
+                api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(del.clave)}&per_page=200`)
+                    .then((r) => {
+                        if (!cancelled) setCandidatosEmpleados(r.data ?? []);
+                    })
+                    .catch(() => {
+                        if (!cancelled) setCandidatosEmpleados([]);
+                    });
+            } else if (!cancelled) {
+                setCandidatosEmpleados([]);
+            }
+        } else if (!cancelled) {
+            setCandidatosEmpleados([]);
+        }
+        return () => {
+            cancelled = true;
+        };
+    }, [isEdit, item?.id, item?.delegaciones, form.delegacion_id, delegaciones]);
 
     useEffect(() => {
         clearTimeout(userSearchTimer.current);
@@ -85,6 +132,7 @@ function FormModal({ item, onClose, onSaved }) {
             const payload = {
                 nombre: form.nombre,
                 user_id: form.user_id || null,
+                empleado_id: form.empleado_id ? parseInt(form.empleado_id, 10) : null,
             };
             if (isEdit) {
                 await api.put(`/api/delegados/${item.id}`, payload);
@@ -140,13 +188,33 @@ function FormModal({ item, onClose, onSaved }) {
                     </Field>
                     {!isEdit && (
                         <Field label="Delegación asignada" error={errors.delegacion_id?.[0]}>
-                            <select value={form.delegacion_id} onChange={(e) => setForm({ ...form, delegacion_id: e.target.value })}
+                            <select value={form.delegacion_id} onChange={(e) => setForm({ ...form, delegacion_id: e.target.value, empleado_id: '' })}
                                 required className={selectClass}>
                                 <option value="">Seleccionar…</option>
                                 {delegaciones.map(d => (
                                     <option key={d.id} value={d.id}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
                                 ))}
                             </select>
+                        </Field>
+                    )}
+
+                    {((isEdit && item?.delegaciones?.length > 0) || (!isEdit && form.delegacion_id)) && (
+                        <Field label="Registro de empleado (misma persona, opcional)" error={errors.empleado_id?.[0]}>
+                            <select
+                                value={form.empleado_id}
+                                onChange={(e) => setForm({ ...form, empleado_id: e.target.value })}
+                                className={selectClass}
+                            >
+                                <option value="">Sin vincular</option>
+                                {candidatosEmpleados.map((e) => (
+                                    <option key={e.id} value={e.id}>
+                                        {e.nombre_completo} — NUE {e.nue}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed">
+                                Si el delegado también está en el padrón de trabajadores, elija su fila. Al usar <strong>Crear usuario desde datos del delegado</strong>, la cuenta quedará vinculada al delegado y a ese empleado (acceso a Mi vestuario y Mi delegación).
+                            </p>
                         </Field>
                     )}
 
@@ -202,8 +270,17 @@ function FormModal({ item, onClose, onSaved }) {
 
                     {isEdit && !userLinked && (
                         <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 p-4 bg-zinc-50/50 dark:bg-zinc-800/20">
-                            <p className="text-[12px] text-zinc-600 dark:text-zinc-400 mb-3">
-                                Cree una cuenta nueva con el RFC del delegado; se asignará el rol <strong className="text-zinc-800 dark:text-zinc-200">delegado</strong> y quedará vinculada a este registro.
+                            <p className="text-[12px] text-zinc-600 dark:text-zinc-400 mb-3 leading-relaxed">
+                                Cree una cuenta nueva con el RFC del delegado; se asignarán los roles <strong className="text-zinc-800 dark:text-zinc-200">delegado</strong> y <strong className="text-zinc-800 dark:text-zinc-200">empleado</strong> y quedará vinculada a este registro.
+                                {form.empleado_id ? (
+                                    <span className="block mt-2 font-semibold text-brand-gold dark:text-amber-400/90">
+                                        Tiene empleado vinculado: la misma cuenta servirá para Mi vestuario y Mi delegación (guarde antes si acaba de elegir el empleado).
+                                    </span>
+                                ) : (
+                                    <span className="block mt-2 text-zinc-500 dark:text-zinc-500">
+                                        Opcional: vincule arriba el registro del padrón si es la misma persona.
+                                    </span>
+                                )}
                             </p>
                             <button
                                 type="button"
@@ -265,6 +342,11 @@ function FormModal({ item, onClose, onSaved }) {
                     )}
                     <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                         Los datos del delegado se usan como referencia. Indique el <strong>RFC</strong> para el inicio de sesión y una contraseña segura.
+                        {form.empleado_id && (
+                            <span className="block mt-2 text-amber-800 dark:text-amber-200/90 font-medium">
+                                Si guardó un empleado vinculado, ese registro también quedará ligado a esta cuenta.
+                            </span>
+                        )}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Nombre para la cuenta" error={errorsCrearUsuario.name?.[0]}>
@@ -428,9 +510,7 @@ export default function DelegadosPage() {
                     columns={columns}
                     data={data}
                     loading={loading}
-                    onEdit={canEdit ? ((row) => {
-                        setEditing({ id: row.id, nombre: row.nombre, user_id: row.user_id, user: row.user });
-                    }) : undefined}
+                    onEdit={canEdit ? ((row) => setEditing(row)) : undefined}
                     onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                     emptyMessage="Sin delegados registrados."
                 />

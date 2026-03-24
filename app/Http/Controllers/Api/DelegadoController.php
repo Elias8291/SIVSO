@@ -4,15 +4,50 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delegado;
+use App\Models\Empleado;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DelegadoController extends Controller
 {
+    /**
+     * @param  array{delegacion_id?: int}  $contextoCreacion  Solo para alta: delegación única asignada.
+     */
+    private function validarEmpleadoIdParaDelegado(Delegado $delegado, ?int $empleadoId, ?int $userIdEfectivo, ?int $delegacionIdAlCrear): ?JsonResponse
+    {
+        if ($empleadoId === null) {
+            return null;
+        }
+
+        $emp = Empleado::find($empleadoId);
+        if (! $emp) {
+            return response()->json(['message' => 'Empleado no encontrado.'], 422);
+        }
+
+        if ($delegacionIdAlCrear !== null) {
+            if ((int) $emp->delegacion_id !== (int) $delegacionIdAlCrear) {
+                return response()->json(['message' => 'El empleado no pertenece a la delegación seleccionada.'], 422);
+            }
+        } else {
+            $delegado->loadMissing('delegaciones');
+            $ids = $delegado->delegaciones->pluck('id');
+            if (! $ids->contains($emp->delegacion_id)) {
+                return response()->json(['message' => 'El empleado no pertenece a ninguna delegación asignada a este delegado.'], 422);
+            }
+        }
+
+        if ($emp->user_id && $userIdEfectivo && (int) $emp->user_id !== (int) $userIdEfectivo) {
+            return response()->json(['message' => 'El empleado ya está vinculado a otro usuario. Quite esa vinculación o use el usuario existente.'], 422);
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $ur     = $request->get('ur');
+        $ur = $request->get('ur');
         $search = trim((string) $request->get('search', ''));
 
         $query = DB::table('delegados AS d')
@@ -24,19 +59,18 @@ class DelegadoController extends Controller
             if ($depId) {
                 $query->join('dependencia_delegacion AS dep_del', function ($j) use ($depId) {
                     $j->on('dep_del.delegacion_id', '=', 'dl.id')
-                      ->where('dep_del.dependencia_id', $depId);
+                        ->where('dep_del.dependencia_id', $depId);
                 });
             }
         }
 
-        $query->when($search, fn ($q) => $q->where(fn ($q2) =>
-            $q2->where('d.nombre', 'like', "%{$search}%")
-               ->orWhere('dl.clave', 'like', "%{$search}%")
+        $query->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('d.nombre', 'like', "%{$search}%")
+            ->orWhere('dl.clave', 'like', "%{$search}%")
         ));
 
         $rows = $query->select([
-                'd.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
-            ])
+            'd.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
+        ])
             ->orderBy('d.nombre')
             ->limit(200)
             ->get();
@@ -49,10 +83,10 @@ class DelegadoController extends Controller
             ->pluck('cnt', 'delegacion_id');
 
         $data = $rows->map(fn ($d) => [
-            'id'                 => $d->id,
-            'clave'              => $d->delegacion_clave,
-            'nombre'             => $d->nombre,
-            'ur'                 => $ur,
+            'id' => $d->id,
+            'clave' => $d->delegacion_clave,
+            'nombre' => $d->nombre,
+            'ur' => $ur,
             'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
         ]);
 
@@ -67,10 +101,13 @@ class DelegadoController extends Controller
             ->join('delegado_delegacion AS dd', 'dd.delegado_id', '=', 'd.id')
             ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
             ->leftJoin('users AS u', 'u.id', '=', 'd.user_id')
+            ->leftJoin('empleados AS emp', 'emp.id', '=', 'd.empleado_id')
             ->select([
-                'd.id', 'd.nombre', 'd.user_id',
+                'd.id', 'd.nombre', 'd.user_id', 'd.empleado_id',
                 'u.name AS user_name', 'u.rfc AS user_rfc',
-                'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id'
+                'emp.nue AS empleado_nue',
+                DB::raw("TRIM(CONCAT(COALESCE(emp.nombre,''),' ',COALESCE(emp.apellido_paterno,''),' ',COALESCE(emp.apellido_materno,''))) AS empleado_nombre_completo"),
+                'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
             ])
             ->orderBy('d.nombre')
             ->get();
@@ -85,16 +122,22 @@ class DelegadoController extends Controller
         foreach ($delegados as $d) {
             if (! isset($byId[$d->id])) {
                 $byId[$d->id] = [
-                    'id'                 => $d->id,
-                    'nombre'             => $d->nombre,
-                    'user_id'            => $d->user_id,
-                    'user'               => $d->user_id ? [
-                        'id'   => $d->user_id,
+                    'id' => $d->id,
+                    'nombre' => $d->nombre,
+                    'user_id' => $d->user_id,
+                    'empleado_id' => $d->empleado_id,
+                    'empleado' => $d->empleado_id ? [
+                        'id' => (int) $d->empleado_id,
+                        'nue' => $d->empleado_nue,
+                        'nombre_completo' => trim((string) $d->empleado_nombre_completo) ?: null,
+                    ] : null,
+                    'user' => $d->user_id ? [
+                        'id' => $d->user_id,
                         'name' => $d->user_name,
-                        'rfc'  => $d->user_rfc,
+                        'rfc' => $d->user_rfc,
                     ] : null,
                     'delegaciones_count' => 0,
-                    'delegaciones'       => [],
+                    'delegaciones' => [],
                     'trabajadores_total' => 0,
                 ];
             }
@@ -102,16 +145,15 @@ class DelegadoController extends Controller
             $cnt = (int) ($trabCounts[$d->delegacion_id] ?? 0);
             $byId[$d->id]['delegaciones_count']++;
             $byId[$d->id]['delegaciones'][] = [
-                'id'                 => $d->delegacion_id,
-                'clave'              => $d->delegacion_clave,
+                'id' => $d->delegacion_id,
+                'clave' => $d->delegacion_clave,
                 'trabajadores_count' => $cnt,
             ];
             $byId[$d->id]['trabajadores_total'] += $cnt;
         }
 
         if ($search) {
-            $byId = array_filter($byId, fn ($v) =>
-                stripos($v['nombre'], $search) !== false ||
+            $byId = array_filter($byId, fn ($v) => stripos($v['nombre'], $search) !== false ||
                 ($v['user'] && stripos($v['user']['rfc'], $search) !== false) ||
                 collect($v['delegaciones'])->contains(fn ($del) => stripos($del['clave'], $search) !== false)
             );
@@ -123,18 +165,29 @@ class DelegadoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'nombre'        => 'required|string|max:120',
+            'nombre' => 'required|string|max:120',
             'delegacion_id' => 'required|integer|exists:delegaciones,id',
-            'user_id'       => 'nullable|integer|exists:users,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'empleado_id' => 'nullable|integer|exists:empleados,id',
         ]);
+
+        if ($blocked = $this->validarEmpleadoIdParaDelegado(
+            new Delegado,
+            $data['empleado_id'] ?? null,
+            $data['user_id'] ?? null,
+            (int) $data['delegacion_id']
+        )) {
+            return $blocked;
+        }
 
         if (! empty($data['user_id'])) {
             Delegado::where('user_id', $data['user_id'])->update(['user_id' => null]);
         }
 
         $delegado = Delegado::create([
-            'nombre'  => strtoupper(trim($data['nombre'])),
+            'nombre' => strtoupper(trim($data['nombre'])),
             'user_id' => $data['user_id'] ?? null,
+            'empleado_id' => $data['empleado_id'] ?? null,
         ]);
 
         $delegado->delegaciones()->attach($data['delegacion_id']);
@@ -150,17 +203,33 @@ class DelegadoController extends Controller
         }
 
         $data = $request->validate([
-            'nombre'  => 'required|string|max:120',
+            'nombre' => 'required|string|max:120',
             'user_id' => 'nullable|integer|exists:users,id',
+            'empleado_id' => 'nullable|integer|exists:empleados,id',
         ]);
+
+        $userIdEfectivo = array_key_exists('user_id', $data) ? $data['user_id'] : $delegado->user_id;
+        $nuevoEmpleadoId = array_key_exists('empleado_id', $data)
+            ? $data['empleado_id']
+            : $delegado->empleado_id;
+
+        if ($blocked = $this->validarEmpleadoIdParaDelegado(
+            $delegado,
+            $nuevoEmpleadoId,
+            $userIdEfectivo ? (int) $userIdEfectivo : null,
+            null
+        )) {
+            return $blocked;
+        }
 
         if (! empty($data['user_id'])) {
             Delegado::where('user_id', $data['user_id'])->where('id', '!=', $delegado->id)->update(['user_id' => null]);
         }
 
         $delegado->update([
-            'nombre'  => strtoupper(trim($data['nombre'])),
+            'nombre' => strtoupper(trim($data['nombre'])),
             'user_id' => $data['user_id'] ?? null,
+            'empleado_id' => array_key_exists('empleado_id', $data) ? $data['empleado_id'] : $delegado->empleado_id,
         ]);
 
         return response()->json(['message' => 'Delegado actualizado correctamente.']);
@@ -177,41 +246,85 @@ class DelegadoController extends Controller
             return response()->json(['message' => 'Este delegado ya tiene un usuario vinculado.'], 422);
         }
 
+        if ($delegado->empleado_id) {
+            $empPrevio = Empleado::find($delegado->empleado_id);
+            if ($empPrevio && $empPrevio->user_id) {
+                return response()->json([
+                    'message' => 'El empleado vinculado a este delegado ya tiene usuario. Quite la vinculación en el padrón o use “Vincular a usuario existente”.',
+                ], 422);
+            }
+        }
+
         $data = $request->validate([
-            'rfc'                 => ['required', 'string', 'max:20', 'unique:users,rfc'],
-            'email'               => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'password'            => 'required|string|min:8|confirmed',
-            'name'                => 'nullable|string|max:255',
+            'rfc' => ['required', 'string', 'max:20', 'unique:users,rfc'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'password' => 'required|string|min:8|confirmed',
+            'name' => 'nullable|string|max:255',
         ]);
 
         $name = ! empty($data['name']) ? trim($data['name']) : ($delegado->nombre ?: 'Delegado');
 
-        $user = \App\Models\User::create([
-            'name'     => $name,
-            'rfc'      => strtoupper(trim($data['rfc'])),
-            'email'    => $data['email'] ?? null,
-            'password' => $data['password'],
-            'activo'   => true,
-        ]);
+        try {
+            return DB::transaction(function () use ($data, $delegado, $name) {
+                $user = User::create([
+                    'name' => $name,
+                    'rfc' => strtoupper(trim($data['rfc'])),
+                    'email' => $data['email'] ?? null,
+                    'password' => $data['password'],
+                    'activo' => true,
+                ]);
 
-        $user->assignRole('delegado');
-        // También le asignamos el rol de empleado ya que el delegado también es un empleado con vestuario
-        $user->assignRole('empleado');
+                $user->assignRole('delegado');
+                $user->assignRole('empleado');
 
-        Delegado::where('user_id', $user->id)->where('id', '!=', $delegado->id)->update(['user_id' => null]);
+                Delegado::where('user_id', $user->id)->where('id', '!=', $delegado->id)->update(['user_id' => null]);
 
-        $delegado->user_id = $user->id;
-        $delegado->save();
+                $delegado->user_id = $user->id;
+                $delegado->save();
 
-        return response()->json([
-            'message' => 'Usuario creado y vinculado correctamente.',
-            'user'    => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'rfc'   => $user->rfc,
-                'email' => $user->email,
-            ],
-        ], 201);
+                $empleadoVinculado = false;
+                if ($delegado->empleado_id) {
+                    $emp = Empleado::lockForUpdate()->find($delegado->empleado_id);
+                    if ($emp) {
+                        if ($emp->user_id) {
+                            throw new \RuntimeException('empleado_ocupado');
+                        }
+                        Empleado::where('user_id', $user->id)->where('id', '!=', $emp->id)->update(['user_id' => null]);
+                        $emp->user_id = $user->id;
+                        $emp->save();
+                        if ($emp->nue) {
+                            $user->nue = $emp->nue;
+                            $user->save();
+                        }
+                        $empleadoVinculado = true;
+                    }
+                }
+
+                $msg = $empleadoVinculado
+                    ? 'Usuario creado y vinculado al delegado y al registro de empleado (Mismo acceso para Mi vestuario y Mi delegación).'
+                    : 'Usuario creado y vinculado correctamente al delegado.';
+
+                return response()->json([
+                    'message' => $msg,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'rfc' => $user->rfc,
+                        'email' => $user->email,
+                        'nue' => $user->nue,
+                    ],
+                    'empleado_vinculado' => $empleadoVinculado,
+                ], 201);
+            });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'empleado_ocupado') {
+                return response()->json([
+                    'message' => 'El registro de empleado quedó vinculado a otro usuario. Actualice la pantalla e intente de nuevo.',
+                ], 409);
+            }
+
+            throw $e;
+        }
     }
 
     public function destroy(int $id): JsonResponse
