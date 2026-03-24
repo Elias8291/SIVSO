@@ -48,7 +48,7 @@ function nivelAlerta(pct) {
     return 'ok';
 }
 
-function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon }) {
+function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon, estimado, pendiente, estimadoIva, pendienteIva }) {
     const nivel = nivelAlerta(pct);
     return (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl p-5 flex items-start gap-4">
@@ -65,6 +65,32 @@ function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon }
                 </p>
                 {cantidad > 0 && (
                     <p className="text-[11px] text-zinc-400 mt-1">{fmtNum(cantidad)} piezas</p>
+                )}
+                {(estimado > 0 || pendiente > 0) && (
+                    <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-0.5">
+                        {estimado > 0 && (
+                            <>
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                    Estimado* <span className="font-semibold text-zinc-600 dark:text-zinc-300">{fmtCompact(estimado)}</span>
+                                    <span className="text-[9px] opacity-70 ml-0.5">s/IVA</span>
+                                </p>
+                                {estimadoIva > 0 && (
+                                    <p className="text-[10px] text-zinc-400">{fmtCompact(estimadoIva)} c/IVA</p>
+                                )}
+                            </>
+                        )}
+                        {pendiente > 0 && (
+                            <>
+                                <p className="text-[11px] text-amber-700 dark:text-amber-500/90">
+                                    Pendiente <span className="font-bold">{fmtCompact(pendiente)}</span>
+                                    <span className="text-[9px] opacity-80 ml-0.5">s/IVA</span>
+                                </p>
+                                {pendienteIva > 0 && (
+                                    <p className="text-[10px] text-amber-600/80 dark:text-amber-500/70">{fmtCompact(pendienteIva)} c/IVA</p>
+                                )}
+                            </>
+                        )}
+                    </div>
                 )}
                 {limite > 0 && (
                     <>
@@ -86,6 +112,8 @@ function StatSummary({ label, gastado, gastadoIva, cantidad, limite, pct, icon }
 
 function CeldaPartida({ col }) {
     const nivel = nivelAlerta(col.porcentaje);
+    const est = col.estimado ?? 0;
+    const pend = col.pendiente ?? 0;
     return (
         <td className="px-4 py-3 align-top">
             <div className="min-w-[150px]">
@@ -100,6 +128,17 @@ function CeldaPartida({ col }) {
                 <p className="text-[11px] text-zinc-400 mt-0.5">
                     {fmtNum(col.cantidad)} pzas
                 </p>
+
+                {est > 0 && (
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                        Est.* {fmt(est)} <span className="text-[9px] opacity-70">s/IVA</span>
+                    </p>
+                )}
+                {pend > 0 && (
+                    <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">
+                        Pend. {fmt(pend)} <span className="text-[9px] font-normal opacity-80">s/IVA</span>
+                    </p>
+                )}
 
                 {col.limite > 0 ? (
                     <>
@@ -154,41 +193,78 @@ export default function PartidasPage() {
     );
 
     const partidas = data?.partidas ?? [];
+    const anioActual = new Date().getFullYear();
 
     const openEdit = (row) => {
         navigate('/dashboard/partidas/limites/editar', { state: { row, anio: anio ?? data?.anio } });
     };
 
+    const anioRef = data?.anio_demanda_referencia;
+    const anioVista = anio ?? data?.anio ?? anioActual;
+
     // Totales calculados desde las filas visibles (filtra correctamente con búsqueda)
-    const { sumByPartida, totalGastado, totalGastadoIva, totalPiezas, totalLimite } = useMemo(() => {
+    const {
+        sumByPartida, totalGastado, totalGastadoIva, totalPiezas, totalLimite,
+        totalEstimado, totalEstimadoIva, totalPendiente, totalPendienteIva,
+    } = useMemo(() => {
         const byPart = {};
         let tGastado = 0;
         let tGastadoIva = 0;
         let tPiezas = 0;
         let tLimite = 0;
+        let tEst = 0;
+        let tEstIva = 0;
+        let tPend = 0;
+        let tPendIva = 0;
 
         for (const row of rows) {
             for (const col of row.columnas) {
                 const pa = col.partida_especifica;
-                if (!byPart[pa]) byPart[pa] = { gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0 };
+                if (!byPart[pa]) {
+                    byPart[pa] = {
+                        gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0,
+                        estimado: 0, estimado_iva: 0, pendiente: 0, pendiente_iva: 0,
+                    };
+                }
                 byPart[pa].gastado += col.gastado;
                 byPart[pa].gastado_iva += col.gastado_iva ?? 0;
                 byPart[pa].cantidad += col.cantidad;
                 byPart[pa].limite += col.limite;
+                byPart[pa].estimado += col.estimado ?? 0;
+                byPart[pa].estimado_iva += col.estimado_iva ?? 0;
             }
             tGastado += row.total_gastado;
             tGastadoIva += row.total_gastado_iva ?? 0;
             tPiezas += row.total_piezas ?? 0;
             tLimite += row.total_limite;
+            tEst += row.total_estimado ?? 0;
+            tEstIva += row.total_estimado_iva ?? 0;
+            tPend += row.total_pendiente ?? 0;
+            tPendIva += row.total_pendiente_iva ?? 0;
         }
 
-        return { sumByPartida: byPart, totalGastado: tGastado, totalGastadoIva: tGastadoIva, totalPiezas: tPiezas, totalLimite: tLimite };
+        for (const pa of Object.keys(byPart)) {
+            const b = byPart[pa];
+            b.pendiente = Math.max(0, Math.round((b.estimado - b.gastado) * 100) / 100);
+            b.pendiente_iva = Math.max(0, Math.round((b.estimado_iva - b.gastado_iva) * 100) / 100);
+        }
+
+        return {
+            sumByPartida: byPart,
+            totalGastado: tGastado,
+            totalGastadoIva: tGastadoIva,
+            totalPiezas: tPiezas,
+            totalLimite: tLimite,
+            totalEstimado: tEst,
+            totalEstimadoIva: tEstIva,
+            totalPendiente: tPend,
+            totalPendienteIva: tPendIva,
+        };
     }, [rows]);
 
     const totalPct = totalLimite > 0 ? Math.min(Math.round((totalGastado / totalLimite) * 100), 999) : null;
 
     const aniosDisponibles = data?.anios_disponibles ?? [];
-    const anioActual = new Date().getFullYear();
     const anosOpts = aniosDisponibles.length > 0
         ? [...new Set([...aniosDisponibles, anioActual])].sort()
         : [anioActual - 1, anioActual, anioActual + 1];
@@ -206,7 +282,7 @@ export default function PartidasPage() {
         <div>
             <PageHeader
                 title="Partidas Presupuestales"
-                description={`Gasto por partida · Ejercicio ${anio ?? data?.anio ?? anioActual} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
+                description={`Gasto por partida · Ejercicio ${anioVista} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
                 actions={
                     <div className="flex items-center gap-2">
                         <select
@@ -231,6 +307,20 @@ export default function PartidasPage() {
                 }
             />
 
+            {typeof anioRef === 'number' && (totalEstimado > 0 || totalPendiente > 0) && (
+                <p className="text-[13px] text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed px-1">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-300">Estimado*</span>
+                    {' '}
+                    toma las mismas piezas y cantidades seleccionadas en el ejercicio <strong>{anioRef}</strong>
+                    {' '}
+                    y las valora con los precios del ejercicio <strong>{anioVista}</strong>.
+                    {' '}
+                    <span className="font-semibold text-amber-800 dark:text-amber-500/90">Pendiente</span>
+                    {' '}
+                    es lo que aún no queda cubierto por el gasto ya registrado en <strong>{anioVista}</strong> (por UR y por partida).
+                </p>
+            )}
+
             {/* Resumen global */}
             <div className={`grid gap-4 mb-8 ${getGridColsClass()}`}>
                 <StatSummary
@@ -240,10 +330,17 @@ export default function PartidasPage() {
                     cantidad={totalPiezas}
                     limite={totalLimite}
                     pct={totalPct}
+                    estimado={totalEstimado}
+                    estimadoIva={totalEstimadoIva}
+                    pendiente={totalPendiente}
+                    pendienteIva={totalPendienteIva}
                     icon={<DollarSign size={18} strokeWidth={1.8} />}
                 />
                 {partidas.map((pa) => {
-                    const s = sumByPartida[pa] ?? { gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0 };
+                    const s = sumByPartida[pa] ?? {
+                        gastado: 0, gastado_iva: 0, cantidad: 0, limite: 0,
+                        estimado: 0, estimado_iva: 0, pendiente: 0, pendiente_iva: 0,
+                    };
                     return (
                         <StatSummary
                             key={pa}
@@ -253,6 +350,10 @@ export default function PartidasPage() {
                             cantidad={s.cantidad}
                             limite={s.limite}
                             pct={s.limite > 0 ? Math.round((s.gastado / s.limite) * 100) : null}
+                            estimado={s.estimado}
+                            estimadoIva={s.estimado_iva}
+                            pendiente={s.pendiente}
+                            pendienteIva={s.pendiente_iva}
                             icon={<TrendingUp size={18} strokeWidth={1.8} />}
                         />
                     );
@@ -296,7 +397,7 @@ export default function PartidasPage() {
                     <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
                         <DollarSign size={28} strokeWidth={1.2} className="mb-3 opacity-30" />
                         <p className="text-[14px] font-semibold">Sin datos de partidas</p>
-                        <p className="text-[13px] mt-1">No hay selecciones registradas para este ejercicio.</p>
+                        <p className="text-[13px] mt-1 text-center max-w-sm">No hay dependencias con gasto o estimado para este ejercicio (o ninguna coincide con la búsqueda).</p>
                     </div>
                 ) : (
                     <>
@@ -358,6 +459,16 @@ export default function PartidasPage() {
                                                     <p className="text-[11px] text-zinc-400 mt-0.5">
                                                         {fmtNum(row.total_piezas ?? 0)} pzas
                                                     </p>
+                                                    {(row.total_estimado ?? 0) > 0 && (
+                                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                                                            Est.* {fmt(row.total_estimado)} <span className="text-[9px] opacity-70">s/IVA</span>
+                                                        </p>
+                                                    )}
+                                                    {(row.total_pendiente ?? 0) > 0 && (
+                                                        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">
+                                                            Pend. {fmt(row.total_pendiente)} <span className="text-[9px] font-normal opacity-80">s/IVA</span>
+                                                        </p>
+                                                    )}
                                                     {row.total_limite > 0 && (
                                                         <>
                                                             <p className="text-[12px] text-zinc-400 mt-0.5">
@@ -391,12 +502,21 @@ export default function PartidasPage() {
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{rows.length} dependencias</p>
                                             </td>
                                             {partidas.map((pa) => {
-                                                const s = sumByPartida[pa] ?? { gastado: 0, gastado_iva: 0, cantidad: 0 };
+                                                const s = sumByPartida[pa] ?? {
+                                                    gastado: 0, gastado_iva: 0, cantidad: 0,
+                                                    estimado: 0, pendiente: 0,
+                                                };
                                                 return (
                                                     <td key={pa} className="px-4 py-4">
                                                         <p className="text-[16px] font-bold text-zinc-700 dark:text-zinc-200">{fmt(s.gastado)}</p>
                                                         <p className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 mt-0.5">{fmt(s.gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(s.cantidad)} pzas</p>
+                                                        {s.estimado > 0 && (
+                                                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">Est.* {fmt(s.estimado)} s/IVA</p>
+                                                        )}
+                                                        {s.pendiente > 0 && (
+                                                            <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">Pend. {fmt(s.pendiente)} s/IVA</p>
+                                                        )}
                                                     </td>
                                                 );
                                             })}
@@ -404,6 +524,12 @@ export default function PartidasPage() {
                                                 <p className="text-[16px] font-black text-brand-gold">{fmt(totalGastado)}</p>
                                                 <p className="text-[14px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5">{fmt(totalGastadoIva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span></p>
                                                 <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(totalPiezas)} pzas</p>
+                                                {totalEstimado > 0 && (
+                                                    <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-1">Est.* {fmt(totalEstimado)} s/IVA</p>
+                                                )}
+                                                {totalPendiente > 0 && (
+                                                    <p className="text-[12px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">Pend. {fmt(totalPendiente)} s/IVA</p>
+                                                )}
                                             </td>
                                             {canEditLimites && <td />}
                                         </tr>
@@ -448,6 +574,12 @@ export default function PartidasPage() {
                                                                 {fmt(col.gastado_iva)} <span className="text-[9px] font-normal opacity-70">c/IVA</span>
                                                             </p>
                                                             <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(col.cantidad)} pzas</p>
+                                                            {(col.estimado ?? 0) > 0 && (
+                                                                <p className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1">Est.* {fmt(col.estimado)} s/IVA</p>
+                                                            )}
+                                                            {(col.pendiente ?? 0) > 0 && (
+                                                                <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">Pend. {fmt(col.pendiente)} s/IVA</p>
+                                                            )}
                                                             {col.limite > 0 && (
                                                                 <>
                                                                     <p className="text-[11px] font-medium text-zinc-400 mt-0.5">/ {fmt(col.limite)}</p>
@@ -468,6 +600,12 @@ export default function PartidasPage() {
                                                             {fmt(row.total_gastado_iva)} <span className="text-[10px] font-normal opacity-70">c/IVA</span>
                                                         </p>
                                                         <p className="text-[11px] text-zinc-400 mt-0.5">{fmtNum(row.total_piezas ?? 0)} piezas</p>
+                                                        {(row.total_estimado ?? 0) > 0 && (
+                                                            <p className="text-[10px] text-zinc-500 mt-1">Est.* {fmt(row.total_estimado)} s/IVA</p>
+                                                        )}
+                                                        {(row.total_pendiente ?? 0) > 0 && (
+                                                            <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-500 mt-0.5">Pend. {fmt(row.total_pendiente)} s/IVA</p>
+                                                        )}
                                                     </div>
                                                     {row.total_limite > 0 && (
                                                         <p className="text-[12px] font-medium text-zinc-400">/ {fmt(row.total_limite)}</p>
