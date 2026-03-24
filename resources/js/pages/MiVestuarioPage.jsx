@@ -47,6 +47,43 @@ function displayItem(orig, patch) {
     return { ...m, _pendiente: !!pendiente };
 }
 
+/** Indica si el parche refleja que el usuario revisó talla (o cambió artículo). */
+function patchRevisaTallaUOrigen(orig, patch) {
+    if (!patch) return false;
+    if (patch.producto_id != null && patch.producto_id !== orig.producto_id) return true;
+    return Object.prototype.hasOwnProperty.call(patch, 'talla');
+}
+
+/**
+ * Validación antes de guardar: talla obligatoria; prendas heredadas del año anterior requieren confirmar talla o cambiar artículo.
+ * @returns {{ descripcion: string, clave: string, motivo: string }[]}
+ */
+function listarPrendasConTallaPendiente(asignaciones, baseline, pendingEdits) {
+    const fallos = [];
+    for (const row of asignaciones) {
+        const orig = baseline.find((x) => x.id === row.id) ?? row;
+        const patch = pendingEdits[row.id];
+        const m = mergedRow(orig, patch);
+        const tallaStr = String(m.talla ?? '').trim();
+        if (!tallaStr) {
+            fallos.push({
+                descripcion: orig.descripcion ?? 'Artículo',
+                clave: orig.clave_vestuario ?? orig.codigo ?? '—',
+                motivo: 'No hay talla indicada.',
+            });
+            continue;
+        }
+        if (orig.heredado_preview && !patchRevisaTallaUOrigen(orig, patch)) {
+            fallos.push({
+                descripcion: orig.descripcion ?? 'Artículo',
+                clave: orig.clave_vestuario ?? orig.codigo ?? '—',
+                motivo: 'Debes abrir «Cambiar talla» o «Cambiar artículo» y confirmar (viene del año anterior).',
+            });
+        }
+    }
+    return fallos;
+}
+
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 function Toast({ message, onDone }) {
     useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
@@ -337,6 +374,7 @@ export default function MiVestuarioPage() {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
     const [savingBatch, setSavingBatch] = useState(false);
+    const [tallaBloqueo, setTallaBloqueo] = useState(null);
     const [anio, setAnio] = useState(null);
 
     const [editTalla, setEditTalla] = useState(null);
@@ -467,6 +505,23 @@ export default function MiVestuarioPage() {
 
     const confirmarCambios = async () => {
         if (pendingCount === 0) return;
+
+        const ejercicioVigenteLocal = data?.ejercicio_vigente ?? new Date().getFullYear();
+        const viendoHistoricoLocal = (anio ?? data?.anio) !== ejercicioVigenteLocal;
+        const puedeEditarLocal = data?.puede_editar_vestuario ?? false;
+
+        if (puedeEditarLocal && !viendoHistoricoLocal) {
+            const fallosTalla = listarPrendasConTallaPendiente(
+                data?.asignaciones ?? [],
+                baseline,
+                pendingEdits
+            );
+            if (fallosTalla.length > 0) {
+                setTallaBloqueo(fallosTalla);
+                return;
+            }
+        }
+
         const cambios = [];
         for (const idStr of Object.keys(pendingEdits)) {
             const origIdKey = Number(idStr);
@@ -741,6 +796,38 @@ export default function MiVestuarioPage() {
                     </div>
                 </div>
             )}
+
+            <Modal
+                open={Array.isArray(tallaBloqueo) && tallaBloqueo.length > 0}
+                onClose={() => setTallaBloqueo(null)}
+                title="Revisa la talla antes de guardar"
+                size="md"
+                footer={
+                    <button
+                        type="button"
+                        onClick={() => setTallaBloqueo(null)}
+                        className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90"
+                    >
+                        Entendido
+                    </button>
+                }
+            >
+                <p className="text-[13px] text-zinc-600 dark:text-zinc-300 leading-relaxed mb-4">
+                    No se puede guardar todavía. Corrige estas prendas y vuelve a intentar:
+                </p>
+                <ul className="space-y-2.5 max-h-[min(50vh,320px)] overflow-y-auto pr-1">
+                    {tallaBloqueo?.map((f, i) => (
+                        <li
+                            key={i}
+                            className="rounded-xl border border-amber-200/80 dark:border-amber-800/60 bg-amber-50/80 dark:bg-amber-950/25 px-3.5 py-3"
+                        >
+                            <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-100 leading-snug">{f.descripcion}</p>
+                            <p className="text-[10px] font-mono text-zinc-500 mt-1">Clave: {f.clave}</p>
+                            <p className="text-[11px] text-amber-900 dark:text-amber-200/90 mt-2 font-medium leading-snug">{f.motivo}</p>
+                        </li>
+                    ))}
+                </ul>
+            </Modal>
 
             {toast && <Toast message={toast} onDone={() => setToast(null)} />}
         </div>
