@@ -461,7 +461,14 @@ export default function MiDelegacionVestuarioPage() {
             )}
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
-            <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
+            <ModalCambiarProducto
+                item={cambiarProd}
+                anioCatalogo={anioCatalogo}
+                baseline={baseline}
+                pendingEdits={pendingEdits}
+                onClose={() => setCambiarProd(null)}
+                onApply={handleApplyProducto}
+            />
             <ModalCantidad
                 item={editCantidad}
                 cantidadOriginal={editCantidad ? baseline.find((x) => x.id === editCantidad.id)?.cantidad : undefined}

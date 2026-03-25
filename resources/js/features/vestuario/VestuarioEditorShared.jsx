@@ -55,6 +55,46 @@ export function displayItem(orig, patch) {
     return { ...m, _pendiente: !!pendiente };
 }
 
+/** Importe cantidad × precio (línea baseline o con parche). */
+export function importeLineaVestuario(orig, patch) {
+    const m = mergedRow(orig, patch || undefined);
+    const q = Number(m.cantidad) || 0;
+    const p = Number(m.precio_unitario);
+    if (q <= 0 || !Number.isFinite(p) || p < 0) return 0;
+    return q * p;
+}
+
+/**
+ * Precio unitario máximo al cambiar de producto en una línea, sin superar la suma de importes
+ * del vestuario según la asignación inicial (baseline), asumiendo el resto de líneas como están
+ * en los cambios pendientes. Si baja cantidad o elige algo más barato en otra partida, el saldo
+ * sube el tope en esta línea.
+ */
+export function precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, seleccionId) {
+    if (!Array.isArray(baseline) || baseline.length === 0 || seleccionId == null) return null;
+    let bTotal = 0;
+    for (const o of baseline) {
+        bTotal += importeLineaVestuario(o, null);
+    }
+    if (bTotal <= 0) return null;
+
+    const origT = baseline.find((x) => x.id === seleccionId);
+    if (!origT) return null;
+    const mergedT = mergedRow(origT, pendingEdits[seleccionId]);
+    const qtyT = Number(mergedT.cantidad) || 0;
+    if (qtyT <= 0) return null;
+
+    let sRest = 0;
+    for (const o of baseline) {
+        if (o.id === seleccionId) continue;
+        sRest += importeLineaVestuario(o, pendingEdits[o.id]);
+    }
+
+    const cap = (bTotal - sRest) / qtyT;
+    if (!Number.isFinite(cap)) return null;
+    return Math.max(0, cap);
+}
+
 function patchRevisaTallaUOrigen(orig, patch) {
     if (!patch) return false;
     if (patch.producto_id != null && patch.producto_id !== orig.producto_id) return true;
@@ -194,7 +234,7 @@ export function ModalCantidad({ item, cantidadOriginal, onClose, onApply }) {
                     </p>
                     {redujoVsServidor ? (
                         <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 rounded-xl px-3 py-2.5">
-                            Al bajar la cantidad libera importe dentro de su asignación. Puede volver a subirla aquí o con el botón <strong className="text-zinc-700 dark:text-zinc-300">+</strong> en la tarjeta (hasta 100 piezas).
+                            Al bajar la cantidad libera importe dentro de su asignación total. Puede volver a subirla aquí o con <strong className="text-zinc-700 dark:text-zinc-300">+</strong> en la tarjeta, o usar ese saldo en <strong className="text-zinc-700 dark:text-zinc-300">otra partida</strong> con <strong className="text-zinc-700 dark:text-zinc-300">Artículo</strong> (hasta 100 piezas por línea).
                         </p>
                     ) : null}
                     <input type="number" min="1" max="100" value={cantidad} onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 1)}
@@ -292,8 +332,8 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                             <span className="text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{cant}</span>
                         )}
                         {mostrarAvisoMenos ? (
-                            <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 max-w-[14rem]">
-                                Cantidad por debajo de la guardada: puede recuperar piezas con <strong className="text-zinc-600 dark:text-zinc-300">+</strong> si lo necesita.
+                            <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 max-w-[16rem]">
+                                Libera importe respecto a su asignación: puede recuperar piezas con <strong className="text-zinc-600 dark:text-zinc-300">+</strong> o, en <strong className="text-zinc-600 dark:text-zinc-300">otra partida</strong>, usar <strong className="text-zinc-600 dark:text-zinc-300">Artículo</strong> para elegir algo mejor dentro del mismo tope total.
                             </p>
                         ) : null}
                     </div>
@@ -384,7 +424,7 @@ export function ModalTalla({ item, onClose, onApply }) {
     );
 }
 
-export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
+export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendingEdits = {}, onClose, onApply }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -407,13 +447,28 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
         return () => ctrl.abort();
     }, [debouncedSearch, item, anioCatalogo]);
 
-    const precioTope = item ? Number(item.precio_unitario) : NaN;
-    const hayTope = item != null && Number.isFinite(precioTope) && precioTope > 0;
+    const precioCompartido = useMemo(() => {
+        if (!item?.id || !baseline.length) return null;
+        return precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, item.id);
+    }, [item, baseline, pendingEdits]);
+
+    const precioLineaActual = item ? Number(item.precio_unitario) : NaN;
+    const usaTopeCompartido = precioCompartido != null && Number.isFinite(precioCompartido);
+    const precioLimiteFiltro = usaTopeCompartido ? precioCompartido : precioLineaActual;
+
+    const hayFiltroPrecio = Boolean(
+        item && soloPrecioConservador && Number.isFinite(precioLimiteFiltro) && precioLimiteFiltro >= 0
+    );
+    const muestraInfoPrecio = Boolean(
+        item && (usaTopeCompartido || (Number.isFinite(precioLineaActual) && precioLineaActual > 0))
+    );
+    const saldoExtraPartidas = usaTopeCompartido && precioLimiteFiltro > precioLineaActual + 1e-9;
 
     const productosFiltrados = useMemo(() => {
-        if (!hayTope || !soloPrecioConservador) return productos;
-        return productos.filter((p) => Number(p.precio_unitario ?? 0) <= precioTope + 1e-9);
-    }, [productos, hayTope, precioTope, soloPrecioConservador]);
+        if (!soloPrecioConservador || !item) return productos;
+        if (!Number.isFinite(precioLimiteFiltro) || precioLimiteFiltro < 0) return productos;
+        return productos.filter((p) => Number(p.precio_unitario ?? 0) <= precioLimiteFiltro + 1e-9);
+    }, [productos, soloPrecioConservador, item, precioLimiteFiltro]);
 
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg" mobileFloatingClose
@@ -435,31 +490,43 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
                     <div className="hidden sm:block px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 text-[13px] text-zinc-600 dark:text-zinc-300">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Artículo actual</p>
                         <p className="font-semibold text-zinc-800 dark:text-zinc-100 leading-snug break-words">{item.descripcion}</p>
-                        {hayTope ? (
+                        {Number.isFinite(precioLineaActual) && precioLineaActual > 0 ? (
                             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">
-                                Precio unitario (catálogo): <span className="font-mono tabular-nums">{fmtMx(precioTope)}</span>
+                                Precio unitario de esta línea: <span className="font-mono tabular-nums">{fmtMx(precioLineaActual)}</span>
+                                {usaTopeCompartido && Number.isFinite(precioLimiteFiltro) ? (
+                                    <> · tope para elegir aquí: <span className="font-mono tabular-nums text-brand-gold">{fmtMx(precioLimiteFiltro)}</span></>
+                                ) : null}
                             </p>
                         ) : null}
                     </div>
                     <p className="sm:hidden text-[11px] text-zinc-500 dark:text-zinc-400 -mt-2">
-                        {hayTope ? (
-                            <>Precio actual: <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMx(precioTope)}</span>. </>
+                        {usaTopeCompartido && Number.isFinite(precioLimiteFiltro) ? (
+                            <>
+                                Tope por pieza (esta partida): <span className="font-mono tabular-nums text-zinc-800 dark:text-zinc-100">{fmtMx(precioLimiteFiltro)}</span>
+                                {saldoExtraPartidas ? ' — incluye saldo liberado en otras.' : '.'}{' '}
+                            </>
+                        ) : Number.isFinite(precioLineaActual) && precioLineaActual > 0 ? (
+                            <>Precio actual: <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMx(precioLineaActual)}</span>. </>
                         ) : null}
-                        Busque un reemplazo de la misma partida.
+                        Misma partida presupuestal; el listado respeta su tope total.
                     </p>
-                    {hayTope ? (
+                    {muestraInfoPrecio ? (
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/30 px-3 py-2.5">
                             <p className="text-[11px] leading-snug text-zinc-600 dark:text-zinc-300 min-w-0">
-                                {soloPrecioConservador
-                                    ? 'Solo se listan artículos con precio unitario igual o menor al actual, para no encarecer su asignación.'
-                                    : 'Mostrando todo el catálogo de la partida (incluye precios mayores).'}
+                                {soloPrecioConservador ? (
+                                    usaTopeCompartido
+                                        ? 'Solo artículos hasta el tope por pieza indicado: mantiene el importe total de su vestuario respecto a la asignación inicial. Si bajó cantidad o eligió algo más barato en otra partida, puede aquí subir de precio unitario dentro de ese mismo tope.'
+                                        : 'Solo artículos con precio unitario igual o menor al de esta línea.'
+                                ) : (
+                                    'Mostrando todo el catálogo de la partida (incluye precios mayores que el tope).'
+                                )}
                             </p>
                             <button
                                 type="button"
                                 onClick={() => { setSoloPrecioConservador((v) => !v); setSelected(null); }}
                                 className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-brand-gold hover:underline text-left sm:text-right"
                             >
-                                {soloPrecioConservador ? 'Ver todos los precios' : 'Solo precios ≤ al actual'}
+                                {soloPrecioConservador ? 'Ver todos los precios' : (usaTopeCompartido ? 'Solo dentro del tope' : 'Solo precios ≤ a esta línea')}
                             </button>
                         </div>
                     ) : null}
@@ -480,7 +547,9 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
                         ) : productosFiltrados.length === 0 ? (
                             <div className="py-6 px-4 text-center space-y-3">
                                 <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
-                                    No hay artículos más baratos o iguales en esta búsqueda. Puede ampliar a todo el catálogo.
+                                    {hayFiltroPrecio
+                                        ? 'Ningún resultado dentro del tope de precio. Puede ampliar a todo el catálogo o ajustar cantidades en otras partidas para ganar saldo.'
+                                        : 'No hay artículos más baratos o iguales en esta búsqueda. Puede ampliar a todo el catálogo.'}
                                 </p>
                                 <button
                                     type="button"
