@@ -25,6 +25,7 @@ export default function MiVestuarioPage() {
     const [data, setData] = useState(null);
     const [baseline, setBaseline] = useState([]);
     const [pendingEdits, setPendingEdits] = useState({});
+    const [pendingNuevasLineas, setPendingNuevasLineas] = useState([]);
     const [apiError, setApiError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
