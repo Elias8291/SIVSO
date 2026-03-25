@@ -200,7 +200,8 @@ class AcuseVestuarioService
                 $resolved['lineas'],
                 $resolved['anio_datos'],
                 $logo,
-                $nombreDelegadoAcuse
+                $nombreDelegadoAcuse,
+                96
             );
         }
 
@@ -215,7 +216,8 @@ class AcuseVestuarioService
         Collection $lineas,
         int $anioDatos,
         ?string $logoDataUri = null,
-        ?string $nombreDelegadoPrecomputado = null
+        ?string $nombreDelegadoPrecomputado = null,
+        int $qrPixelSize = 132
     ): array {
         $emp->loadMissing(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
         $licitacion = env('ACUSE_LICITACION', 'LPN-SA-SA-0036-08/2025');
@@ -261,7 +263,7 @@ class AcuseVestuarioService
             'nombre_delegado' => $nombreDelegadoAcuse,
             'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS.',
             'logo_data_uri' => $logo,
-            'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),
+            'qr_data_uri' => $this->qrCodeDataUri($consultaUrl, $qrPixelSize),
             'consulta_publica_url' => $consultaUrl,
             'verificacion_ok' => null,
             'verificacion_mensaje' => null,
@@ -448,16 +450,18 @@ class AcuseVestuarioService
      * Requiere `endroid/qr-code` instalado vía Composer (`composer install` en el servidor).
      * Si la clase no existe, devuelve null y el PDF se genera sin QR (evita error 500).
      */
-    public function qrCodeDataUri(string $payload): ?string
+    public function qrCodeDataUri(string $payload, int $size = 132): ?string
     {
         if (! class_exists(Builder::class)) {
             return null;
         }
 
+        $size = max(64, min($size, 200));
+
         $result = (new Builder)->build(
             data: $payload,
-            size: 132,
-            margin: 4,
+            size: $size,
+            margin: 3,
         );
 
         return $result->getDataUri();

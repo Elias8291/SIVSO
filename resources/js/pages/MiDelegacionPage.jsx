@@ -15,6 +15,7 @@ export default function MiDelegacionPage() {
     const [crearUsuarioCtx, setCrearUsuarioCtx] = useState(null);
     const [expandidas, setExpandidas] = useState({});
     const [pdfLoteLoadingId, setPdfLoteLoadingId] = useState(null);
+    const [pdfEjercicioAnio, setPdfEjercicioAnio] = useState(() => new Date().getFullYear());
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
 
@@ -31,7 +32,15 @@ export default function MiDelegacionPage() {
                 typeof document !== 'undefined'
                     ? document.querySelector('meta[name="csrf-token"]')?.content
                     : '';
-            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${delegacionId}/acuses-pdf`);
+            const anio = Number(pdfEjercicioAnio);
+            const q = new URLSearchParams();
+            if (Number.isFinite(anio) && anio >= 2000 && anio <= 2100) {
+                q.set('anio', String(anio));
+            }
+            const qs = q.toString();
+            const url = resolveApiUrl(
+                `/api/mi-delegacion/delegaciones/${delegacionId}/acuses-pdf${qs ? `?${qs}` : ''}`
+            );
             const res = await fetch(url, {
                 credentials: 'same-origin',
                 headers: {
@@ -54,7 +63,7 @@ export default function MiDelegacionPage() {
             const safeClave = (clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `Acuses_vestuario_${safeClave}.pdf`;
+            a.download = `Acuses_vestuario_${safeClave}_Ej${Number.isFinite(anio) && anio >= 2000 && anio <= 2100 ? anio : new Date().getFullYear()}.pdf`;
             a.click();
             URL.revokeObjectURL(a.href);
         } catch (e) {
@@ -63,6 +72,19 @@ export default function MiDelegacionPage() {
             setPdfLoteLoadingId(null);
         }
     };
+
+    useEffect(() => {
+        api.get('/api/periodos/activo')
+            .then((r) => {
+                const anio = r.data?.anio;
+                if (typeof anio === 'number' && anio >= 2000 && anio <= 2100) {
+                    setPdfEjercicioAnio(anio);
+                }
+            })
+            .catch(() => {
+                /* sin permiso o sin periodo: se mantiene el año actual */
+            });
+    }, []);
 
     useEffect(() => {
         api.get('/api/mi-delegacion')
@@ -182,8 +204,36 @@ export default function MiDelegacionPage() {
         }
     ];
 
+    const delegacionGenerandoPdf = pdfLoteLoadingId != null
+        ? delegaciones.find((d) => d.id === pdfLoteLoadingId)
+        : null;
+
     return (
-        <div>
+        <div className="relative">
+            {pdfLoteLoadingId === null ? null : (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/55 backdrop-blur-[3px]"
+                    role="alertdialog"
+                    aria-busy="true"
+                    aria-live="polite"
+                    aria-label="Generando documento PDF"
+                >
+                    <div className="w-full max-w-md rounded-2xl border border-zinc-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl shadow-black/20 px-4 py-8 sm:px-8 sm:py-10 text-center">
+                        <div className="size-14 shrink-0 mx-auto mb-5 border-[3px] border-zinc-200 dark:border-zinc-600 border-t-brand-gold rounded-full animate-spin" />
+                        <p className="text-[14px] font-bold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1">
+                            Generando PDF de acuses
+                        </p>
+                        <p className="text-[11px] font-mono font-semibold text-brand-gold mb-3">
+                            {delegacionGenerandoPdf?.clave ? `Delegación ${delegacionGenerandoPdf.clave}` : '—'}
+                        </p>
+                        <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Un solo archivo con todos los colaboradores. Si la lista es grande, puede tardar un minuto.
+                            No cierre esta pestaña.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             <PageHeader title="Mi Delegación" description="Tus delegaciones y empleados vinculados." />
 
             {loading ? (
@@ -208,14 +258,33 @@ export default function MiDelegacionPage() {
                                 {successFlash}
                             </div>
                         )}
-                        <div className="flex flex-row flex-wrap sm:flex-nowrap items-stretch gap-3">
+                        <div className="flex flex-col sm:flex-row flex-wrap sm:flex-nowrap items-stretch gap-3">
                             <input
                                 type="text"
                                 placeholder="Buscar por NUE o nombre del colaborador…"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
+                                disabled={pdfLoteLoadingId !== null}
+                                className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all disabled:opacity-50"
                             />
+                            <label className="flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50/80 dark:bg-zinc-800/40">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Año PDF
+                                </span>
+                                <select
+                                    value={pdfEjercicioAnio}
+                                    onChange={(e) => setPdfEjercicioAnio(Number(e.target.value))}
+                                    disabled={pdfLoteLoadingId !== null}
+                                    className="bg-transparent text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer py-0.5 pr-6 min-w-[4.5rem]"
+                                    aria-label="Año del ejercicio para el PDF de acuses de toda la delegación"
+                                >
+                                    {Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                                        <option key={y} value={y}>
+                                            {y}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
                         </div>
                     </div>
 
@@ -275,7 +344,7 @@ export default function MiDelegacionPage() {
                                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:justify-end shrink-0 min-w-0">
                                             <button
                                                 type="button"
-                                                disabled={pdfLoteLoadingId === del.id || loadingEmpleados}
+                                                disabled={pdfLoteLoadingId !== null || loadingEmpleados}
                                                 onClick={() => downloadAcusesPdfLote(del.id, del.clave)}
                                                 className="inline-flex flex-1 sm:flex-initial min-w-0 justify-center items-center gap-1.5 px-2.5 py-2 sm:py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
                                                 title="Un solo PDF con el acuse de todos los colaboradores"
@@ -285,7 +354,7 @@ export default function MiDelegacionPage() {
                                                 ) : (
                                                     <FileDown className="size-3.5 shrink-0 opacity-80" aria-hidden />
                                                 )}
-                                                PDF todos
+                                                {pdfLoteLoadingId === del.id ? 'Generando…' : 'PDF todos'}
                                             </button>
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">
                                                 {del.trabajadores_count} colaboradores
