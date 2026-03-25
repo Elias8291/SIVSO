@@ -164,6 +164,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
     });
     Route::middleware('permission:ver_delegaciones')->group(function () {
         Route::get('delegaciones/all', [DelegacionController::class, 'index']);
+        Route::get('delegaciones/{id}', [DelegacionController::class, 'show'])->whereNumber('id');
     });
     Route::middleware('permission:editar_delegaciones')->group(function () {
         Route::post('delegaciones', [DelegacionController::class, 'store']);

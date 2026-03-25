@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 /**
  * DataTable — responsive:
  *  - Desktop (md+): tabla con scroll horizontal si hace falta
@@ -12,6 +14,8 @@
  *   extraActions [{ label, icon, onClick, variant? }]
  *   emptyMessage string
  *   rowKey       string  (default 'id')
+ *   rowClassName (row, index, data) => string  — clases extra por fila (p. ej. separadores entre grupos)
+ *   renderGroupHeader (row, index, data) => ReactNode | null — fila/bloque encima del grupo (colSpan en desktop)
  */
 export default function DataTable({
     columns = [],
@@ -22,6 +26,8 @@ export default function DataTable({
     extraActions = [],
     emptyMessage = 'Sin registros.',
     rowKey = 'id',
+    rowClassName,
+    renderGroupHeader,
 }) {
     const hasActions = onEdit || onDelete || extraActions.length > 0;
 
@@ -112,63 +118,90 @@ export default function DataTable({
                         </tr>
                     </thead>
                     <tbody>
-                        {data.map((row, i) => (
-                            <tr
-                                key={`${row[rowKey] ?? 'row'}-${i}`}
-                                className={`group transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 ${
-                                    i < data.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800/50' : ''
-                                }`}
-                            >
-                                {columns.map((col) => (
-                                    <td key={col.key} className={`px-5 py-3 text-[13px] ${col.tdClass ?? ''}`}>
-                                        {col.render
-                                            ? col.render(row[col.key], row)
-                                            : <span className="text-zinc-700 dark:text-zinc-300">{row[col.key] ?? '—'}</span>
-                                        }
-                                    </td>
-                                ))}
-                                {hasActions && (
-                                    <td className="px-5 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <ActionButtons row={row} />
-                                        </div>
-                                    </td>
-                                )}
-                            </tr>
-                        ))}
+                        {data.map((row, i) => {
+                            const gh = renderGroupHeader?.(row, i, data) ?? null;
+                            const colSpan = columns.length + (hasActions ? 1 : 0);
+                            return (
+                                <Fragment key={`${row[rowKey] ?? 'row'}-${i}`}>
+                                    {gh ? (
+                                        <tr className="bg-zinc-50/90 dark:bg-zinc-900/50">
+                                            <td
+                                                colSpan={colSpan}
+                                                className="px-5 py-3 border-y border-zinc-200/80 dark:border-zinc-700/80"
+                                            >
+                                                {gh}
+                                            </td>
+                                        </tr>
+                                    ) : null}
+                                    <tr
+                                        className={`group transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 ${
+                                            i < data.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800/50' : ''
+                                        } ${rowClassName ? rowClassName(row, i, data) : ''}`}
+                                    >
+                                        {columns.map((col) => (
+                                            <td key={col.key} className={`px-5 py-3 text-[13px] ${col.tdClass ?? ''}`}>
+                                                {col.render
+                                                    ? col.render(row[col.key], row)
+                                                    : <span className="text-zinc-700 dark:text-zinc-300">{row[col.key] ?? '—'}</span>
+                                                }
+                                            </td>
+                                        ))}
+                                        {hasActions && (
+                                            <td className="px-5 py-3 text-right">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <ActionButtons row={row} />
+                                                </div>
+                                            </td>
+                                        )}
+                                    </tr>
+                                </Fragment>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
 
             {/* ── MÓVIL: tarjetas (< md), una columna para legibilidad ───── */}
-            <div className="md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-                {data.map((row, i) => (
-                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-5 py-4 space-y-3">
-                        <dl className="flex flex-col gap-3 min-w-0">
-                            {columns.filter((c) => !c.hideOnMobile).map((col) => (
-                                <div key={col.key} className="min-w-0">
-                                    {col.label ? (
-                                        <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-500 mb-1">
-                                            {col.label}
-                                        </dt>
-                                    ) : null}
-                                    <dd className="text-[13px] text-zinc-800 dark:text-zinc-200 min-w-0 break-words [&_a]:break-all">
-                                        {col.render
-                                            ? col.render(row[col.key], row)
-                                            : (row[col.key] ?? '—')
-                                        }
-                                    </dd>
+            <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800">
+                {data.map((row, i) => {
+                    const gh = renderGroupHeader?.(row, i, data) ?? null;
+                    return (
+                        <Fragment key={`${row[rowKey] ?? 'row'}-${i}-m`}>
+                            {gh ? (
+                                <div className="px-5 py-3 bg-zinc-50/90 dark:bg-zinc-900/50 border-b border-zinc-200/80 dark:border-zinc-700/80">
+                                    {gh}
                                 </div>
-                            ))}
-                        </dl>
+                            ) : null}
+                            <div
+                                className={`px-5 py-4 space-y-3 border-b border-zinc-100 dark:border-zinc-800/60 last:border-b-0 ${rowClassName ? rowClassName(row, i, data) : ''}`}
+                            >
+                                <dl className="flex flex-col gap-3 min-w-0">
+                                    {columns.filter((c) => !c.hideOnMobile).map((col) => (
+                                        <div key={col.key} className="min-w-0">
+                                            {col.label ? (
+                                                <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-500 mb-1">
+                                                    {col.label}
+                                                </dt>
+                                            ) : null}
+                                            <dd className="text-[13px] text-zinc-800 dark:text-zinc-200 min-w-0 break-words [&_a]:break-all">
+                                                {col.render
+                                                    ? col.render(row[col.key], row)
+                                                    : (row[col.key] ?? '—')
+                                                }
+                                            </dd>
+                                        </div>
+                                    ))}
+                                </dl>
 
-                        {hasActions && (
-                            <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                                <ActionButtons row={row} />
+                                {hasActions && (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                                        <ActionButtons row={row} />
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                ))}
+                        </Fragment>
+                    );
+                })}
             </div>
         </>
     );

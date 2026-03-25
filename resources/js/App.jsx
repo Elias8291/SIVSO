@@ -26,6 +26,7 @@ import {
     OrganizacionPage,
     DependenciasPage,
     DelegacionesPage,
+    DelegacionEmpleadosPage,
     DelegadosPage,
     PartidasPage,
     PartidasLimitePage,
@@ -125,6 +126,14 @@ export default function App({ initialState }) {
                                     </RequirePermission>
                                 }
                             />
+                            <Route
+                                path="empleados/:empleadoId/vestuario"
+                                element={
+                                    <RequirePermission anyOf={['ver_empleados', 'ver_mi_delegacion']}>
+                                        <MiDelegacionVestuarioPage />
+                                    </RequirePermission>
+                                }
+                            />
 
                             <Route
                                 path="productos"
@@ -187,6 +196,14 @@ export default function App({ initialState }) {
                                 }
                             />
 
+                            <Route
+                                path="delegaciones/:delegacionId"
+                                element={
+                                    <RequirePermission permission="ver_delegaciones">
+                                        <DelegacionEmpleadosPage />
+                                    </RequirePermission>
+                                }
+                            />
                             <Route
                                 path="delegaciones"
                                 element={

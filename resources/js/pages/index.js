@@ -17,6 +17,7 @@ export { default as PermisoFormPage }  from './PermisoFormPage';
 export { default as OrganizacionPage } from './OrganizacionPage';
 export { default as DependenciasPage } from './DependenciasPage';
 export { default as DelegacionesPage } from './DelegacionesPage';
+export { default as DelegacionEmpleadosPage } from './DelegacionEmpleadosPage';
 export { default as DelegadosPage }    from './DelegadosPage';
 export { default as PartidasPage }     from './PartidasPage';
 export { default as PartidasLimitePage } from './PartidasLimitePage';

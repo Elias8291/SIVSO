@@ -2,7 +2,7 @@
  * Vestuario de un colaborador desde Mi delegación — misma UX que Mi vestuario: cambios locales y un solo «Guardar cambios».
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Shirt, Search, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/ui';
@@ -26,6 +26,9 @@ import {
 export default function MiDelegacionVestuarioPage() {
     const { empleadoId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const backPath = location.state?.from ?? '/dashboard/mi-delegacion';
+    const backLabel = location.state?.fromLabel ?? 'Volver a Mi delegación';
     const idNum = empleadoId ? parseInt(empleadoId, 10) : NaN;
 
     const [data, setData] = useState(null);
@@ -347,7 +350,7 @@ export default function MiDelegacionVestuarioPage() {
         return (
             <div className="text-center py-16">
                 <p className="text-sm text-zinc-500">Identificador de colaborador no válido.</p>
-                <Link to="/dashboard/mi-delegacion" className="text-brand-gold text-sm font-bold mt-4 inline-block">Volver a Mi delegación</Link>
+                <Link to={backPath} className="text-brand-gold text-sm font-bold mt-4 inline-block">{backLabel}</Link>
             </div>
         );
     }
@@ -368,7 +371,7 @@ export default function MiDelegacionVestuarioPage() {
                 <div className="flex gap-3">
                     <button type="button" onClick={() => load(anio ?? undefined)}
                         className="px-5 py-2.5 rounded-2xl border border-zinc-200 text-[11px] font-bold">Reintentar</button>
-                    <Link to="/dashboard/mi-delegacion"
+                    <Link to={backPath}
                         className="px-5 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold">
                         Volver
                     </Link>
@@ -381,7 +384,7 @@ export default function MiDelegacionVestuarioPage() {
         return (
             <div className="text-center py-16">
                 <p className="text-sm text-zinc-500">No se encontró información del colaborador.</p>
-                <Link to="/dashboard/mi-delegacion" className="text-brand-gold text-sm font-bold mt-4 inline-block">Volver a Mi delegación</Link>
+                <Link to={backPath} className="text-brand-gold text-sm font-bold mt-4 inline-block">{backLabel}</Link>
             </div>
         );
     }
@@ -395,9 +398,9 @@ export default function MiDelegacionVestuarioPage() {
     return (
         <div className={pendingCountCombined > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
             <div className="mb-6">
-                <button type="button" onClick={() => navigate('/dashboard/mi-delegacion')}
+                <button type="button" onClick={() => navigate(backPath)}
                     className="inline-flex items-center gap-2 text-[12px] font-bold text-zinc-500 hover:text-brand-gold mb-4 transition-colors">
-                    <ArrowLeft size={16} strokeWidth={2} /> Volver a Mi delegación
+                    <ArrowLeft size={16} strokeWidth={2} /> {backLabel}
                 </button>
 
                 <div>

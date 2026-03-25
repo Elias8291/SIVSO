@@ -17,7 +17,7 @@ class DelegacionController extends Controller
         $delegadoId = $request->get('delegado_id');
         $search = trim((string) $request->get('search', ''));
 
-        $query = Delegacion::query()->withCount('empleados');
+        $query = Delegacion::query()->withCount(['empleados', 'dependencias']);
 
         if ($delegadoId) {
             $delegacionIds = DB::table('delegado_delegacion')
@@ -70,14 +70,81 @@ class DelegacionController extends Controller
             return response()->json(['data' => $data]);
         }
 
+        $delegacionIds = $rows->pluck('id')->all();
+        $nombresPorDelegacion = [];
+        if ($delegacionIds !== []) {
+            $pairs = DB::table('delegado_delegacion AS dd')
+                ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
+                ->whereIn('dd.delegacion_id', $delegacionIds)
+                ->orderBy('d.nombre')
+                ->get(['dd.delegacion_id', 'd.nombre']);
+
+            foreach ($pairs as $p) {
+                $id = (int) $p->delegacion_id;
+                $nom = trim((string) ($p->nombre ?? ''));
+                if ($nom === '') {
+                    continue;
+                }
+                $nombresPorDelegacion[$id] ??= [];
+                if (! in_array($nom, $nombresPorDelegacion[$id], true)) {
+                    $nombresPorDelegacion[$id][] = $nom;
+                }
+            }
+        }
+
         $data = $rows->map(fn ($d) => [
             'id' => $d->id,
             'clave' => $d->clave,
             'nombre' => $d->nombre,
+            'dependencias_count' => $d->dependencias_count,
             'empleados_count' => $d->empleados_count,
+            'delegados_nombres' => $nombresPorDelegacion[$d->id] ?? [],
         ]);
 
         return response()->json(['data' => $data]);
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        $d = Delegacion::query()->withCount('empleados')->find($id);
+        if (! $d) {
+            return response()->json(['message' => 'Delegación no encontrada.'], 404);
+        }
+
+        $nombres = DB::table('delegado_delegacion AS dd')
+            ->join('delegados AS del', 'del.id', '=', 'dd.delegado_id')
+            ->where('dd.delegacion_id', $d->id)
+            ->orderBy('del.nombre')
+            ->pluck('del.nombre');
+
+        $delegadosNombres = $nombres
+            ->map(fn ($n) => trim((string) $n))
+            ->filter(fn ($n) => $n !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        $dependenciasRows = DB::table('dependencia_delegacion AS ddel')
+            ->join('dependencias AS dep', 'dep.id', '=', 'ddel.dependencia_id')
+            ->where('ddel.delegacion_id', $d->id)
+            ->orderBy('dep.clave')
+            ->get(['dep.clave', 'dep.nombre']);
+
+        $dependencias = $dependenciasRows->map(fn ($row) => [
+            'clave' => $row->clave,
+            'nombre' => $row->nombre,
+        ])->values()->all();
+
+        return response()->json([
+            'data' => [
+                'id' => $d->id,
+                'clave' => $d->clave,
+                'nombre' => $d->nombre,
+                'empleados_count' => $d->empleados_count,
+                'delegados_nombres' => $delegadosNombres,
+                'dependencias' => $dependencias,
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse

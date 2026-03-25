@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Eye } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
 import { api } from '../lib/api';
@@ -58,6 +59,7 @@ function FormModal({ item, onClose, onSaved }) {
 }
 
 export default function DelegacionesPage() {
+    const navigate = useNavigate();
     const { can } = useAuth();
     const canEdit = can('editar_delegaciones');
     const [data, setData] = useState([]);
@@ -99,6 +101,11 @@ export default function DelegacionesPage() {
             render: (v) => <span className="text-[13px] font-black text-brand-gold uppercase tracking-wider">{v}</span>,
         },
         {
+            key: 'dependencias_count',
+            label: 'Dependencias',
+            render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">{v ?? 0}</span>,
+        },
+        {
             key: 'empleados_count',
             label: 'Empleados',
             render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">{v}</span>,
@@ -132,6 +139,13 @@ export default function DelegacionesPage() {
                     columns={columns}
                     data={data}
                     loading={loading}
+                    extraActions={[
+                        {
+                            label: 'Ver empleados y delegado',
+                            icon: <Eye size={13} strokeWidth={2.2} aria-hidden />,
+                            onClick: (row) => navigate(`/dashboard/delegaciones/${row.id}`),
+                        },
+                    ]}
                     onEdit={canEdit ? ((row) => setEditing(row)) : undefined}
                     onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                     emptyMessage="Sin delegaciones registradas."

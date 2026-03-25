@@ -98,6 +98,8 @@ export function getRouteLabel(path) {
     if (path.startsWith('/dashboard/partidas/limites/editar')) return 'Editar Límites';
     if (path.startsWith('/dashboard/notificaciones')) return 'Notificaciones';
     if (path.match(/^\/dashboard\/mi-delegacion\/vestuario\/\d+/)) return 'Vestuario del colaborador';
+    if (path.match(/^\/dashboard\/empleados\/\d+\/vestuario/)) return 'Vestuario del colaborador';
+    if (path.match(/^\/dashboard\/delegaciones\/\d+/)) return 'Delegación · empleados';
     return ROUTE_LABELS[path] ?? 'Dashboard';
 }
 
