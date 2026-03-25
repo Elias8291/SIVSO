@@ -51,19 +51,17 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
                     </div>
                 </section>
 
-                {/* Panel derecho con contenido */}
+                {/* Panel derecho con contenido (tema dentro de la misma columna para que overlays full-screen tapen el botón) */}
                 <section className="w-full lg:w-7/12 flex flex-col justify-center px-6 md:px-12 lg:px-16 py-10 lg:py-0 relative bg-white dark:bg-[#0f0f0f] z-10">
+                    <button
+                        type="button"
+                        onClick={toggleTheme}
+                        className="fixed top-4 right-4 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-[#1f1f1f] bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md shadow-lg hover:bg-zinc-50 dark:hover:bg-[#050505] transition-colors z-30"
+                    >
+                        {isDarkMode ? <Sun className="w-5 h-5 text-zinc-400" /> : <Moon className="w-5 h-5 text-zinc-500" />}
+                    </button>
                     <div className="w-full max-w-sm mx-auto">{children}</div>
                 </section>
-
-                {/* Toggle tema */}
-                <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className="fixed top-4 right-4 lg:absolute lg:top-6 lg:right-6 lg:bottom-auto p-3 rounded-full border border-zinc-200 dark:border-[#1f1f1f] bg-white/80 dark:bg-[#0f0f0f]/80 backdrop-blur-md shadow-lg hover:bg-zinc-50 dark:hover:bg-[#050505] transition-colors z-[100]"
-                >
-                    {isDarkMode ? <Sun className="w-5 h-5 text-zinc-400" /> : <Moon className="w-5 h-5 text-zinc-500" />}
-                </button>
             </main>
         </div>
     );
