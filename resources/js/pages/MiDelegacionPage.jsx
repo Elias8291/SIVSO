@@ -124,9 +124,9 @@ export default function MiDelegacionPage() {
             key: 'nombre_completo',
             label: 'Empleado',
             render: (val, row) => (
-                <div>
-                    <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200 tracking-wide leading-none">{val}</p>
-                    <p className="text-[11px] text-zinc-400 mt-1.5 font-mono leading-none">NUE: {row.nue ?? '—'}</p>
+                <div className="min-w-0">
+                    <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-200 tracking-wide leading-snug break-words">{val}</p>
+                    <p className="text-[11px] text-zinc-400 mt-1.5 font-mono leading-snug break-all">NUE: {row.nue ?? '—'}</p>
                 </div>
             )
         },
@@ -149,14 +149,15 @@ export default function MiDelegacionPage() {
         },
         {
             key: 'actions',
-            label: '',
+            label: 'Acciones',
+            tdClass: 'align-top',
             render: (_, row) => (
-                <div className="flex justify-end flex-wrap gap-2">
+                <div className="flex flex-col gap-2 w-full max-w-full md:flex-row md:flex-wrap md:justify-end md:gap-2">
                     {!row.user_id && (
                         <button
                             type="button"
                             onClick={() => setCrearUsuarioCtx({ empleado: row, delegacionId })}
-                            className="px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all whitespace-nowrap"
+                            className="w-full md:w-auto inline-flex justify-center px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                         >
                             Crear acceso
                         </button>
@@ -164,7 +165,7 @@ export default function MiDelegacionPage() {
                     <button
                         type="button"
                         onClick={() => openAcusePdf(row.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all whitespace-nowrap"
+                        className="w-full md:w-auto inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                         title="Acuse de recibo (PDF)"
                     >
                         <FileText className="size-3.5 shrink-0 opacity-80" aria-hidden />
@@ -172,7 +173,7 @@ export default function MiDelegacionPage() {
                     </button>
                     <Link
                         to={`/dashboard/mi-delegacion/vestuario/${row.id}`}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-brand-gold/10 text-brand-gold text-[10px] font-bold uppercase tracking-wider border border-brand-gold/20 hover:bg-brand-gold hover:text-white transition-all whitespace-nowrap"
+                        className="w-full md:w-auto inline-flex items-center justify-center px-3 py-2 rounded-lg bg-brand-gold/10 text-brand-gold text-[10px] font-bold uppercase tracking-wider border border-brand-gold/20 hover:bg-brand-gold hover:text-white transition-all"
                     >
                         Ver vestuario
                     </Link>
@@ -225,8 +226,8 @@ export default function MiDelegacionPage() {
                             const abierta = expandidas[del.id] !== false;
 
                             return (
-                                <div key={del.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none transition-all duration-300">
-                                    <div className="w-full px-6 py-4 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
+                                <div key={del.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none transition-all duration-300 min-w-0">
+                                    <div className="w-full px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60 min-w-0">
                                         <div
                                             role="button"
                                             tabIndex={0}
@@ -238,14 +239,14 @@ export default function MiDelegacionPage() {
                                                     toggleExpand(del.id);
                                                 }
                                             }}
-                                            className="flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-lg -ml-2 pl-2 py-1 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/30"
+                                            className="flex items-start gap-2.5 min-w-0 w-full sm:flex-1 text-left rounded-lg -ml-1 sm:-ml-2 pl-1 sm:pl-2 py-1 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/30"
                                         >
                                             <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
                                             <div className="min-w-0">
                                                 <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
                                                     Delegación {del.clave}
                                                 </h3>
-                                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+                                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug break-words">
                                                     {del.delegado_usuario?.rfc || del.delegado_usuario?.name ? (
                                                         <>
                                                             <span className="font-semibold text-zinc-600 dark:text-zinc-300">Cuenta del delegado:</span>{' '}
@@ -271,12 +272,12 @@ export default function MiDelegacionPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end shrink-0">
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:justify-end shrink-0 min-w-0">
                                             <button
                                                 type="button"
                                                 disabled={pdfLoteLoadingId === del.id || loadingEmpleados}
                                                 onClick={() => downloadAcusesPdfLote(del.id, del.clave)}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
+                                                className="inline-flex flex-1 sm:flex-initial min-w-0 justify-center items-center gap-1.5 px-2.5 py-2 sm:py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
                                                 title="Un solo PDF con el acuse de todos los colaboradores"
                                             >
                                                 {pdfLoteLoadingId === del.id ? (

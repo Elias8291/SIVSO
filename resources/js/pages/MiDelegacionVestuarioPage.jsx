@@ -312,7 +312,7 @@ export default function MiDelegacionVestuarioPage() {
     const emp = data.empleado;
 
     return (
-        <div className={pendingCount > 0 && puedeEditar ? 'pb-28 sm:pb-24' : ''}>
+        <div className={pendingCount > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
             <div className="mb-6">
                 <button type="button" onClick={() => navigate('/dashboard/mi-delegacion')}
                     className="inline-flex items-center gap-2 text-[12px] font-bold text-zinc-500 hover:text-brand-gold mb-4 transition-colors">
@@ -428,12 +428,10 @@ export default function MiDelegacionVestuarioPage() {
                 </div>
             )}
 
-            <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
-            <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
-            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
-
             {pendingCount > 0 && puedeEditar && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md shadow-[0_-8px_30px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div
+                    className="z-40 max-md:mt-10 max-md:rounded-2xl max-md:border max-md:border-zinc-200/80 dark:max-md:border-zinc-700/50 max-md:shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:max-md:shadow-none bg-white/95 dark:bg-zinc-950/95 md:fixed md:bottom-0 md:left-0 md:right-0 md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:backdrop-blur-md md:shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                >
                     <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <div className="flex items-start gap-2 min-w-0 flex-1">
                             <AlertCircle className="size-5 text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
@@ -459,6 +457,10 @@ export default function MiDelegacionVestuarioPage() {
                     </div>
                 </div>
             )}
+
+            <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
+            <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
+            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
 
             <Modal
                 open={Array.isArray(tallaBloqueo) && tallaBloqueo.length > 0}

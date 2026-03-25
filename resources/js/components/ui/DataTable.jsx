@@ -1,11 +1,10 @@
 /**
  * DataTable — responsive:
- *  - Desktop (md+): tabla horizontal clásica
- *  - Móvil (<md):  cada fila se convierte en una tarjeta
- *                  con etiqueta arriba y valor abajo por cada columna
+ *  - Desktop (md+): tabla con scroll horizontal si hace falta
+ *  - Móvil (<md):  tarjetas apiladas, una columna (sin rejilla 2×2)
  *
  * Props:
- *   columns      [{ key, label, render?, className?, tdClass?, hideOnMobile? }]
+ *   columns      [{ key, label, render?, className?, tdClass?, hideOnMobile?, mobileFullWidth? }]
  *   data         array de objetos
  *   loading      boolean
  *   onEdit       (row) => void
@@ -93,8 +92,8 @@ export default function DataTable({
     return (
         <>
             {/* ── DESKTOP: tabla clásica (md+) ────────────────────────────── */}
-            <div className="hidden md:block overflow-x-auto -mx-1">
-                <table className="w-full text-left min-w-[600px]">
+            <div className="hidden md:block w-full overflow-x-auto">
+                <table className="w-full text-left min-w-[640px]">
                     <thead>
                         <tr className="border-b border-zinc-100 dark:border-zinc-700/60">
                             {columns.map((col) => (
@@ -141,17 +140,19 @@ export default function DataTable({
                 </table>
             </div>
 
-            {/* ── MÓVIL: tarjetas (< md) ──────────────────────────────────── */}
+            {/* ── MÓVIL: tarjetas (< md), una columna para legibilidad ───── */}
             <div className="md:hidden divide-y divide-zinc-100 dark:divide-zinc-800/50">
                 {data.map((row, i) => (
-                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-4 py-3 space-y-2.5">
-                        <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-                            {columns.filter(c => !c.hideOnMobile).map((col) => (
-                                <div key={col.key} className={col.mobileFullWidth ? 'col-span-2' : ''}>
-                                    <dt className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-500 dark:text-zinc-500 mb-0.5">
-                                        {col.label}
-                                    </dt>
-                                    <dd className="text-[13px] text-zinc-700 dark:text-zinc-300">
+                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-3 py-3.5 space-y-3">
+                        <dl className="flex flex-col gap-3 min-w-0">
+                            {columns.filter((c) => !c.hideOnMobile).map((col) => (
+                                <div key={col.key} className="min-w-0">
+                                    {col.label ? (
+                                        <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-500 mb-1">
+                                            {col.label}
+                                        </dt>
+                                    ) : null}
+                                    <dd className="text-[13px] text-zinc-800 dark:text-zinc-200 min-w-0 break-words [&_a]:break-all">
                                         {col.render
                                             ? col.render(row[col.key], row)
                                             : (row[col.key] ?? '—')
@@ -161,9 +162,8 @@ export default function DataTable({
                             ))}
                         </dl>
 
-                        {/* Acciones siempre visibles en móvil */}
                         {hasActions && (
-                            <div className="flex items-center gap-1.5 pt-1 border-t border-zinc-50 dark:border-zinc-800/40">
+                            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
                                 <ActionButtons row={row} />
                             </div>
                         )}

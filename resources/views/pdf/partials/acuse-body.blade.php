@@ -37,12 +37,6 @@
         <td class="k">Secretaría / Dependencia</td>
         <td>{{ $secretaria_dependencia !== '' ? $secretaria_dependencia : '—' }}</td>
     </tr>
-    <tr>
-        <td class="k">CLAVE DE RESUMEN</td>
-        <td style="font-family: DejaVu Sans, monospace; font-size: 9px; letter-spacing: 0.06em;">
-            {{ $clave_resumen_vestuario ?? '—' }}
-        </td>
-    </tr>
 </table>
 
 <table class="items">

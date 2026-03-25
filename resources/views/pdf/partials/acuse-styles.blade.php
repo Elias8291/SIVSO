@@ -3,43 +3,47 @@
         font-family: DejaVu Sans, sans-serif;
         font-size: 9px;
         color: #111;
-        line-height: 1.35;
+        line-height: 1.12;
     }
     .center { text-align: center; }
     .title-main {
         font-size: 11px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 4px 0 2px;
+        margin: 2px 0 1px;
+        line-height: 1.1;
     }
     .title-sub {
         font-size: 9px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 2px 0;
+        margin: 1px 0;
+        line-height: 1.12;
     }
     .warn {
         font-size: 7.5px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 0 auto 10px;
+        margin: 0 auto 6px;
         text-align: center;
-        line-height: 1.4;
+        line-height: 1.12;
     }
     .folio {
         font-size: 9px;
         font-weight: bold;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
+        line-height: 1.1;
     }
     .datos {
         width: 100%;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
         border-collapse: collapse;
     }
     .datos td {
-        padding: 4px 0;
+        padding: 2px 0;
         vertical-align: top;
         font-size: 9px;
+        line-height: 1.12;
     }
     .datos .k {
         font-weight: bold;
@@ -53,15 +57,17 @@
     }
     table.items th {
         border: 1px solid #222;
-        padding: 5px 4px;
+        padding: 3px 3px;
         background: #e8e8e8;
         text-transform: uppercase;
         font-weight: bold;
+        line-height: 1.1;
     }
     table.items td {
         border: 1px solid #333;
-        padding: 4px;
+        padding: 2px 3px;
         vertical-align: top;
+        line-height: 1.1;
     }
     table.items td.desc {
         word-wrap: break-word;
@@ -74,15 +80,17 @@
     .total-row td {
         font-weight: bold;
         border: 1px solid #222;
-        padding: 5px 4px;
+        padding: 3px 3px;
+        line-height: 1.1;
     }
     .pie-anio {
-        margin-top: 10px;
+        margin-top: 6px;
         font-size: 8px;
         color: #444;
+        line-height: 1.1;
     }
     .firmas-wrap {
-        margin-top: 28px;
+        margin-top: 18px;
         width: 100%;
     }
     .firmas-table {
@@ -100,18 +108,20 @@
     }
     .firma-linea {
         border-bottom: 1px solid #000;
-        min-height: 36px;
-        margin-bottom: 6px;
+        min-height: 28px;
+        margin-bottom: 4px;
     }
     .firma-nombre {
         font-size: 9px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 0 0 4px;
+        margin: 0 0 2px;
+        line-height: 1.1;
     }
     .firma-rol {
         font-size: 8px;
         font-weight: bold;
         text-transform: uppercase;
+        line-height: 1.1;
     }
 </style>
