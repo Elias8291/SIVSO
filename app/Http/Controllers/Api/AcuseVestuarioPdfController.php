@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use ZipArchive;
 
 class AcuseVestuarioPdfController extends Controller
 {
@@ -140,7 +139,8 @@ class AcuseVestuarioPdfController extends Controller
         ]);
     }
 
-    public function delegacionZip(Request $request, int $delegacion): Response
+    /** Un solo PDF con una página (o conjunto de páginas) por colaborador. */
+    public function delegacionPdfLote(Request $request, int $delegacion): Response
     {
         if (! $this->usuarioPuedeExportarDelegacion($request, $delegacion)) {
             return response()->json(['message' => 'No tiene permiso para exportar acuses de esta delegación.'], 403);
@@ -161,18 +161,7 @@ class AcuseVestuarioPdfController extends Controller
             return response()->json(['message' => 'No hay colaboradores en esta delegación.'], 422);
         }
 
-        $zipPath = tempnam(sys_get_temp_dir(), 'acuses_');
-        if ($zipPath === false) {
-            return response()->json(['message' => 'No se pudo crear el archivo temporal.'], 500);
-        }
-        unlink($zipPath);
-        $zipPath .= '.zip';
-
-        $zip = new ZipArchive;
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            return response()->json(['message' => 'No se pudo crear el archivo ZIP.'], 500);
-        }
-
+        $acusets = [];
         foreach ($ids as $eid) {
             $emp = Empleado::find($eid);
             if (! $emp) {
@@ -181,25 +170,24 @@ class AcuseVestuarioPdfController extends Controller
             if (! $this->usuarioPuedeVerAcuseEmpleado($request, (int) $eid)) {
                 continue;
             }
-            $pdf = $this->renderPdfBinary($emp, $anioQuery);
-            $nueSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '_', (string) ($emp->nue ?? 'sin-nue')) ?? 'sin-nue';
-            $zip->addFromString('Acuse_'.$nueSlug.'_'.$emp->id.'.pdf', $pdf);
+            $acusets[] = $this->acuseService->datasetFor($emp, $anioQuery, false);
         }
 
-        $zip->close();
+        if ($acusets === []) {
+            return response()->json(['message' => 'No hay acuses que pueda exportar para esta delegación.'], 422);
+        }
+
+        $binary = Pdf::loadView('pdf.acuse-vestuario-lote', ['acusets' => $acusets])
+            ->setPaper('a4', 'portrait')
+            ->setOption('isRemoteEnabled', true)
+            ->output();
 
         $clave = preg_replace('/[^a-zA-Z0-9_-]+/', '_', (string) ($del->clave ?? 'delegacion')) ?? 'delegacion';
-        $zipName = 'Acuses_vestuario_'.$clave.'.zip';
-        $contents = file_get_contents($zipPath);
-        @unlink($zipPath);
+        $filename = 'Acuses_vestuario_'.$clave.'.pdf';
 
-        if ($contents === false) {
-            return response()->json(['message' => 'Error al leer el ZIP generado.'], 500);
-        }
-
-        return response($contents, 200, [
-            'Content-Type' => 'application/zip',
-            'Content-Disposition' => 'attachment; filename="'.$zipName.'"',
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 }

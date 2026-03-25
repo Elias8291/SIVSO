@@ -14,7 +14,7 @@ export default function MiDelegacionPage() {
     const [search, setSearch] = useState('');
     const [crearUsuarioCtx, setCrearUsuarioCtx] = useState(null);
     const [expandidas, setExpandidas] = useState({});
-    const [zipLoadingId, setZipLoadingId] = useState(null);
+    const [pdfLoteLoadingId, setPdfLoteLoadingId] = useState(null);
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
 
@@ -23,19 +23,19 @@ export default function MiDelegacionPage() {
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const downloadAcusesZip = async (delegacionId, clave) => {
-        setZipLoadingId(delegacionId);
+    const downloadAcusesPdfLote = async (delegacionId, clave) => {
+        setPdfLoteLoadingId(delegacionId);
         setMessage(null);
         try {
             const token =
                 typeof document !== 'undefined'
                     ? document.querySelector('meta[name="csrf-token"]')?.content
                     : '';
-            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${delegacionId}/acuses-zip`);
+            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${delegacionId}/acuses-pdf`);
             const res = await fetch(url, {
                 credentials: 'same-origin',
                 headers: {
-                    Accept: 'application/zip',
+                    Accept: 'application/pdf',
                     'X-CSRF-TOKEN': token ?? '',
                 },
             });
@@ -54,13 +54,13 @@ export default function MiDelegacionPage() {
             const safeClave = (clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `Acuses_vestuario_${safeClave}.zip`;
+            a.download = `Acuses_vestuario_${safeClave}.pdf`;
             a.click();
             URL.revokeObjectURL(a.href);
         } catch (e) {
-            setMessage(e.message || 'Error al descargar el archivo ZIP.');
+            setMessage(e.message || 'Error al descargar el PDF.');
         } finally {
-            setZipLoadingId(null);
+            setPdfLoteLoadingId(null);
         }
     };
 
@@ -226,14 +226,22 @@ export default function MiDelegacionPage() {
 
                             return (
                                 <div key={del.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none transition-all duration-300">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleExpand(del.id)}
-                                        className="w-full px-6 py-4 flex items-center justify-between bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/60 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
-                                    >
-                                        <div className="flex items-center gap-2.5">
+                                    <div className="w-full px-6 py-4 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
+                                        <div
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-expanded={abierta}
+                                            onClick={() => toggleExpand(del.id)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    toggleExpand(del.id);
+                                                }
+                                            }}
+                                            className="flex items-center gap-2.5 min-w-0 flex-1 text-left rounded-lg -ml-2 pl-2 py-1 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/30"
+                                        >
                                             <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
-                                            <div>
+                                            <div className="min-w-0">
                                                 <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
                                                     Delegación {del.clave}
                                                 </h3>
@@ -263,32 +271,34 @@ export default function MiDelegacionPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+                                        <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end shrink-0">
                                             <button
                                                 type="button"
-                                                disabled={zipLoadingId === del.id || loadingEmpleados}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    downloadAcusesZip(del.id, del.clave);
-                                                }}
+                                                disabled={pdfLoteLoadingId === del.id || loadingEmpleados}
+                                                onClick={() => downloadAcusesPdfLote(del.id, del.clave)}
                                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
-                                                title="Un PDF por colaborador en un ZIP"
+                                                title="Un solo PDF con el acuse de todos los colaboradores"
                                             >
-                                                {zipLoadingId === del.id ? (
+                                                {pdfLoteLoadingId === del.id ? (
                                                     <span className="size-3.5 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin shrink-0" aria-hidden />
                                                 ) : (
                                                     <FileDown className="size-3.5 shrink-0 opacity-80" aria-hidden />
                                                 )}
-                                                ZIP acuses
+                                                PDF todos
                                             </button>
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">
                                                 {del.trabajadores_count} colaboradores
                                             </span>
-                                            <span className="text-zinc-400 dark:text-zinc-500">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleExpand(del.id)}
+                                                className="p-1 rounded-md text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 dark:hover:text-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold/30"
+                                                aria-label={abierta ? 'Contraer lista' : 'Expandir lista'}
+                                            >
                                                 {abierta ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                            </span>
+                                            </button>
                                         </div>
-                                    </button>
+                                    </div>
 
                                     {abierta && (
                                         <div>

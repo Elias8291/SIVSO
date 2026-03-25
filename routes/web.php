@@ -66,7 +66,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
     });
     Route::middleware('permission:ver_mi_delegacion|ver_empleados')->group(function () {
         Route::get('mi-delegacion/empleados/{empleado}/acuse-pdf', [AcuseVestuarioPdfController::class, 'empleado']);
-        Route::get('mi-delegacion/delegaciones/{delegacion}/acuses-zip', [AcuseVestuarioPdfController::class, 'delegacionZip']);
+        Route::get('mi-delegacion/delegaciones/{delegacion}/acuses-pdf', [AcuseVestuarioPdfController::class, 'delegacionPdfLote']);
     });
 
     Route::middleware('permission:ver_mi_delegacion|editar_seleccion')->post(
