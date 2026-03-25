@@ -38,6 +38,15 @@
         <td class="k">Secretaría / Dependencia</td>
         <td>{{ $secretaria_dependencia !== '' ? $secretaria_dependencia : '—' }}</td>
     </tr>
+    <tr>
+        <td class="k">Código de integridad</td>
+        <td style="font-family: DejaVu Sans, monospace; font-size: 8px; letter-spacing: 0.04em;">
+            {{ $codigo_integridad ?? '—' }}
+            <span style="font-size: 7px; font-weight: normal; display: block; margin-top: 3px; text-transform: none;">
+                Amarra productos y cantidades al sistema. Al escanear el QR se comprueba si el registro sigue igual.
+            </span>
+        </td>
+    </tr>
 </table>
 
 <table class="items">

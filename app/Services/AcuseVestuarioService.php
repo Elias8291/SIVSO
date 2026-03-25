@@ -8,6 +8,7 @@ use Endroid\QrCode\Builder\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 class AcuseVestuarioService
 {
@@ -34,7 +35,7 @@ class AcuseVestuarioService
             ->where('s.empleado_id', $empleadoId)
             ->where('s.anio', $anio)
             ->select([
-                's.id', 's.cantidad', 's.anio',
+                's.id', 's.cantidad', 's.anio', 's.producto_talla_id',
                 'p.id AS producto_id', 'p.descripcion', 'p.marca', 'p.unidad', 'p.medida',
                 'pp.clave AS codigo', 'pp.precio_unitario',
                 't.nombre AS talla', 't.id AS talla_id',
@@ -45,6 +46,7 @@ class AcuseVestuarioService
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,
+                'producto_talla_id' => (int) $c->producto_talla_id,
                 'producto_id' => $c->producto_id,
                 'anio' => (int) $c->anio,
                 'cantidad' => (int) $c->cantidad,
@@ -147,7 +149,63 @@ class AcuseVestuarioService
         return 'data:image/png;base64,'.base64_encode($raw);
     }
 
-    public function signedPublicConsultaUrl(int $empleadoId, int $anio): string
+    /**
+     * Cadena estable de las líneas del acuse (selección, talla, cantidad) para HMAC.
+     *
+     * @param  Collection<int, array<string, mixed>>  $lineas
+     */
+    public function canonicalPayloadIntegridad(int $empleadoId, int $anio, Collection $lineas): string
+    {
+        $sorted = $lineas->sortBy(fn (array $r) => (int) ($r['id'] ?? 0))->values();
+        $bloques = $sorted->map(function (array $r) {
+            return implode('|', [
+                (int) ($r['id'] ?? 0),
+                (int) ($r['producto_talla_id'] ?? 0),
+                (int) ($r['cantidad'] ?? 0),
+            ]);
+        })->implode(';');
+
+        return 'e'.$empleadoId.';y'.$anio.';'.($bloques === '' ? '_' : $bloques);
+    }
+
+    /**
+     * Token hexadecimal (32 caracteres) que amarra productos/cantidades al momento de emitir el acuse.
+     *
+     * @param  Collection<int, array<string, mixed>>  $lineas
+     */
+    public function tokenIntegridad(int $empleadoId, int $anio, Collection $lineas): string
+    {
+        $payload = $this->canonicalPayloadIntegridad($empleadoId, $anio, $lineas);
+        $secret = $this->hmacSecretForAcuse();
+        $bin = hash_hmac('sha256', $payload, $secret, true);
+
+        return substr(bin2hex($bin), 0, 32);
+    }
+
+    /** Recalcula el token con lo que hay hoy en BD (mismo año). */
+    public function tokenIntegridadActualEnBd(int $empleadoId, int $anio): string
+    {
+        $lineas = $this->getSelecciones($empleadoId, $anio);
+
+        return $this->tokenIntegridad($empleadoId, $anio, $lineas);
+    }
+
+    private function hmacSecretForAcuse(): string
+    {
+        $k = (string) config('app.key', '');
+        if ($k === '') {
+            return 'sivso-acuse-insecure';
+        }
+        if (Str::startsWith($k, 'base64:')) {
+            $raw = base64_decode(substr($k, 7), true);
+
+            return (is_string($raw) && $raw !== '') ? $raw : $k;
+        }
+
+        return $k;
+    }
+
+    public function signedPublicConsultaUrl(int $empleadoId, int $anio, string $tokenIntegridad): string
     {
         $ttlDays = (int) env('ACUSE_CONSULTA_URL_DAYS', 180);
         $ttlDays = max(1, min($ttlDays, 3650));
@@ -155,12 +213,24 @@ class AcuseVestuarioService
         return URL::temporarySignedRoute(
             'public.acuse-vestuario',
             now()->addDays($ttlDays),
-            ['empleado' => $empleadoId, 'anio' => $anio]
+            [
+                'empleado' => $empleadoId,
+                'anio' => $anio,
+                'v' => $tokenIntegridad,
+            ]
         );
     }
 
-    public function qrCodeDataUri(string $payload): string
+    /**
+     * Requiere `endroid/qr-code` instalado vía Composer (`composer install` en el servidor).
+     * Si la clase no existe, devuelve null y el PDF se genera sin QR (evita error 500).
+     */
+    public function qrCodeDataUri(string $payload): ?string
     {
+        if (! class_exists(Builder::class)) {
+            return null;
+        }
+
         $result = (new Builder)->build(
             data: $payload,
             size: 132,
@@ -196,7 +266,10 @@ class AcuseVestuarioService
         $claveDel = strtoupper(trim((string) ($emp->delegacion?->clave ?? 'X')));
         $folio = $claveDel.'-'.$emp->id;
 
-        $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos);
+        $tokenIntegridad = $this->tokenIntegridad($emp->id, $anioDatos, $lineas);
+        $codigoIntegridadLegible = strtoupper(collect(str_split($tokenIntegridad, 4))->implode('-'));
+
+        $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos, $tokenIntegridad);
 
         return [
             'anio_encabezado' => $anioDatos,
@@ -213,6 +286,9 @@ class AcuseVestuarioService
             'logo_data_uri' => $this->logoAcuseDataUri(),
             'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),
             'consulta_publica_url' => $consultaUrl,
+            'codigo_integridad' => $codigoIntegridadLegible,
+            'verificacion_ok' => null,
+            'verificacion_mensaje' => null,
         ];
     }
 }

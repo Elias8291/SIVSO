@@ -22,7 +22,23 @@ class PublicAcuseVestuarioController extends Controller
             abort(404);
         }
 
+        $v = (string) $request->query('v', '');
+
         $data = $service->datasetFor($emp, $anio, true);
+
+        if ($v !== '') {
+            $actual = $service->tokenIntegridadActualEnBd($emp->id, $anio);
+            if (hash_equals($actual, $v)) {
+                $data['verificacion_ok'] = true;
+                $data['verificacion_mensaje'] = 'Los artículos y cantidades registrados en el sistema coinciden con el acuse emitido.';
+            } else {
+                $data['verificacion_ok'] = false;
+                $data['verificacion_mensaje'] = 'El registro actual en el sistema no coincide con este acuse. Pudo modificarse el vestuario después de generar el PDF, o el documento en papel no corresponde a esta constancia en línea.';
+            }
+        } else {
+            $data['verificacion_ok'] = null;
+            $data['verificacion_mensaje'] = 'Este enlace no trae código de integridad (por ejemplo, acuse generado antes de esta función). Vuelva a descargar el PDF para obtener validación automática.';
+        }
 
         return view('public.acuse-vestuario', $data);
     }
