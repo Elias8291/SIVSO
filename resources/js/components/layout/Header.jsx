@@ -34,7 +34,7 @@ const Header = ({ onMenuClick }) => {
     }, [showNotificaciones]);
 
     return (
-        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-40 flex items-center justify-between px-3 sm:px-8 xl:px-14">
+        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-50 flex items-center justify-between px-3 sm:px-8 xl:px-14">
 
             {/* Breadcrumb + menú móvil */}
             <div className="flex items-center gap-2.5">
@@ -76,8 +76,13 @@ const Header = ({ onMenuClick }) => {
 
                 {/* Toggle tema */}
                 <button
-                    onClick={toggleTheme}
-                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleTheme();
+                    }}
+                    className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:bg-zinc-200/80 dark:active:bg-zinc-700/60 transition-all touch-manipulation [-webkit-tap-highlight-color:transparent]"
                     aria-label="Cambiar tema"
                 >
                     {isDarkMode

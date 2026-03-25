@@ -35,18 +35,18 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
 
     return (
         <>
-            {/* Overlay móvil */}
-            <div
-                role="button"
-                tabIndex={0}
-                onClick={onClose}
-                onKeyDown={(e) => e.key === 'Escape' && onClose()}
-                className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 ${
-                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
-                aria-hidden={!isOpen}
-                aria-label="Cerrar menú"
-            />
+            {/* Overlay solo cuando el menú está abierto: evita capa full-screen que en móvil bloquea toques (p. ej. botón de tema) */}
+            {isOpen && (
+                <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={onClose}
+                    onKeyDown={(e) => e.key === 'Escape' && onClose()}
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300 opacity-100"
+                    aria-hidden={false}
+                    aria-label="Cerrar menú"
+                />
+            )}
 
             <aside
                 className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0A0B] border-r border-zinc-100 dark:border-zinc-800/80 flex flex-col z-50 transition-all duration-300 ease-out
