@@ -39,7 +39,7 @@
     @endif
 
     <p style="font-size:12px;color:#52525b;margin:0 0 16px;line-height:1.45;">
-        Compare la <strong>clave de resumen</strong> de la tabla con la de su documento impreso: si coinciden, los productos, tallas y cantidades son los mismos sin revisar uno por uno.
+        Compare la <strong>CLAVE DE RESUMEN</strong> de la tabla con la de su documento impreso; si coincide, los productos, tallas y cantidades son los mismos sin cotejar fila por fila.
     </p>
 
     @include('pdf.partials.acuse-body')

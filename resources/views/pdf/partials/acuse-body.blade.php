@@ -1,3 +1,5 @@
+<div class="warn">{{ $aviso_rectangulo }}</div>
+
 <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:6px;border-collapse:collapse;">
     <tr>
         <td width="26%" valign="top" style="padding-right:8px;">
@@ -16,13 +18,10 @@
         <td width="26%" valign="top" align="right" style="padding-left:8px;">
             @if (! empty($qr_data_uri))
                 <img src="{{ $qr_data_uri }}" alt="Código QR" style="display:block;width:96px;height:96px;margin-left:auto;"/>
-                <div class="qr-hint">Escanee para ver esta constancia en línea<br/>(enlace firmado, vence automáticamente)</div>
             @endif
         </td>
     </tr>
 </table>
-
-<div class="warn">{{ $aviso_rectangulo }}</div>
 <div class="center folio">Folio {{ $folio }}</div>
 
 <table class="datos">
@@ -39,7 +38,7 @@
         <td>{{ $secretaria_dependencia !== '' ? $secretaria_dependencia : '—' }}</td>
     </tr>
     <tr>
-        <td class="k">Clave de resumen</td>
+        <td class="k">CLAVE DE RESUMEN</td>
         <td style="font-family: DejaVu Sans, monospace; font-size: 9px; letter-spacing: 0.06em;">
             {{ $clave_resumen_vestuario ?? '—' }}
             <span style="font-size: 7px; font-weight: normal; display: block; margin-top: 4px; text-transform: none; line-height: 1.35;">

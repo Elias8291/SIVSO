@@ -104,6 +104,10 @@ class AcuseVestuarioService
         return trim(implode(' ', array_filter($partes)));
     }
 
+    /**
+     * Delegado asignado a la delegación en el padrón (tabla delegados + delegado_delegacion),
+     * no el nombre de la cuenta de usuario. Varias filas: se toma la de menor delegado_id.
+     */
     public function nombreDelegadoParaDelegacionId(?int $delegacionId): string
     {
         if (! $delegacionId) {
@@ -112,26 +116,34 @@ class AcuseVestuarioService
 
         $row = DB::table('delegado_delegacion AS dd')
             ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
-            ->leftJoin('users AS u', 'u.id', '=', 'd.user_id')
             ->where('dd.delegacion_id', $delegacionId)
             ->orderBy('dd.delegado_id')
-            ->select(['d.nombre AS catalogo', 'u.name AS usuario'])
+            ->select(['d.nombre'])
             ->first();
 
         if (! $row) {
             return '—';
         }
 
-        $catalogo = strtoupper(trim((string) ($row->catalogo ?? '')));
-        $usuario = strtoupper(trim((string) ($row->usuario ?? '')));
-        if ($usuario !== '') {
-            return $usuario;
-        }
-        if ($catalogo !== '') {
-            return $catalogo;
+        $nombre = strtoupper(trim((string) ($row->nombre ?? '')));
+
+        return $nombre !== '' ? $nombre : '—';
+    }
+
+    /** Resolución explícita por clave de delegación (misma lógica que por id). */
+    public function nombreDelegadoParaDelegacionClave(?string $claveDelegacion): string
+    {
+        $clave = trim((string) ($claveDelegacion));
+        if ($clave === '') {
+            return '—';
         }
 
-        return '—';
+        $delegacionId = DB::table('delegaciones')->where('clave', $clave)->value('id');
+        if (! $delegacionId) {
+            return '—';
+        }
+
+        return $this->nombreDelegadoParaDelegacionId((int) $delegacionId);
     }
 
     public function logoAcuseDataUri(): ?string
@@ -280,6 +292,11 @@ class AcuseVestuarioService
         $claveDel = strtoupper(trim((string) ($emp->delegacion?->clave ?? 'X')));
         $folio = $claveDel.'-'.$emp->id;
 
+        $delegacionClaveNorm = trim((string) ($emp->delegacion?->clave ?? ''));
+        $nombreDelegadoAcuse = $delegacionClaveNorm !== ''
+            ? $this->nombreDelegadoParaDelegacionClave($delegacionClaveNorm)
+            : $this->nombreDelegadoParaDelegacionId($emp->delegacion_id);
+
         $tokenIntegridad = $this->tokenIntegridad($emp->id, $anioDatos, $lineas);
         $claveResumenVestuario = $this->claveResumenVestuario($emp->id, $anioDatos, $lineas);
 
@@ -296,7 +313,7 @@ class AcuseVestuarioService
             'clave_resumen_vestuario' => $claveResumenVestuario,
             'rows' => $rows->all(),
             'total_piezas' => $totalPiezas,
-            'nombre_delegado' => $this->nombreDelegadoParaDelegacionId($emp->delegacion_id),
+            'nombre_delegado' => $nombreDelegadoAcuse,
             'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS.',
             'logo_data_uri' => $this->logoAcuseDataUri(),
             'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),

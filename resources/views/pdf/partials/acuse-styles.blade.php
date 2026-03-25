@@ -22,7 +22,7 @@
         font-size: 7.5px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 8px auto 10px;
+        margin: 0 auto 10px;
         text-align: center;
         line-height: 1.4;
     }
@@ -113,11 +113,5 @@
         font-size: 8px;
         font-weight: bold;
         text-transform: uppercase;
-    }
-    .qr-hint {
-        font-size: 6px;
-        margin-top: 3px;
-        text-align: center;
-        color: #333;
     }
 </style>
