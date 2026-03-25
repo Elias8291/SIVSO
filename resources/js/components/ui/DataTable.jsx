@@ -36,7 +36,7 @@ export default function DataTable({
 
     if (data.length === 0) {
         return (
-            <div className="py-12 text-center text-sm text-zinc-400">
+            <div className="py-12 px-5 text-center text-sm text-zinc-500 dark:text-zinc-400">
                 {emptyMessage}
             </div>
         );
@@ -95,7 +95,7 @@ export default function DataTable({
             <div className="hidden md:block w-full overflow-x-auto">
                 <table className="w-full text-left min-w-[640px]">
                     <thead>
-                        <tr className="border-b border-zinc-100 dark:border-zinc-700/60">
+                        <tr className="border-b border-zinc-200 dark:border-zinc-800">
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
@@ -116,7 +116,7 @@ export default function DataTable({
                             <tr
                                 key={`${row[rowKey] ?? 'row'}-${i}`}
                                 className={`group transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 ${
-                                    i < data.length - 1 ? 'border-b border-zinc-50 dark:border-zinc-800/30' : ''
+                                    i < data.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800/50' : ''
                                 }`}
                             >
                                 {columns.map((col) => (
@@ -141,9 +141,9 @@ export default function DataTable({
             </div>
 
             {/* ── MÓVIL: tarjetas (< md), una columna para legibilidad ───── */}
-            <div className="md:hidden divide-y divide-zinc-100 dark:divide-zinc-800/50">
+            <div className="md:hidden divide-y divide-zinc-200 dark:divide-zinc-800">
                 {data.map((row, i) => (
-                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-3 py-3.5 space-y-3">
+                    <div key={`${row[rowKey] ?? 'row'}-${i}`} className="px-5 py-4 space-y-3">
                         <dl className="flex flex-col gap-3 min-w-0">
                             {columns.filter((c) => !c.hideOnMobile).map((col) => (
                                 <div key={col.key} className="min-w-0">
@@ -163,7 +163,7 @@ export default function DataTable({
                         </dl>
 
                         {hasActions && (
-                            <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
+                            <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
                                 <ActionButtons row={row} />
                             </div>
                         )}

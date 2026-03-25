@@ -1,7 +1,7 @@
 /**
  * UI y utilidades compartidas entre Mi vestuario y vestuario desde Mi delegación.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Ruler, RefreshCw, CheckCircle, Search, Minus, Plus, Hash } from 'lucide-react';
 import { Modal } from '../../components/ui';
 import { useDebounce } from '../../lib/useDebounce';
@@ -34,6 +34,9 @@ export function mergedRow(orig, patch) {
     if (patch.clave_vestuario != null && patch.clave_vestuario !== '') {
         o.clave_vestuario = patch.clave_vestuario;
         o.codigo = patch.clave_vestuario;
+    }
+    if (Object.prototype.hasOwnProperty.call(patch, 'precio_unitario')) {
+        o.precio_unitario = patch.precio_unitario;
     }
     return o;
 }
@@ -166,9 +169,11 @@ export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados
     );
 }
 
-export function ModalCantidad({ item, onClose, onApply }) {
+export function ModalCantidad({ item, cantidadOriginal, onClose, onApply }) {
     const [cantidad, setCantidad] = useState(item?.cantidad ?? 1);
     useEffect(() => { if (item) setCantidad(item.cantidad ?? 1); }, [item]);
+    const base = cantidadOriginal != null ? Number(cantidadOriginal) : null;
+    const redujoVsServidor = base != null && !Number.isNaN(base) && cantidad < base;
     return (
         <Modal open={!!item} onClose={onClose} title="Cambiar cantidad" size="sm"
             footer={
@@ -184,9 +189,14 @@ export function ModalCantidad({ item, onClose, onApply }) {
         >
             {item && (
                 <div className="space-y-4">
-                    <p className="max-h-40 overflow-y-auto text-[13px] sm:text-[14px] leading-relaxed text-zinc-600 dark:text-zinc-300 break-words">
+                    <p className="line-clamp-4 sm:line-clamp-none sm:max-h-40 sm:overflow-y-auto text-[13px] sm:text-[14px] leading-relaxed text-zinc-600 dark:text-zinc-300 break-words">
                         {item.descripcion}
                     </p>
+                    {redujoVsServidor ? (
+                        <p className="text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/70 dark:border-zinc-700/50 rounded-xl px-3 py-2.5">
+                            Al bajar la cantidad libera importe dentro de su asignación. Puede volver a subirla aquí o con el botón <strong className="text-zinc-700 dark:text-zinc-300">+</strong> en la tarjeta (hasta 100 piezas).
+                        </p>
+                    ) : null}
                     <input type="number" min="1" max="100" value={cantidad} onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 1)}
                         className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-base focus:outline-none focus:ring-2 focus:ring-brand-gold/25" />
                 </div>
@@ -197,11 +207,13 @@ export function ModalCantidad({ item, onClose, onApply }) {
 
 const CANTIDAD_MAX = 100;
 
-export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, onAdjustCantidad, editable }) {
+export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, onAdjustCantidad, editable, cantidadBaseline }) {
     const st = catStyle(item.partida);
     const cant = Math.max(1, Math.min(CANTIDAD_MAX, Number(item.cantidad) || 1));
     const puedeMenos = cant > 1;
     const puedeMas = cant < CANTIDAD_MAX;
+    const baseCant = cantidadBaseline != null ? Number(cantidadBaseline) : null;
+    const mostrarAvisoMenos = editable && baseCant != null && !Number.isNaN(baseCant) && cant < baseCant;
     const modificadoLocal = !!item._pendiente;
     const pendienteRevisar = !!item.heredado_preview && !modificadoLocal;
 
@@ -279,6 +291,11 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                         ) : (
                             <span className="text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{cant}</span>
                         )}
+                        {mostrarAvisoMenos ? (
+                            <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 max-w-[14rem]">
+                                Cantidad por debajo de la guardada: puede recuperar piezas con <strong className="text-zinc-600 dark:text-zinc-300">+</strong> si lo necesita.
+                            </p>
+                        ) : null}
                     </div>
                     <div className="flex flex-col gap-1">
                         <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Talla</span>
@@ -335,7 +352,7 @@ export function ModalTalla({ item, onClose, onApply }) {
         >
             {item && (
                 <div className="space-y-5">
-                    <p className="text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300 leading-relaxed">{item.descripcion}</p>
+                    <p className="line-clamp-4 sm:line-clamp-none text-[13px] sm:text-[14px] text-zinc-600 dark:text-zinc-300 leading-relaxed break-words">{item.descripcion}</p>
                     <div>
                         <label className="block text-[11px] sm:text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mb-2">
                             Talla actual: <span className="text-brand-gold">{item.talla || '—'}</span>
@@ -373,9 +390,10 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
     const [selected, setSelected] = useState(null);
     const [talla, setTalla] = useState('');
     const [loadingP, setLoadingP] = useState(false);
+    const [soloPrecioConservador, setSoloPrecioConservador] = useState(true);
     const debouncedSearch = useDebounce(search, 350);
 
-    useEffect(() => { if (item) { setSelected(null); setTalla(item.talla ?? ''); setSearch(''); } }, [item]);
+    useEffect(() => { if (item) { setSelected(null); setTalla(item.talla ?? ''); setSearch(''); setSoloPrecioConservador(true); } }, [item]);
 
     useEffect(() => {
         if (!item) return;
@@ -389,8 +407,16 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
         return () => ctrl.abort();
     }, [debouncedSearch, item, anioCatalogo]);
 
+    const precioTope = item ? Number(item.precio_unitario) : NaN;
+    const hayTope = item != null && Number.isFinite(precioTope) && precioTope > 0;
+
+    const productosFiltrados = useMemo(() => {
+        if (!hayTope || !soloPrecioConservador) return productos;
+        return productos.filter((p) => Number(p.precio_unitario ?? 0) <= precioTope + 1e-9);
+    }, [productos, hayTope, precioTope, soloPrecioConservador]);
+
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg"
+        <Modal open={!!item} onClose={onClose} title="Cambiar artículo" size="lg" mobileFloatingClose
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
@@ -406,9 +432,37 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
         >
             {item && (
                 <div className="space-y-5">
-                    <div className="px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 text-[13px] text-zinc-600 dark:text-zinc-300">
-                        Artículo actual: <span className="font-semibold text-zinc-800 dark:text-zinc-100">{item.descripcion}</span>
+                    <div className="hidden sm:block px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 text-[13px] text-zinc-600 dark:text-zinc-300">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Artículo actual</p>
+                        <p className="font-semibold text-zinc-800 dark:text-zinc-100 leading-snug break-words">{item.descripcion}</p>
+                        {hayTope ? (
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">
+                                Precio unitario (catálogo): <span className="font-mono tabular-nums">{fmtMx(precioTope)}</span>
+                            </p>
+                        ) : null}
                     </div>
+                    <p className="sm:hidden text-[11px] text-zinc-500 dark:text-zinc-400 -mt-2">
+                        {hayTope ? (
+                            <>Precio actual: <span className="font-mono tabular-nums text-zinc-700 dark:text-zinc-300">{fmtMx(precioTope)}</span>. </>
+                        ) : null}
+                        Busque un reemplazo de la misma partida.
+                    </p>
+                    {hayTope ? (
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/30 px-3 py-2.5">
+                            <p className="text-[11px] leading-snug text-zinc-600 dark:text-zinc-300 min-w-0">
+                                {soloPrecioConservador
+                                    ? 'Solo se listan artículos con precio unitario igual o menor al actual, para no encarecer su asignación.'
+                                    : 'Mostrando todo el catálogo de la partida (incluye precios mayores).'}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => { setSoloPrecioConservador((v) => !v); setSelected(null); }}
+                                className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-brand-gold hover:underline text-left sm:text-right"
+                            >
+                                {soloPrecioConservador ? 'Ver todos los precios' : 'Solo precios ≤ al actual'}
+                            </button>
+                        </div>
+                    ) : null}
                     <div className="relative">
                         <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
                         <input value={search} onChange={(e) => setSearch(e.target.value)}
@@ -423,8 +477,21 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
                             </div>
                         ) : productos.length === 0 ? (
                             <p className="py-8 text-center text-[11px] text-zinc-400">Sin resultados.</p>
+                        ) : productosFiltrados.length === 0 ? (
+                            <div className="py-6 px-4 text-center space-y-3">
+                                <p className="text-[12px] text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                                    No hay artículos más baratos o iguales en esta búsqueda. Puede ampliar a todo el catálogo.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setSoloPrecioConservador(false)}
+                                    className="min-h-[44px] px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[12px] font-bold"
+                                >
+                                    Ver todos los artículos
+                                </button>
+                            </div>
                         ) : (
-                            productos.map(p => (
+                            productosFiltrados.map(p => (
                                 <button key={p.id} type="button" onClick={() => setSelected(p)}
                                     className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-all ${selected?.id === p.id
                                         ? 'bg-brand-gold/8 border-l-4 border-brand-gold'
@@ -432,8 +499,13 @@ export function ModalCambiarProducto({ item, anioCatalogo, onClose, onApply }) {
                                         }`}
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[13px] sm:text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 truncate">{p.descripcion}</p>
-                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{p.clave_vestuario || p.codigo || '—'}</p>
+                                        <p className="text-[13px] sm:text-[14px] font-semibold text-zinc-800 dark:text-zinc-100 break-words">{p.descripcion}</p>
+                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                                            <span className="font-mono">{p.clave_vestuario || p.codigo || '—'}</span>
+                                            {p.precio_unitario != null ? (
+                                                <span className="ml-2 tabular-nums">{fmtMx(p.precio_unitario)}</span>
+                                            ) : null}
+                                        </p>
                                     </div>
                                     {selected?.id === p.id && (
                                         <CheckCircle size={18} className="text-brand-gold shrink-0" strokeWidth={2} />

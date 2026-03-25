@@ -122,6 +122,7 @@ export default function MiDelegacionVestuarioPage() {
                 producto_id: selected.id,
                 descripcion: selected.descripcion,
                 clave_vestuario: selected.clave_vestuario ?? selected.codigo,
+                precio_unitario: selected.precio_unitario != null ? selected.precio_unitario : null,
             };
             if (t) cur.talla = t;
             else delete cur.talla;
@@ -418,6 +419,7 @@ export default function MiDelegacionVestuarioPage() {
                         <PrendaCard
                             key={item.id}
                             item={item}
+                            cantidadBaseline={baseline.find((x) => x.id === item.id)?.cantidad}
                             editable={puedeEditar}
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
@@ -460,7 +462,12 @@ export default function MiDelegacionVestuarioPage() {
 
             <ModalTalla item={editTalla} onClose={() => setEditTalla(null)} onApply={handleApplyTalla} />
             <ModalCambiarProducto item={cambiarProd} anioCatalogo={anioCatalogo} onClose={() => setCambiarProd(null)} onApply={handleApplyProducto} />
-            <ModalCantidad item={editCantidad} onClose={() => setEditCantidad(null)} onApply={handleApplyCantidad} />
+            <ModalCantidad
+                item={editCantidad}
+                cantidadOriginal={editCantidad ? baseline.find((x) => x.id === editCantidad.id)?.cantidad : undefined}
+                onClose={() => setEditCantidad(null)}
+                onApply={handleApplyCantidad}
+            />
 
             <Modal
                 open={Array.isArray(tallaBloqueo) && tallaBloqueo.length > 0}

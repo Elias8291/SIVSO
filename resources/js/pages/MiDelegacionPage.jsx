@@ -226,8 +226,8 @@ export default function MiDelegacionPage() {
                             const abierta = expandidas[del.id] !== false;
 
                             return (
-                                <div key={del.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none transition-all duration-300 min-w-0">
-                                    <div className="w-full px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60 min-w-0">
+                                <div key={del.id} className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-sm rounded-xl overflow-hidden transition-all duration-300 min-w-0">
+                                    <div className="w-full px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 border-b border-zinc-200 dark:border-zinc-800 min-w-0">
                                         <div
                                             role="button"
                                             tabIndex={0}

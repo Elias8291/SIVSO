@@ -223,9 +223,7 @@ export default function ProductosPage() {
                         emptyMessage="Sin productos registrados."
                     />
                     {meta.last_page > 1 && (
-                        <div className="px-6 pb-4 pt-2 border-t border-zinc-50 dark:border-zinc-800/40">
-                            <Pagination meta={meta} page={page} onPageChange={setPage} />
-                        </div>
+                        <Pagination meta={meta} page={page} onPageChange={setPage} />
                     )}
                 </Card>
             ) : (

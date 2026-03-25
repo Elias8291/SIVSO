@@ -301,32 +301,37 @@ export default function EmpleadosPage() {
                 </div>
             )}
 
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-sm mt-4 lg:mx-2 rounded-xl overflow-hidden">
-                <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-end">
-                    <h3 className="text-[14px] font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Directorio de Colaboradores</h3>
-                    {meta.total > 0 && <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded">{meta.total} registros</span>}
-                </div>
-                <div className="overflow-x-auto">
-                    <DataTable
-                        columns={columns}
-                        data={empleados}
-                        loading={loading}
-                        onEdit={canEdit ? ((row) => navigate(`/dashboard/empleados/${row.id}/editar`)) : undefined}
-                        onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
-                        emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay empleados registrados.'}
-                        extraActions={canEdit ? [{
-                            label: 'Reasignar',
-                            icon: <ArrowRightLeft size={14} />,
-                            onClick: (row) => setChangeDelegacion(row),
-                            variant: 'primary',
-                        }] : []}
-                    />
-                </div>
-                {meta.last_page > 1 && (
-                    <div className="px-6 pb-4 pt-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-transparent">
-                        <Pagination meta={meta} page={page} onPageChange={setPage} />
+            <div className="mt-4 lg:mx-2">
+                <Card
+                    title="Directorio de Colaboradores"
+                    action={
+                        meta.total > 0 ? (
+                            <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded">
+                                {meta.total} registros
+                            </span>
+                        ) : null
+                    }
+                >
+                    <div className="overflow-x-auto">
+                        <DataTable
+                            columns={columns}
+                            data={empleados}
+                            loading={loading}
+                            onEdit={canEdit ? ((row) => navigate(`/dashboard/empleados/${row.id}/editar`)) : undefined}
+                            onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
+                            emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay empleados registrados.'}
+                            extraActions={canEdit ? [{
+                                label: 'Reasignar',
+                                icon: <ArrowRightLeft size={14} />,
+                                onClick: (row) => setChangeDelegacion(row),
+                                variant: 'primary',
+                            }] : []}
+                        />
                     </div>
-                )}
+                    {meta.last_page > 1 && (
+                        <Pagination meta={meta} page={page} onPageChange={setPage} />
+                    )}
+                </Card>
             </div>
 
             <ConfirmDialog

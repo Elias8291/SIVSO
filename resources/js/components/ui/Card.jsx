@@ -1,17 +1,16 @@
 export default function Card({ title, action, children, className = '' }) {
     return (
-        <div className={`bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 overflow-hidden ${className}`}>
+        <div
+            className={`border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-sm rounded-xl overflow-hidden ${className}`}
+        >
             {(title || action) && (
-                <div className="px-6 py-4 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-end justify-between gap-3">
                     {title && (
-                        <div className="flex items-center gap-2.5">
-                            <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
-                            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-600 dark:text-zinc-400">
-                                {title}
-                            </h3>
-                        </div>
+                        <h3 className="text-[14px] font-bold text-zinc-900 dark:text-white uppercase tracking-wider min-w-0">
+                            {title}
+                        </h3>
                     )}
-                    {action && <div className="ml-auto">{action}</div>}
+                    {action && <div className="shrink-0 ml-auto">{action}</div>}
                 </div>
             )}
             {children}

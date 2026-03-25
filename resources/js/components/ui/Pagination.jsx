@@ -16,7 +16,7 @@ export default function Pagination({ meta, onPage, onPageChange }) {
     const range = buildRange(current, last);
 
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-3.5 border-t border-zinc-50 dark:border-zinc-800/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-transparent">
 
             {/* Info */}
             <p className="text-[13px] text-zinc-400 whitespace-nowrap">
