@@ -128,7 +128,7 @@ class VestuarioController extends Controller
         return $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
     }
 
-    /** Guardado en lote (Mi delegación o quien tenga editar_seleccion). No marca edición cerrada del empleado. */
+    /** Permite guardar en lote el vestuario de un colaborador (Mi delegación o permiso editar_seleccion). */
     private function usuarioPuedeGuardarLoteVestuarioEmpleado(Request $request, int $empleadoId): bool
     {
         if ($request->user()->can('editar_seleccion')) {
@@ -278,6 +278,9 @@ class VestuarioController extends Controller
             'anio_referencia_vista' => $anioReferenciaVista,
             'edicion_cerrada_ejercicio_vigente' => $edicionCerrada,
             'puede_editar_vestuario' => $puedeEditarVestuario,
+            'partidas_catalogo' => $anio === $ejercicioVigente
+                ? $this->partidasCatalogoConPrecio($ejercicioVigente)
+                : [],
             'periodo_activo' => $periodoActivo ? [
                 'id' => $periodoActivo->id,
                 'anio' => (int) $periodoActivo->anio,
@@ -477,6 +480,198 @@ class VestuarioController extends Controller
         $seleccion->update(['cantidad' => $cantidad]);
     }
 
+    /** Partidas (número) que tienen al menos un producto con precio en el ejercicio (catálogo para agregar líneas). */
+    private function partidasCatalogoConPrecio(int $anio): array
+    {
+        return DB::table('productos AS p')
+            ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
+            ->join('producto_precios AS pp', function ($j) use ($anio) {
+                $j->on('pp.producto_id', '=', 'p.id')->where('pp.anio', '=', $anio);
+            })
+            ->distinct()
+            ->orderBy('pa.numero')
+            ->pluck('pa.numero')
+            ->map(fn ($n) => (int) $n)
+            ->values()
+            ->all();
+    }
+
+    /** Suma cantidad × precio_unitario del vestuario del empleado en un año (selecciones reales en BD). */
+    private function totalImporteVestuarioEmpleadoAnio(int $empleadoId, int $anio): float
+    {
+        $raw = DB::table('selecciones AS s')
+            ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
+            ->join('productos AS p', 'p.id', '=', 'pt.producto_id')
+            ->leftJoin('producto_precios AS pp', function ($j) {
+                $j->on('pp.producto_id', '=', 'p.id')->on('pp.anio', '=', 's.anio');
+            })
+            ->where('s.empleado_id', $empleadoId)
+            ->where('s.anio', $anio)
+            ->selectRaw('SUM(s.cantidad * COALESCE(pp.precio_unitario, 0)) AS t')
+            ->value('t');
+
+        return round((float) $raw, 2);
+    }
+
+    private function crearSeleccionNuevaLineaVestuario(int $empleadoId, int $productoId, string $tallaNombre, int $cantidad): void
+    {
+        $anio = $this->ejercicioVigenteAnio();
+        if ($cantidad < 1 || $cantidad > 100) {
+            $this->abortJson(422, 'Cantidad inválida para el artículo nuevo.');
+        }
+
+        $nombre = strtoupper(trim($tallaNombre));
+        if ($nombre === '') {
+            $this->abortJson(422, 'La talla es obligatoria al agregar un artículo nuevo.');
+        }
+
+        $row = DB::table('tallas')->where('nombre', $nombre)->first();
+        $tallaId = $row ? (int) $row->id : (int) DB::table('tallas')->insertGetId([
+            'nombre' => $nombre, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $pt = DB::table('producto_tallas')
+            ->where('producto_id', $productoId)
+            ->where('talla_id', $tallaId)
+            ->where('anio', $anio)
+            ->first();
+
+        if (! $pt) {
+            $ptId = (int) DB::table('producto_tallas')->insertGetId([
+                'producto_id' => $productoId,
+                'talla_id' => $tallaId,
+                'anio' => $anio,
+                'medidas' => null,
+                'cantidad_disponible' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } else {
+            $ptId = (int) $pt->id;
+        }
+
+        $dup = Seleccion::where('empleado_id', $empleadoId)
+            ->where('anio', $anio)
+            ->where('producto_talla_id', $ptId)
+            ->exists();
+
+        if ($dup) {
+            $this->abortJson(422, 'Ya existe una línea con ese artículo y talla. Use la tarjeta existente para cambiar cantidad o elija otro producto.');
+        }
+
+        Seleccion::create([
+            'empleado_id' => $empleadoId,
+            'producto_talla_id' => $ptId,
+            'anio' => $anio,
+            'cantidad' => $cantidad,
+        ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $cambios
+     */
+    private function validarPayloadCambiosVestuario(array $cambios): ?JsonResponse
+    {
+        foreach ($cambios as $i => $c) {
+            $tipo = $c['tipo'] ?? '';
+            if (! in_array($tipo, ['producto', 'talla', 'cantidad', 'nueva_linea'], true)) {
+                return response()->json(['message' => 'Cambio #'.($i + 1).': tipo no válido.'], 422);
+            }
+            if ($tipo === 'nueva_linea') {
+                if (empty($c['producto_id'])) {
+                    return response()->json(['message' => 'Cambio #'.($i + 1).': producto_id requerido.'], 422);
+                }
+                if (trim((string) ($c['talla'] ?? '')) === '') {
+                    return response()->json(['message' => 'Cambio #'.($i + 1).': talla requerida.'], 422);
+                }
+                $q = (int) ($c['cantidad'] ?? 0);
+                if ($q < 1 || $q > 100) {
+                    return response()->json(['message' => 'Cambio #'.($i + 1).': cantidad inválida.'], 422);
+                }
+
+                continue;
+            }
+            if (empty($c['seleccion_id'])) {
+                return response()->json(['message' => 'Cambio #'.($i + 1).': seleccion_id requerido.'], 422);
+            }
+            if ($tipo === 'talla' && trim((string) ($c['talla'] ?? '')) === '') {
+                return response()->json(['message' => 'Cambio #'.($i + 1).': talla requerida.'], 422);
+            }
+            if ($tipo === 'producto' && empty($c['producto_id'])) {
+                return response()->json(['message' => 'Cambio #'.($i + 1).': producto_id requerido.'], 422);
+            }
+            if ($tipo === 'cantidad') {
+                $q = (int) ($c['cantidad'] ?? 0);
+                if ($q < 1 || $q > 100) {
+                    return response()->json(['message' => 'Cambio #'.($i + 1).': cantidad inválida.'], 422);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $cambios
+     */
+    private function aplicarLoteCambiosVestuarioEnTransaccion(array $cambios, int $empleadoId): void
+    {
+        $anioV = $this->ejercicioVigenteAnio();
+        $topeImporte = $this->totalImporteVestuarioEmpleadoAnio($empleadoId, $anioV);
+
+        $resolved = [];
+
+        foreach ($cambios as $c) {
+            $tipo = $c['tipo'] ?? '';
+
+            if ($tipo === 'nueva_linea') {
+                $this->crearSeleccionNuevaLineaVestuario(
+                    $empleadoId,
+                    (int) $c['producto_id'],
+                    (string) $c['talla'],
+                    (int) $c['cantidad']
+                );
+
+                continue;
+            }
+
+            $clientId = (int) $c['seleccion_id'];
+            $currentId = $resolved[$clientId] ?? $clientId;
+
+            $seleccion = Seleccion::with('productoTalla')
+                ->where('id', $currentId)
+                ->where('empleado_id', $empleadoId)
+                ->first();
+
+            if (! $seleccion) {
+                $this->abortJson(404, 'Registro de vestuario no encontrado.');
+            }
+
+            $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleadoId);
+            $resolved[$clientId] = (int) $seleccion->id;
+
+            $this->asegurarSeleccionEjercicioVigente($seleccion);
+
+            match ($tipo) {
+                'talla' => $this->aplicarTallaSeleccionMiVestuario($seleccion, (string) $c['talla']),
+                'producto' => $this->aplicarProductoSeleccionMiVestuario(
+                    $seleccion,
+                    (int) $c['producto_id'],
+                    isset($c['talla']) ? (string) $c['talla'] : null
+                ),
+                'cantidad' => $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $c['cantidad']),
+                default => $this->abortJson(422, 'Tipo de cambio no válido.'),
+            };
+        }
+
+        if ($topeImporte > 0.01) {
+            $final = $this->totalImporteVestuarioEmpleadoAnio($empleadoId, $anioV);
+            if ($final > $topeImporte + 0.05) {
+                $this->abortJson(422, 'El importe total del vestuario supera su asignación inicial. Reduzca cantidades, elija artículos más económicos o quite líneas agregadas.');
+            }
+        }
+    }
+
     /** Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio. */
     private function totalGastoDependenciaAnio(?int $dependenciaId, int $anio): array
     {
@@ -635,62 +830,17 @@ class VestuarioController extends Controller
         }
 
         $request->validate([
-            'cambios' => 'required|array|min:1|max:40',
-            'cambios.*.seleccion_id' => 'required|integer|min:1',
-            'cambios.*.tipo' => 'required|string|in:producto,talla,cantidad',
+            'cambios' => 'required|array|min:1|max:60',
         ]);
 
-        foreach ($request->input('cambios') as $i => $c) {
-            $tipo = $c['tipo'];
-            if ($tipo === 'talla' && empty($c['talla'])) {
-                return response()->json(['message' => "Cambio #{$i}: talla requerida."], 422);
-            }
-            if ($tipo === 'producto') {
-                if (empty($c['producto_id'])) {
-                    return response()->json(['message' => "Cambio #{$i}: producto_id requerido."], 422);
-                }
-            }
-            if ($tipo === 'cantidad') {
-                $q = (int) ($c['cantidad'] ?? 0);
-                if ($q < 1 || $q > 100) {
-                    return response()->json(['message' => "Cambio #{$i}: cantidad inválida."], 422);
-                }
-            }
+        $cambios = $request->input('cambios');
+        if ($err = $this->validarPayloadCambiosVestuario($cambios)) {
+            return $err;
         }
 
         try {
-            DB::transaction(function () use ($request, $empleado) {
-                $resolved = [];
-                foreach ($request->input('cambios') as $c) {
-                    $clientId = (int) $c['seleccion_id'];
-                    $currentId = $resolved[$clientId] ?? $clientId;
-
-                    $seleccion = Seleccion::with('productoTalla')
-                        ->where('id', $currentId)
-                        ->where('empleado_id', $empleado->id)
-                        ->first();
-
-                    if (! $seleccion) {
-                        $this->abortJson(404, 'Registro de vestuario no encontrado.');
-                    }
-
-                    $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $empleado->id);
-                    $resolved[$clientId] = (int) $seleccion->id;
-
-                    $this->asegurarSeleccionEjercicioVigente($seleccion);
-
-                    match ($c['tipo']) {
-                        'talla' => $this->aplicarTallaSeleccionMiVestuario($seleccion, (string) $c['talla']),
-                        'producto' => $this->aplicarProductoSeleccionMiVestuario(
-                            $seleccion,
-                            (int) $c['producto_id'],
-                            isset($c['talla']) ? (string) $c['talla'] : null
-                        ),
-                        'cantidad' => $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $c['cantidad']),
-                        default => $this->abortJson(422, 'Tipo de cambio no válido.'),
-                    };
-                }
-
+            DB::transaction(function () use ($cambios, $empleado) {
+                $this->aplicarLoteCambiosVestuarioEnTransaccion($cambios, $empleado->id);
                 $this->marcarEdicionCerrada($empleado->id, $this->ejercicioVigenteAnio());
             });
         } catch (HttpResponseException $e) {
@@ -853,6 +1003,9 @@ class VestuarioController extends Controller
             'anio_referencia_vista' => $anioReferenciaVista,
             'estado_actualizacion_ejercicio' => $estadoActualizacionEjercicio,
             'presupuesto_comparativo' => $presupuestoComparativo,
+            'partidas_catalogo' => $anio === $anioCalendario
+                ? $this->partidasCatalogoConPrecio($anioCalendario)
+                : [],
             'periodo_activo' => $periodoActivo ? [
                 'id' => $periodoActivo->id,
                 'anio' => (int) $periodoActivo->anio,
@@ -880,66 +1033,25 @@ class VestuarioController extends Controller
         }
 
         $request->validate([
-            'cambios' => 'required|array|min:1|max:40',
-            'cambios.*.seleccion_id' => 'required|integer|min:1',
-            'cambios.*.tipo' => 'required|string|in:producto,talla,cantidad',
+            'cambios' => 'required|array|min:1|max:60',
         ]);
 
-        foreach ($request->input('cambios') as $i => $c) {
-            $tipo = $c['tipo'];
-            if ($tipo === 'talla' && empty($c['talla'])) {
-                return response()->json(['message' => "Cambio #{$i}: talla requerida."], 422);
-            }
-            if ($tipo === 'producto' && empty($c['producto_id'])) {
-                return response()->json(['message' => "Cambio #{$i}: producto_id requerido."], 422);
-            }
-            if ($tipo === 'cantidad') {
-                $q = (int) ($c['cantidad'] ?? 0);
-                if ($q < 1 || $q > 100) {
-                    return response()->json(['message' => "Cambio #{$i}: cantidad inválida."], 422);
-                }
-            }
+        $cambios = $request->input('cambios');
+        if ($err = $this->validarPayloadCambiosVestuario($cambios)) {
+            return $err;
         }
 
         try {
-            DB::transaction(function () use ($request, $emp) {
-                $resolved = [];
-                foreach ($request->input('cambios') as $c) {
-                    $clientId = (int) $c['seleccion_id'];
-                    $currentId = $resolved[$clientId] ?? $clientId;
-
-                    $seleccion = Seleccion::with('productoTalla')
-                        ->where('id', $currentId)
-                        ->where('empleado_id', $emp->id)
-                        ->first();
-
-                    if (! $seleccion) {
-                        $this->abortJson(404, 'Registro de vestuario no encontrado.');
-                    }
-
-                    $seleccion = $this->materializarSeleccionAlAnioCalendario($seleccion, $emp->id);
-                    $resolved[$clientId] = (int) $seleccion->id;
-
-                    $this->asegurarSeleccionEjercicioVigente($seleccion);
-
-                    match ($c['tipo']) {
-                        'talla' => $this->aplicarTallaSeleccionMiVestuario($seleccion, (string) $c['talla']),
-                        'producto' => $this->aplicarProductoSeleccionMiVestuario(
-                            $seleccion,
-                            (int) $c['producto_id'],
-                            isset($c['talla']) ? (string) $c['talla'] : null
-                        ),
-                        'cantidad' => $this->aplicarCantidadSeleccionMiVestuario($seleccion, (int) $c['cantidad']),
-                        default => $this->abortJson(422, 'Tipo de cambio no válido.'),
-                    };
-                }
+            DB::transaction(function () use ($cambios, $emp) {
+                $this->aplicarLoteCambiosVestuarioEnTransaccion($cambios, $emp->id);
+                $this->marcarEdicionCerrada($emp->id, $this->ejercicioVigenteAnio());
             });
         } catch (HttpResponseException $e) {
             return $e->getResponse();
         }
 
         return response()->json([
-            'message' => 'Cambios del vestuario guardados correctamente.',
+            'message' => 'Cambios guardados. El colaborador no podrá editar su vestuario del ejercicio vigente en Mi vestuario hasta que reactive la actualización desde aquí.',
         ]);
     }
 

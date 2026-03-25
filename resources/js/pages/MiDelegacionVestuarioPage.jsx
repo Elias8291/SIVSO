@@ -3,7 +3,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Shirt, Search, AlertCircle, ArrowLeft, Unlock } from 'lucide-react';
+import { Shirt, Search, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
@@ -12,11 +12,14 @@ import {
     rowsEquivalent,
     displayItem,
     listarPrendasConTallaPendiente,
+    importeLineaVestuario,
+    importeTotalLineasNuevasPendientes,
     Toast,
     ModalCantidad,
     PrendaCard,
     ModalTalla,
     ModalCambiarProducto,
+    ModalAgregarLineaVestuario,
     VestuarioResumenTotales,
 } from '../features/vestuario/VestuarioEditorShared';
 
@@ -41,6 +44,8 @@ export default function MiDelegacionVestuarioPage() {
     const debouncedFilter = useDebounce(filterSearch, 250);
     const [periodoActivo, setPeriodoActivo] = useState(null);
     const [reactivando, setReactivando] = useState(false);
+    const [pendingNuevasLineas, setPendingNuevasLineas] = useState([]);
+    const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
 
     const load = useCallback((anioParam) => {
         if (!idNum || Number.isNaN(idNum)) {
@@ -59,6 +64,7 @@ export default function MiDelegacionVestuarioPage() {
                     setData(res);
                     setBaseline((res.asignaciones ?? []).map((a) => ({ ...a })));
                     setPendingEdits({});
+                    setPendingNuevasLineas([]);
                     setPeriodoActivo(res.periodo_activo ?? null);
                     if (!anioParam && res.anio != null) setAnio(res.anio);
                 } else {
@@ -104,8 +110,12 @@ export default function MiDelegacionVestuarioPage() {
 
     const handleApplyTalla = (talla) => {
         if (!editTalla) return;
-        const t = String(talla ?? '').trim();
-        upsertPending(editTalla.id, { talla: t.toUpperCase() });
+        const t = String(talla ?? '').trim().toUpperCase();
+        if (editTalla._nuevaLinea) {
+            setPendingNuevasLineas((prev) => prev.map((n) => (n.clientKey === editTalla.id ? { ...n, talla: t } : n)));
+        } else {
+            upsertPending(editTalla.id, { talla: t });
+        }
         setEditTalla(null);
     };
 
@@ -139,17 +149,54 @@ export default function MiDelegacionVestuarioPage() {
     const handleApplyCantidad = (cantidad) => {
         if (!editCantidad) return;
         const n = Math.max(1, parseInt(cantidad, 10) || 1);
-        upsertPending(editCantidad.id, { cantidad: n });
+        if (editCantidad._nuevaLinea) {
+            setPendingNuevasLineas((prev) => prev.map((row) => (row.clientKey === editCantidad.id ? { ...row, cantidad: n } : row)));
+        } else {
+            upsertPending(editCantidad.id, { cantidad: n });
+        }
         setEditCantidad(null);
     };
 
     const handleAdjustCantidad = useCallback((item, delta) => {
+        if (item._nuevaLinea) {
+            setPendingNuevasLineas((prev) => prev.map((n) => {
+                if (n.clientKey !== item.id) return n;
+                const cur = Number(n.cantidad) || 1;
+                const next = Math.min(100, Math.max(1, cur + delta));
+                return { ...n, cantidad: next };
+            }));
+            return;
+        }
         const cur = Number(item.cantidad) || 1;
         const next = Math.min(100, Math.max(1, cur + delta));
         upsertPending(item.id, { cantidad: next });
     }, [upsertPending]);
 
     const pendingCount = Object.keys(pendingEdits).length;
+    const pendingCountCombined = pendingCount + pendingNuevasLineas.length;
+
+    const importeBaselineTotal = useMemo(
+        () => baseline.reduce((s, o) => s + importeLineaVestuario(o, null), 0),
+        [baseline]
+    );
+    const importeConCambiosPendientes = useMemo(
+        () => baseline.reduce((s, o) => s + importeLineaVestuario(o, pendingEdits[o.id]), 0),
+        [baseline, pendingEdits]
+    );
+    const importeNuevasPendientes = useMemo(
+        () => importeTotalLineasNuevasPendientes(pendingNuevasLineas),
+        [pendingNuevasLineas]
+    );
+    const saldoDisponibleNuevaLinea = importeBaselineTotal - importeConCambiosPendientes - importeNuevasPendientes;
+    const puedeAgregarOtraLinea = (importeBaselineTotal <= 0) || saldoDisponibleNuevaLinea > 0.01;
+
+    const partidasCatalogoUi = useMemo(() => {
+        const fromApi = data?.partidas_catalogo;
+        if (Array.isArray(fromApi) && fromApi.length > 0) return fromApi.map((p) => Number(p));
+        const u = new Set();
+        baseline.forEach((r) => { if (r.partida != null) u.add(Number(r.partida)); });
+        return [...u].sort((a, b) => a - b);
+    }, [data?.partidas_catalogo, baseline]);
 
     const aniosSelect = useMemo(() => {
         const disp = data?.anios_disponibles ?? [];
@@ -175,8 +222,30 @@ export default function MiDelegacionVestuarioPage() {
             : true
     );
 
+    const filasNuevasPendientes = useMemo(() => pendingNuevasLineas.map((n) => ({
+        id: n.clientKey,
+        _nuevaLinea: true,
+        partida: n.partida,
+        descripcion: n.descripcion,
+        clave_vestuario: n.clave_vestuario,
+        talla: n.talla,
+        cantidad: n.cantidad,
+        precio_unitario: n.precio_unitario,
+        _pendiente: true,
+    })), [pendingNuevasLineas]);
+
+    const nuevasFiltradas = useMemo(() => filasNuevasPendientes.filter((a) =>
+        debouncedFilter
+            ? (a.descripcion || '').toLowerCase().includes(debouncedFilter.toLowerCase())
+            || (a.clave_vestuario ?? '').toLowerCase().includes(debouncedFilter.toLowerCase())
+            : true
+    ), [filasNuevasPendientes, debouncedFilter]);
+
+    const listadoGrid = useMemo(() => [...asignaciones, ...nuevasFiltradas], [asignaciones, nuevasFiltradas]);
+    const asignacionesParaTotales = useMemo(() => [...asignacionesMerged, ...filasNuevasPendientes], [asignacionesMerged, filasNuevasPendientes]);
+
     const confirmarCambios = async () => {
-        if (pendingCount === 0 || !idNum) return;
+        if (pendingCountCombined === 0 || !idNum) return;
 
         const ejercicioVigenteLocal = data?.ejercicio_vigente ?? new Date().getFullYear();
         const viendoHistoricoLocal = (anio ?? data?.anio) !== ejercicioVigenteLocal;
@@ -186,7 +255,8 @@ export default function MiDelegacionVestuarioPage() {
             const fallosTalla = listarPrendasConTallaPendiente(
                 data?.asignaciones ?? [],
                 baseline,
-                pendingEdits
+                pendingEdits,
+                pendingNuevasLineas
             );
             if (fallosTalla.length > 0) {
                 setTallaBloqueo(fallosTalla);
@@ -228,6 +298,14 @@ export default function MiDelegacionVestuarioPage() {
                 });
             }
         }
+        for (const n of pendingNuevasLineas) {
+            cambios.push({
+                tipo: 'nueva_linea',
+                producto_id: n.producto_id,
+                talla: String(n.talla ?? '').trim(),
+                cantidad: Math.max(1, Math.min(100, Number(n.cantidad) || 1)),
+            });
+        }
         if (cambios.length === 0) return;
 
         setSavingBatch(true);
@@ -235,6 +313,7 @@ export default function MiDelegacionVestuarioPage() {
             const res = await api.post(`/api/empleados/${idNum}/vestuario/guardar-cambios`, { cambios });
             showToast(res?.message ?? 'Cambios guardados.');
             setPendingEdits({});
+            setPendingNuevasLineas([]);
             load(anio ?? data?.anio);
         } catch (err) {
             alert(err.message || 'No se pudieron guardar los cambios.');
@@ -244,9 +323,10 @@ export default function MiDelegacionVestuarioPage() {
     };
 
     const descartarPendientes = () => {
-        if (pendingCount === 0) return;
-        if (!window.confirm('¿Descartar todos los cambios pendientes?')) return;
+        if (pendingCountCombined === 0) return;
+        if (!window.confirm('¿Descartar todos los cambios pendientes (incluidas líneas nuevas)?')) return;
         setPendingEdits({});
+        setPendingNuevasLineas([]);
     };
 
     const handleReactivarEdicion = async () => {
@@ -313,7 +393,7 @@ export default function MiDelegacionVestuarioPage() {
     const emp = data.empleado;
 
     return (
-        <div className={pendingCount > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
+        <div className={pendingCountCombined > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
             <div className="mb-6">
                 <button type="button" onClick={() => navigate('/dashboard/mi-delegacion')}
                     className="inline-flex items-center gap-2 text-[12px] font-bold text-zinc-500 hover:text-brand-gold mb-4 transition-colors">
@@ -347,7 +427,7 @@ export default function MiDelegacionVestuarioPage() {
                         {(anio ?? data.anio) !== ejercicioVigente && (
                             <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
                         )}
-                        {puedeReactivar && edicionCerradaEmp && (
+                        {puedeReactivar && edicionCerradaEmp && (anio ?? data.anio) === ejercicioVigente && (
                             <button
                                 type="button"
                                 disabled={reactivando}
@@ -355,7 +435,7 @@ export default function MiDelegacionVestuarioPage() {
                                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:brightness-105 active:scale-95 transition-all ml-1"
                             >
                                 <Unlock size={12} strokeWidth={2} />
-                                {reactivando ? '…' : 'Activar actualización'}
+                                {reactivando ? '…' : 'Activar edición en Mi vestuario'}
                             </button>
                         )}
                     </div>
@@ -375,11 +455,29 @@ export default function MiDelegacionVestuarioPage() {
                     <VestuarioResumenTotales
                         variant="header"
                         rubrica="Resumen"
-                        asignacionesMerged={asignacionesMerged}
+                        asignacionesMerged={asignacionesParaTotales}
                         mostrandoFiltrados={Boolean(debouncedFilter?.trim())}
-                        totalFiltrados={asignaciones.length}
+                        totalFiltrados={listadoGrid.length}
                     />
                 </div>
+                {puedeEditar && (anio ?? data.anio) === ejercicioVigente && (
+                    <div className="mt-4">
+                        <button
+                            type="button"
+                            onClick={() => setModalAgregarOpen(true)}
+                            disabled={!puedeAgregarOtraLinea}
+                            className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border border-brand-gold/35 bg-brand-gold/10 text-[12px] font-bold text-brand-gold hover:bg-brand-gold/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                        >
+                            <Plus size={16} strokeWidth={2.5} />
+                            Agregar otro artículo (otra partida)
+                        </button>
+                        {!puedeAgregarOtraLinea && importeBaselineTotal > 0 ? (
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 max-w-xl leading-snug">
+                                Para agregar una línea nueva, el colaborador debe tener saldo: baje cantidades o elija artículos más baratos en las líneas actuales.
+                            </p>
+                        ) : null}
+                    </div>
+                )}
                 <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
                     <div className="flex items-start">
                         <AlertCircle className="w-5 h-5 mr-2 mt-0.5 shrink-0" strokeWidth={1.5} />
@@ -391,7 +489,10 @@ export default function MiDelegacionVestuarioPage() {
                             ) : puedeEditar ? (
                                 <>
                                     {edicionCerradaEmp ? (
-                                        <>El colaborador ya confirmó su vestuario para {ejercicioVigente}. Puede seguir ajustando desde aquí y usar <strong>Guardar cambios</strong> (los cambios no se envían hasta entonces). </>
+                                        <>
+                                            En <strong>Mi vestuario</strong> el colaborador no puede editar el ejercicio {ejercicioVigente} hasta que pulse <strong>Activar edición en Mi vestuario</strong> arriba.
+                                            Usted puede seguir corrigiendo aquí y usar <strong>Guardar cambios</strong> (no se aplican hasta guardar).
+                                        </>
                                     ) : null}
                                     Use «Cambiar talla / artículo / cantidad» para marcar cambios; pulse <strong>Guardar cambios</strong> al final para enviar todo junto (no se guarda al pulsar «Aceptar» en cada ventana).
                                     {periodoActivo?.fecha_fin && (
@@ -406,7 +507,7 @@ export default function MiDelegacionVestuarioPage() {
                 </div>
             </div>
 
-            {asignaciones.length === 0 ? (
+            {listadoGrid.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
                     <Shirt size={32} className="text-zinc-200 dark:text-zinc-700" strokeWidth={1.2} />
                     <p className="text-[11px] text-zinc-400">
@@ -415,22 +516,25 @@ export default function MiDelegacionVestuarioPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-                    {asignaciones.map((item) => (
+                    {listadoGrid.map((item) => (
                         <PrendaCard
                             key={item.id}
                             item={item}
-                            cantidadBaseline={baseline.find((x) => x.id === item.id)?.cantidad}
+                            cantidadBaseline={item._nuevaLinea ? undefined : baseline.find((x) => x.id === item.id)?.cantidad}
                             editable={puedeEditar}
                             onEditTalla={setEditTalla}
                             onCambiarProducto={setCambiarProd}
                             onEditCantidad={setEditCantidad}
                             onAdjustCantidad={handleAdjustCantidad}
+                            onRemoveNuevaLinea={item._nuevaLinea ? (key) => {
+                                setPendingNuevasLineas((prev) => prev.filter((n) => n.clientKey !== key));
+                            } : undefined}
                         />
                     ))}
                 </div>
             )}
 
-            {pendingCount > 0 && puedeEditar && (
+            {pendingCountCombined > 0 && puedeEditar && (
                 <div
                     className="z-40 max-md:mt-10 max-md:rounded-2xl max-md:border max-md:border-zinc-200/80 dark:max-md:border-zinc-700/50 max-md:shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:max-md:shadow-none bg-white/95 dark:bg-zinc-950/95 md:fixed md:bottom-0 md:left-0 md:right-0 md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:backdrop-blur-md md:shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                 >
@@ -439,7 +543,7 @@ export default function MiDelegacionVestuarioPage() {
                             <AlertCircle className="size-5 text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
                             <div className="min-w-0">
                                 <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">
-                                    {pendingCount === 1 ? '1 cambio pendiente' : `${pendingCount} cambios pendientes`}
+                                    {pendingCountCombined === 1 ? '1 cambio pendiente' : `${pendingCountCombined} cambios pendientes`}
                                 </p>
                                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
                                     Los cambios no se envían hasta que pulse «Guardar cambios». Puede modificar varias prendas y guardar una sola vez.
@@ -466,12 +570,25 @@ export default function MiDelegacionVestuarioPage() {
                 anioCatalogo={anioCatalogo}
                 baseline={baseline}
                 pendingEdits={pendingEdits}
+                importeLineasNuevasPendientes={importeNuevasPendientes}
                 onClose={() => setCambiarProd(null)}
                 onApply={handleApplyProducto}
             />
+            <ModalAgregarLineaVestuario
+                open={modalAgregarOpen}
+                onClose={() => setModalAgregarOpen(false)}
+                anioCatalogo={anioCatalogo}
+                partidasCatalogo={partidasCatalogoUi}
+                saldoImporteDisponible={importeBaselineTotal > 0 ? saldoDisponibleNuevaLinea : null}
+                onApply={(payload) => {
+                    const clientKey = `nueva-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+                    setPendingNuevasLineas((prev) => [...prev, { ...payload, clientKey }]);
+                    setModalAgregarOpen(false);
+                }}
+            />
             <ModalCantidad
                 item={editCantidad}
-                cantidadOriginal={editCantidad ? baseline.find((x) => x.id === editCantidad.id)?.cantidad : undefined}
+                cantidadOriginal={editCantidad && !editCantidad._nuevaLinea ? baseline.find((x) => x.id === editCantidad.id)?.cantidad : undefined}
                 onClose={() => setEditCantidad(null)}
                 onApply={handleApplyCantidad}
             />

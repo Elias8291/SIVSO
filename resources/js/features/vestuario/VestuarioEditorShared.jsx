@@ -2,7 +2,7 @@
  * UI y utilidades compartidas entre Mi vestuario y vestuario desde Mi delegación.
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Ruler, RefreshCw, CheckCircle, Search, Minus, Plus, Hash } from 'lucide-react';
+import { Ruler, RefreshCw, CheckCircle, Search, Minus, Plus, Hash, Trash2 } from 'lucide-react';
 import { Modal } from '../../components/ui';
 import { useDebounce } from '../../lib/useDebounce';
 
@@ -64,13 +64,24 @@ export function importeLineaVestuario(orig, patch) {
     return q * p;
 }
 
+export function importeTotalLineasNuevasPendientes(lineas) {
+    if (!Array.isArray(lineas) || lineas.length === 0) return 0;
+    return lineas.reduce((s, n) => {
+        const q = Number(n.cantidad) || 0;
+        const p = Number(n.precio_unitario);
+        if (q <= 0 || !Number.isFinite(p) || p < 0) return s;
+        return s + q * p;
+    }, 0);
+}
+
 /**
  * Precio unitario máximo al cambiar de producto en una línea, sin superar la suma de importes
  * del vestuario según la asignación inicial (baseline), asumiendo el resto de líneas como están
  * en los cambios pendientes. Si baja cantidad o elige algo más barato en otra partida, el saldo
  * sube el tope en esta línea.
+ * @param {number} [importeOtrasAltas] — importe ya comprometido en líneas nuevas pendientes (p. ej. agregar producto).
  */
-export function precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, seleccionId) {
+export function precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, seleccionId, importeOtrasAltas = 0) {
     if (!Array.isArray(baseline) || baseline.length === 0 || seleccionId == null) return null;
     let bTotal = 0;
     for (const o of baseline) {
@@ -84,7 +95,7 @@ export function precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits
     const qtyT = Number(mergedT.cantidad) || 0;
     if (qtyT <= 0) return null;
 
-    let sRest = 0;
+    let sRest = Number(importeOtrasAltas) || 0;
     for (const o of baseline) {
         if (o.id === seleccionId) continue;
         sRest += importeLineaVestuario(o, pendingEdits[o.id]);
@@ -101,7 +112,7 @@ function patchRevisaTallaUOrigen(orig, patch) {
     return Object.prototype.hasOwnProperty.call(patch, 'talla');
 }
 
-export function listarPrendasConTallaPendiente(asignaciones, baseline, pendingEdits) {
+export function listarPrendasConTallaPendiente(asignaciones, baseline, pendingEdits, lineasNuevasPendientes = []) {
     const fallos = [];
     for (const row of asignaciones) {
         const orig = baseline.find((x) => x.id === row.id) ?? row;
@@ -121,6 +132,16 @@ export function listarPrendasConTallaPendiente(asignaciones, baseline, pendingEd
                 descripcion: orig.descripcion ?? 'Artículo',
                 clave: orig.clave_vestuario ?? orig.codigo ?? '—',
                 motivo: 'Debes abrir «Cambiar talla» o «Cambiar artículo» y confirmar (viene del año anterior).',
+            });
+        }
+    }
+    for (const n of lineasNuevasPendientes) {
+        const tallaStr = String(n.talla ?? '').trim();
+        if (!tallaStr) {
+            fallos.push({
+                descripcion: n.descripcion ?? 'Artículo nuevo',
+                clave: n.clave_vestuario ?? n.codigo ?? '—',
+                motivo: 'Indique la talla del artículo agregado.',
             });
         }
     }
@@ -247,21 +268,24 @@ export function ModalCantidad({ item, cantidadOriginal, onClose, onApply }) {
 
 const CANTIDAD_MAX = 100;
 
-export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, onAdjustCantidad, editable, cantidadBaseline }) {
+export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantidad, onAdjustCantidad, editable, cantidadBaseline, onRemoveNuevaLinea }) {
     const st = catStyle(item.partida);
     const cant = Math.max(1, Math.min(CANTIDAD_MAX, Number(item.cantidad) || 1));
     const puedeMenos = cant > 1;
     const puedeMas = cant < CANTIDAD_MAX;
     const baseCant = cantidadBaseline != null ? Number(cantidadBaseline) : null;
-    const mostrarAvisoMenos = editable && baseCant != null && !Number.isNaN(baseCant) && cant < baseCant;
+    const mostrarAvisoMenos = editable && !item._nuevaLinea && baseCant != null && !Number.isNaN(baseCant) && cant < baseCant;
     const modificadoLocal = !!item._pendiente;
     const pendienteRevisar = !!item.heredado_preview && !modificadoLocal;
+    const esNuevaLinea = !!item._nuevaLinea;
 
-    const cardShell = modificadoLocal
-        ? 'border border-emerald-200/70 bg-emerald-50/45 dark:border-emerald-800/35 dark:bg-emerald-950/20 ring-1 ring-emerald-200/50 dark:ring-emerald-800/30 shadow-sm'
-        : pendienteRevisar
-            ? 'border border-slate-200/80 bg-slate-50/50 dark:border-slate-700/40 dark:bg-slate-900/35 ring-1 ring-slate-200/40 dark:ring-slate-700/25 shadow-sm'
-            : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md';
+    const cardShell = esNuevaLinea
+        ? 'border border-sky-200/80 bg-sky-50/40 dark:border-sky-800/50 dark:bg-sky-950/25 ring-1 ring-sky-200/50 dark:ring-sky-800/30 shadow-sm'
+        : modificadoLocal
+            ? 'border border-emerald-200/70 bg-emerald-50/45 dark:border-emerald-800/35 dark:bg-emerald-950/20 ring-1 ring-emerald-200/50 dark:ring-emerald-800/30 shadow-sm'
+            : pendienteRevisar
+                ? 'border border-slate-200/80 bg-slate-50/50 dark:border-slate-700/40 dark:bg-slate-900/35 ring-1 ring-slate-200/40 dark:ring-slate-700/25 shadow-sm'
+                : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md';
 
     return (
         <div className={`rounded-2xl flex flex-col transition-all duration-300 ${cardShell}`}>
@@ -282,6 +306,11 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                         {modificadoLocal && (
                             <span className="text-[9px] font-semibold text-emerald-800 dark:text-emerald-300/90 bg-emerald-100/90 dark:bg-emerald-900/35 px-2 py-0.5 rounded-md border border-emerald-200/70 dark:border-emerald-800/40">
                                 Modificado
+                            </span>
+                        )}
+                        {esNuevaLinea && (
+                            <span className="text-[9px] font-semibold text-sky-800 dark:text-sky-200/90 bg-sky-100/90 dark:bg-sky-900/40 px-2 py-0.5 rounded-md border border-sky-200/70 dark:border-sky-800/45">
+                                Nuevo (pendiente)
                             </span>
                         )}
                     </div>
@@ -351,7 +380,23 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                 </div>
             </div>
 
-            {editable && (
+            {editable && esNuevaLinea && typeof onRemoveNuevaLinea === 'function' ? (
+                <div className="px-2 pb-3 flex gap-1 border-t border-sky-100/80 dark:border-sky-900/40 pt-3">
+                    <button type="button" onClick={() => onEditTalla(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
+                        <Ruler size={13} strokeWidth={2} /> Talla
+                    </button>
+                    <button type="button" onClick={() => onEditCantidad(item)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
+                        <Hash size={13} strokeWidth={2} /> Cantidad
+                    </button>
+                    <button type="button" onClick={() => onRemoveNuevaLinea(item.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors touch-manipulation">
+                        <Trash2 size={13} strokeWidth={2} /> Quitar
+                    </button>
+                </div>
+            ) : null}
+            {editable && !esNuevaLinea ? (
                 <div className="px-2 pb-3 flex gap-1 border-t border-zinc-50 dark:border-zinc-800/50 pt-3">
                     <button type="button" onClick={() => onEditTalla(item)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
@@ -366,7 +411,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                         <Hash size={13} strokeWidth={2} /> Cantidad
                     </button>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -424,7 +469,218 @@ export function ModalTalla({ item, onClose, onApply }) {
     );
 }
 
-export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendingEdits = {}, onClose, onApply }) {
+/**
+ * Agregar una línea nueva al vestuario (otro producto / partida) dentro del saldo liberado.
+ * @param {boolean} open
+ * @param {number[]} partidasCatalogo — números de partida con precio en el ejercicio
+ * @param {number|null} saldoImporteDisponible — importe máximo para esta línea (cantidad × precio); null si no hay datos de precio
+ */
+export function ModalAgregarLineaVestuario({
+    open,
+    onClose,
+    onApply,
+    anioCatalogo,
+    partidasCatalogo = [],
+    saldoImporteDisponible,
+}) {
+    const partidasOrdenadas = useMemo(() => [...new Set(partidasCatalogo)].sort((a, b) => a - b), [partidasCatalogo]);
+    const [partida, setPartida] = useState(partidasOrdenadas[0] ?? null);
+    const [search, setSearch] = useState('');
+    const [productos, setProductos] = useState([]);
+    const [selected, setSelected] = useState(null);
+    const [talla, setTalla] = useState('');
+    const [cantidad, setCantidad] = useState(1);
+    const [loadingP, setLoadingP] = useState(false);
+    const [soloDentroSaldo, setSoloDentroSaldo] = useState(true);
+    const debouncedSearch = useDebounce(search, 350);
+
+    useEffect(() => {
+        if (!open) return;
+        const first = partidasOrdenadas[0] ?? null;
+        setPartida((p) => (p != null && partidasOrdenadas.includes(p) ? p : first));
+        setSelected(null);
+        setTalla('');
+        setCantidad(1);
+        setSearch('');
+        setSoloDentroSaldo(true);
+    }, [open, partidasOrdenadas]);
+
+    useEffect(() => {
+        if (!open || partida == null) return;
+        setLoadingP(true);
+        const ctrl = new AbortController();
+        fetch(`/api/productos?all=1&partida=${partida}&anio=${anioCatalogo || ''}&search=${encodeURIComponent(debouncedSearch)}`, {
+            signal: ctrl.signal, headers: { Accept: 'application/json' }, credentials: 'same-origin',
+        })
+            .then((r) => r.json())
+            .then((j) => { setProductos(j.data ?? []); setLoadingP(false); })
+            .catch((e) => { if (e.name !== 'AbortError') setLoadingP(false); });
+        return () => ctrl.abort();
+    }, [debouncedSearch, partida, anioCatalogo, open]);
+
+    const saldoOk = saldoImporteDisponible != null && Number.isFinite(saldoImporteDisponible) && saldoImporteDisponible > 0.01;
+    const qty = Math.max(1, Math.min(100, parseInt(cantidad, 10) || 1));
+
+    const productosFiltrados = useMemo(() => {
+        if (!soloDentroSaldo || !saldoOk) return productos;
+        return productos.filter((p) => {
+            const pr = Number(p.precio_unitario);
+            if (!Number.isFinite(pr) || pr < 0) return false;
+            return qty * pr <= saldoImporteDisponible + 1e-9;
+        });
+    }, [productos, soloDentroSaldo, saldoOk, saldoImporteDisponible, qty]);
+
+    const puedeAceptar = selected && String(talla ?? '').trim() !== '' && qty >= 1;
+    const handleApply = () => {
+        if (!puedeAceptar || !selected) return;
+        if (saldoOk && soloDentroSaldo) {
+            const pr = Number(selected.precio_unitario);
+            if (Number.isFinite(pr) && qty * pr > saldoImporteDisponible + 1e-9) return;
+        }
+        onApply({
+            partida,
+            producto_id: selected.id,
+            descripcion: selected.descripcion,
+            clave_vestuario: selected.clave_vestuario ?? selected.codigo,
+            talla: String(talla).trim().toUpperCase(),
+            cantidad: qty,
+            precio_unitario: selected.precio_unitario != null ? Number(selected.precio_unitario) : null,
+        });
+    };
+
+    return (
+        <Modal open={open} onClose={onClose} title="Agregar otro artículo" size="lg" mobileFloatingClose
+            footer={
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                    <button type="button" onClick={onClose}
+                        className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl text-sm font-semibold text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:scale-[0.98] transition-all touch-manipulation">
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={handleApply} disabled={!puedeAceptar}
+                        className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] touch-manipulation">
+                        Agregar al vestuario
+                    </button>
+                </div>
+            }
+        >
+            <div className="space-y-4">
+                <p className="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+                    Elija un artículo de <strong className="text-zinc-800 dark:text-zinc-100">otra partida</strong> o del catálogo. El importe (precio × cantidad) debe caber en el saldo que liberó al bajar cantidades u optar por prendas más baratas en otras líneas.
+                </p>
+                {saldoOk ? (
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Saldo disponible para esta línea nueva: <span className="font-mono font-semibold text-brand-gold">{fmtMx(saldoImporteDisponible)}</span>
+                        {selected && Number.isFinite(Number(selected.precio_unitario)) ? (
+                            <> · estimado con cantidad {qty}: <span className="font-mono">{fmtMx(qty * Number(selected.precio_unitario))}</span></>
+                        ) : null}
+                    </p>
+                ) : (
+                    <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 rounded-xl px-3 py-2">
+                        No se pudo calcular el saldo con precios del catálogo. Puede elegir artículo igualmente; el servidor validará al guardar.
+                    </p>
+                )}
+                <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Partida presupuestal</label>
+                    <select
+                        value={partida ?? ''}
+                        onChange={(e) => { setPartida(Number(e.target.value)); setSelected(null); }}
+                        disabled={partidasOrdenadas.length === 0}
+                        className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-sm font-semibold text-zinc-800 dark:text-zinc-100"
+                    >
+                        {partidasOrdenadas.length === 0 ? (
+                            <option value="">Sin partidas en catálogo</option>
+                        ) : (
+                            partidasOrdenadas.map((p) => (
+                                <option key={p} value={p}>Partida {p}</option>
+                            ))
+                        )}
+                    </select>
+                </div>
+                <div className="relative">
+                    <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
+                    <input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar por nombre o clave..."
+                        className="w-full pl-11 pr-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
+                    />
+                </div>
+                {saldoOk ? (
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/30 px-3 py-2.5">
+                        <p className="text-[11px] text-zinc-600 dark:text-zinc-300 min-w-0">
+                            {soloDentroSaldo
+                                ? 'Solo se listan artículos cuyo importe total (× cantidad) no supera el saldo.'
+                                : 'Mostrando todo el catálogo de la partida.'}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => { setSoloDentroSaldo((v) => !v); setSelected(null); }}
+                            className="shrink-0 text-[11px] font-bold uppercase tracking-wider text-brand-gold hover:underline"
+                        >
+                            {soloDentroSaldo ? 'Ver todos' : 'Solo dentro del saldo'}
+                        </button>
+                    </div>
+                ) : null}
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40">
+                    {loadingP ? (
+                        <div className="py-8 flex justify-center">
+                            <span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
+                        </div>
+                    ) : productosFiltrados.length === 0 ? (
+                        <p className="py-8 text-center text-[11px] text-zinc-400">
+                            {productos.length === 0 ? 'Sin resultados.' : 'Nada dentro del saldo con esta cantidad. Baje la cantidad o use «Ver todos».'}
+                        </p>
+                    ) : (
+                        productosFiltrados.map((p) => (
+                            <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => setSelected(p)}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all ${selected?.id === p.id
+                                    ? 'bg-brand-gold/8 border-l-4 border-brand-gold'
+                                    : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 break-words">{p.descripcion}</p>
+                                    <p className="text-[11px] text-zinc-500 mt-1 font-mono">
+                                        {p.clave_vestuario || p.codigo || '—'}
+                                        {p.precio_unitario != null ? <span className="ml-2 tabular-nums">{fmtMx(p.precio_unitario)}</span> : null}
+                                    </p>
+                                </div>
+                                {selected?.id === p.id ? <CheckCircle size={18} className="text-brand-gold shrink-0" strokeWidth={2} /> : null}
+                            </button>
+                        ))
+                    )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Talla (obligatoria)</label>
+                        <input
+                            value={talla}
+                            onChange={(e) => setTalla(e.target.value.toUpperCase())}
+                            maxLength={10}
+                            placeholder="Ej. M, 32…"
+                            className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-base"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Cantidad</label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={cantidad}
+                            onChange={(e) => setCantidad(parseInt(e.target.value, 10) || 1)}
+                            className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-base"
+                        />
+                    </div>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
+export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendingEdits = {}, importeLineasNuevasPendientes = 0, onClose, onApply }) {
     const [search, setSearch] = useState('');
     const [productos, setProductos] = useState([]);
     const [selected, setSelected] = useState(null);
@@ -449,8 +705,8 @@ export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendin
 
     const precioCompartido = useMemo(() => {
         if (!item?.id || !baseline.length) return null;
-        return precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, item.id);
-    }, [item, baseline, pendingEdits]);
+        return precioUnitarioMaxConPresupuestoCompartido(baseline, pendingEdits, item.id, importeLineasNuevasPendientes);
+    }, [item, baseline, pendingEdits, importeLineasNuevasPendientes]);
 
     const precioLineaActual = item ? Number(item.precio_unitario) : NaN;
     const usaTopeCompartido = precioCompartido != null && Number.isFinite(precioCompartido);
