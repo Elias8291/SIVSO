@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Shirt, Search, AlertCircle, Plus } from 'lucide-react';
-import { api } from '../lib/api';
+import { Shirt, Search, AlertCircle, Plus, FileDown, CheckCircle } from 'lucide-react';
+import { api, resolveApiUrl } from '../lib/api';
 import { Modal } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
 
@@ -40,6 +40,8 @@ export default function MiVestuarioPage() {
     const debouncedFilter = useDebounce(filterSearch, 250);
     const [periodoActivo, setPeriodoActivo] = useState(null);
     const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
+    /** Tras guardar: mensaje de éxito + recibo PDF hasta que cargue `edicion_cerrada` o unos segundos */
+    const [recienGuardadoRecibo, setRecienGuardadoRecibo] = useState(false);
 
     const load = useCallback((anioParam) => {
         setLoading(true);
@@ -72,6 +74,19 @@ export default function MiVestuarioPage() {
     }, []);
 
     useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        if (!recienGuardadoRecibo) return undefined;
+        const t = setTimeout(() => setRecienGuardadoRecibo(false), 15000);
+        return () => clearTimeout(t);
+    }, [recienGuardadoRecibo]);
+
+    const abrirPdfReciboAcuse = useCallback((anioPdf) => {
+        const y = Number(anioPdf);
+        const q = Number.isFinite(y) && y >= 2000 && y <= 2100 ? `?anio=${y}` : '';
+        const url = resolveApiUrl(`/api/mi-vestuario/acuse-pdf${q}`);
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }, []);
 
     const handleAnioChange = (newAnio) => {
         setAnio(newAnio);
@@ -298,6 +313,7 @@ export default function MiVestuarioPage() {
         setSavingBatch(true);
         try {
             const res = await api.post('/api/mi-vestuario/guardar-cambios', { cambios });
+            setRecienGuardadoRecibo(true);
             showToast(res?.message ?? 'Cambios guardados. Tu edición para este ejercicio quedó cerrada.');
             setPendingEdits({});
             setPendingNuevasLineas([]);
@@ -377,6 +393,11 @@ export default function MiVestuarioPage() {
     const puedeEditar = data?.puede_editar_vestuario ?? false;
     const edicionCerrada = data?.edicion_cerrada_ejercicio_vigente ?? false;
     const viendoHistorico = (anio ?? data.anio) !== ejercicioVigente;
+    const anioVista = anio ?? data.anio;
+    const mostrarBloqueRecibo =
+        data?.empleado
+        && anioVista === ejercicioVigente
+        && (edicionCerrada || recienGuardadoRecibo);
 
     return (
         <div className={pendingCountCombined > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
@@ -428,6 +449,38 @@ export default function MiVestuarioPage() {
                         totalFiltrados={listadoGrid.length}
                     />
                 </div>
+
+                {mostrarBloqueRecibo && (
+                    <div
+                        className="mt-5 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-4 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-950/35"
+                        role="status"
+                    >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                            <div className="flex gap-3 min-w-0">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/50">
+                                    <CheckCircle className="size-5 text-emerald-700 dark:text-emerald-400" strokeWidth={2} aria-hidden />
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100 leading-snug">
+                                        {recienGuardadoRecibo ? '¡Listo! Ya guardaste tu vestuario.' : 'Tu vestuario quedó registrado.'}
+                                    </p>
+                                    <p className="mt-1 text-[12px] leading-relaxed text-emerald-800/95 dark:text-emerald-200/90">
+                                        Este PDF es tu recibo de selección para el ejercicio {ejercicioVigente}. Consérvalo o compártelo si te lo solicitan.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => abrirPdfReciboAcuse(ejercicioVigente)}
+                                className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300/70 bg-white px-4 py-3 text-[12px] font-bold uppercase tracking-wide text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700/60 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/50 sm:w-auto sm:min-w-[12rem] touch-manipulation"
+                            >
+                                <FileDown className="size-4 shrink-0" strokeWidth={2.2} aria-hidden />
+                                Descargar recibo (PDF)
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {puedeEditar && (anio ?? data.anio) === ejercicioVigente && (
                     <div className="mt-4">
                         <button

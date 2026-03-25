@@ -8,6 +8,7 @@ use App\Models\Empleado;
 use App\Models\User;
 use App\Services\AcuseVestuarioService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
@@ -116,6 +117,79 @@ class AcuseVestuarioPdfController extends Controller
 
         return $request->user()->can('ver_mi_delegacion')
             && $this->delegadoPuedeGestionarEmpleadoId($request, (int) $emp->id);
+    }
+
+    /**
+     * Misma lógica que {@see VestuarioController::resolverEmpleadoDelUsuarioAutenticado}.
+     */
+    private function resolverEmpleadoDelUsuarioAutenticado(User $user): ?Empleado
+    {
+        $nueTrim = trim((string) ($user->nue ?? ''));
+        if ($nueTrim !== '') {
+            $porNue = Empleado::where('nue', $nueTrim)->first();
+            if ($porNue) {
+                return $porNue;
+            }
+        }
+
+        $porUserId = Empleado::where('user_id', $user->id)->first();
+        if ($porUserId) {
+            if ($nueTrim === '' && $porUserId->nue) {
+                $user->nue = trim((string) $porUserId->nue);
+                $user->save();
+            }
+
+            return $porUserId;
+        }
+
+        $delegado = Delegado::where('user_id', $user->id)->whereNotNull('empleado_id')->first();
+        if ($delegado) {
+            $porDelegado = Empleado::find($delegado->empleado_id);
+            if ($porDelegado && ($porDelegado->user_id === null || (int) $porDelegado->user_id === (int) $user->id)) {
+                if ($porDelegado->user_id === null) {
+                    Empleado::where('user_id', $user->id)->where('id', '!=', $porDelegado->id)->update(['user_id' => null]);
+                    $porDelegado->user_id = $user->id;
+                    $porDelegado->save();
+                }
+                if ($nueTrim === '' && $porDelegado->nue) {
+                    $user->nue = trim((string) $porDelegado->nue);
+                    $user->save();
+                }
+
+                return $porDelegado;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * PDF de acuse para el colaborador autenticado (Mi vestuario), sin pasar ID de empleado.
+     */
+    public function miVestuarioAcusePdf(Request $request): Response|JsonResponse
+    {
+        $user = $request->user();
+        if ($user instanceof User) {
+            $this->asegurarNueUsuarioDesdeEmpleadoSiFalta($user);
+        }
+        $empleado = $this->resolverEmpleadoDelUsuarioAutenticado($user);
+        if (! $empleado) {
+            return response()->json(['message' => 'No hay registro de empleado vinculado a su cuenta.'], 403);
+        }
+
+        $anioQuery = $request->has('anio') ? (int) $request->get('anio') : null;
+        if ($anioQuery !== null && ($anioQuery < 2000 || $anioQuery > 2100)) {
+            return response()->json(['message' => 'Año no válido.'], 422);
+        }
+
+        $binary = $this->renderPdfBinary($empleado, $anioQuery);
+        $nueSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '_', (string) ($empleado->nue ?? 'sin-nue')) ?? 'sin-nue';
+        $filename = 'Acuse_vestuario_'.$nueSlug.'_'.$empleado->id.'.pdf';
+
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
     }
 
     private function renderPdfBinary(Empleado $emp, ?int $anioQuery): string

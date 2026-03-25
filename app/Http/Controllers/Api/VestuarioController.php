@@ -238,6 +238,7 @@ class VestuarioController extends Controller
             : $ejercicioVigente;
 
         $empleadoData = [
+            'id' => $empleado->id,
             'nue' => $empleado->nue,
             'nombre' => $empleado->nombre_completo,
             'delegacion_clave' => $empleado->delegacion?->clave,

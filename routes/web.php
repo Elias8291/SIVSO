@@ -51,6 +51,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
     // Mi vestuario (empleado)
     Route::middleware('permission:ver_selecciones')->group(function () {
         Route::get('mi-vestuario', [VestuarioController::class, 'index']);
+        Route::get('mi-vestuario/acuse-pdf', [AcuseVestuarioPdfController::class, 'miVestuarioAcusePdf']);
     });
     Route::middleware('permission:editar_seleccion')->group(function () {
         Route::post('mi-vestuario/guardar-cambios', [VestuarioController::class, 'guardarCambiosMiVestuario']);

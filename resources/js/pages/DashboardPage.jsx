@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Layers, CircleAlert,
+    TrendingUp, Clock, CheckCircle, Users, Shirt, ArrowRight, Calendar, Layers, CircleAlert, FileDown,
 } from 'lucide-react';
 import { StatCard, PageHeader } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../lib/api';
+import { api, resolveApiUrl } from '../lib/api';
 import { ROUTES } from '../config/routes';
 
 const KPI_ITEMS = [
@@ -146,10 +146,25 @@ function DashboardEmpleado() {
                         </p>
                     )}
                     {enPeriodoYaEnviado && (
-                        <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
-                            <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
-                            <span>Ya enviaste tu vestuario para el ejercicio {ejercicio}.</span>
-                        </p>
+                        <div className="space-y-2.5">
+                            <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                                <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
+                                <span>
+                                    Ya actualizaste y guardaste tu vestuario para el ejercicio {ejercicio}. Tu selección quedó registrada.
+                                </span>
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const url = resolveApiUrl(`/api/mi-vestuario/acuse-pdf?anio=${ejercicio}`);
+                                    window.open(url, '_blank', 'noopener,noreferrer');
+                                }}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200/90 bg-emerald-50/90 px-3 py-2.5 text-[11px] font-bold uppercase tracking-wide text-emerald-900 transition hover:bg-emerald-100/90 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50 sm:w-auto touch-manipulation"
+                            >
+                                <FileDown size={14} strokeWidth={2.2} className="shrink-0" aria-hidden />
+                                Descargar recibo (PDF)
+                            </button>
+                        </div>
                     )}
                 </div>
             )}
