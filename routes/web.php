@@ -64,7 +64,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         Route::get('mi-delegacion', [MiDelegacionController::class, 'index']);
         Route::post('mi-delegacion/empleados/{empleado}/crear-usuario', [MiDelegacionController::class, 'crearUsuarioEmpleado']);
     });
-    Route::middleware('permission:ver_mi_delegacion|ver_empleados')->group(function () {
+    Route::middleware('permission:ver_mi_delegacion|ver_empleados|ver_delegaciones')->group(function () {
         Route::get('mi-delegacion/empleados/{empleado}/acuse-pdf', [AcuseVestuarioPdfController::class, 'empleado']);
         Route::get('mi-delegacion/delegaciones/{delegacion}/acuses-pdf', [AcuseVestuarioPdfController::class, 'delegacionPdfLote']);
     });
@@ -192,7 +192,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         Route::patch('periodos/{id}/estado', [PeriodoController::class, 'cambiarEstado']);
         Route::delete('periodos/{id}', [PeriodoController::class, 'destroy']);
     });
-    Route::middleware('permission:ver_selecciones|ver_catalogo|ver_empleados|gestionar_periodos')->get(
+    Route::middleware('permission:ver_selecciones|ver_catalogo|ver_empleados|gestionar_periodos|ver_delegaciones')->get(
         'periodos/activo',
         [PeriodoController::class, 'activo']
     );

@@ -1,9 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, FileDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, Card, DataTable } from '../components/ui';
-import { api } from '../lib/api';
+import { api, resolveApiUrl } from '../lib/api';
+
+const selectEjercicioClass =
+    'rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2.5 py-2 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40';
 
 export default function DelegacionEmpleadosPage() {
     const { delegacionId } = useParams();
@@ -12,6 +15,7 @@ export default function DelegacionEmpleadosPage() {
     const idNum = delegacionId ? parseInt(delegacionId, 10) : NaN;
     const canVerEmpleados = can('ver_empleados');
     const canVerVestuario = can('ver_empleados') || can('ver_mi_delegacion');
+    const canExportarPdfAcuses = can('ver_delegaciones') || canVerVestuario;
 
     const [delegacion, setDelegacion] = useState(null);
     const [loadErr, setLoadErr] = useState(null);
@@ -20,6 +24,10 @@ export default function DelegacionEmpleadosPage() {
     const [loadingEmp, setLoadingEmp] = useState(false);
     /** @type {Record<string, boolean>} clave UR lógica → expandido */
     const [urExpanded, setUrExpanded] = useState({});
+    /** null | 'full' | clave UR (string) */
+    const [pdfLoadingKind, setPdfLoadingKind] = useState(null);
+    const [pdfNotice, setPdfNotice] = useState(null);
+    const [pdfAnio, setPdfAnio] = useState(() => new Date().getFullYear());
 
     useEffect(() => {
         if (!idNum || Number.isNaN(idNum)) {
@@ -48,6 +56,19 @@ export default function DelegacionEmpleadosPage() {
     }, [idNum]);
 
     useEffect(() => {
+        api.get('/api/periodos/activo')
+            .then((r) => {
+                const anio = r.data?.anio;
+                if (typeof anio === 'number' && anio >= 2000 && anio <= 2100) {
+                    setPdfAnio(anio);
+                }
+            })
+            .catch(() => {
+                /* sin permiso o sin periodo: se queda el año por defecto */
+            });
+    }, []);
+
+    useEffect(() => {
         if (!delegacion?.clave || !canVerEmpleados) {
             setEmpleados([]);
             setLoadingEmp(false);
@@ -67,6 +88,81 @@ export default function DelegacionEmpleadosPage() {
         }),
         [delegacionId]
     );
+
+    const aniosPdfOpciones = useMemo(() => {
+        const cy = new Date().getFullYear();
+        const list = [];
+        for (let y = cy + 2; y >= cy - 25; y -= 1) {
+            list.push(y);
+        }
+        return list;
+    }, []);
+
+    const downloadAcusesPdf = async ({ dependenciaClave = null } = {}) => {
+        if (!idNum || Number.isNaN(idNum)) {
+            return;
+        }
+        if (dependenciaClave !== undefined && dependenciaClave !== null && String(dependenciaClave).trim() === '') {
+            return;
+        }
+        const anio = Number(pdfAnio);
+        if (!Number.isFinite(anio) || anio < 2000 || anio > 2100) {
+            setPdfNotice({ type: 'err', text: 'Seleccione un ejercicio (año) válido.' });
+            return;
+        }
+
+        const loadingKey = dependenciaClave ? String(dependenciaClave) : 'full';
+        setPdfNotice(null);
+        setPdfLoadingKind(loadingKey);
+        try {
+            const token = typeof document !== 'undefined'
+                ? document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+                : '';
+            const q = new URLSearchParams();
+            q.set('anio', String(anio));
+            if (dependenciaClave) {
+                q.set('dependencia_clave', String(dependenciaClave));
+            }
+            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${idNum}/acuses-pdf?${q.toString()}`);
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/pdf',
+                    'X-CSRF-TOKEN': token,
+                },
+            });
+            if (!res.ok) {
+                let msg = `Error ${res.status}`;
+                try {
+                    const j = await res.json();
+                    if (j.message) {
+                        msg = j.message;
+                    }
+                } catch {
+                    /* cuerpo no JSON */
+                }
+                setPdfNotice({ type: 'err', text: msg });
+                return;
+            }
+            const blob = await res.blob();
+            const safeDel = (delegacion?.clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const safeEj = String(anio);
+            let name = `Acuses_vestuario_${safeDel}_Ej${safeEj}.pdf`;
+            if (dependenciaClave) {
+                const safeUr = String(dependenciaClave).replace(/[^a-zA-Z0-9_-]/g, '_');
+                name = `Acuses_vestuario_${safeDel}_UR_${safeUr}_Ej${safeEj}.pdf`;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) {
+            setPdfNotice({ type: 'err', text: e.message || 'No se pudo generar el PDF.' });
+        } finally {
+            setPdfLoadingKind(null);
+        }
+    };
 
     const variasUrs = (delegacion?.dependencias?.length ?? 0) > 1;
 
@@ -265,11 +361,58 @@ export default function DelegacionEmpleadosPage() {
             <PageHeader
                 title={`Delegación ${delegacion.clave}`}
                 description={descParts.join(' · ')}
+                actions={
+                    canExportarPdfAcuses ? (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <label htmlFor="pdf-ejercicio-delegacion" className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                    Ejercicio
+                                </label>
+                                <select
+                                    id="pdf-ejercicio-delegacion"
+                                    value={pdfAnio}
+                                    onChange={(e) => setPdfAnio(Number(e.target.value))}
+                                    className={selectEjercicioClass}
+                                    aria-label="Año del ejercicio para los PDF de acuses"
+                                >
+                                    {aniosPdfOpciones.map((y) => (
+                                        <option key={y} value={y}>
+                                            {y}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                type="button"
+                                disabled={pdfLoadingKind !== null}
+                                onClick={() => downloadAcusesPdf({})}
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors whitespace-nowrap"
+                            >
+                                {pdfLoadingKind === 'full' ? (
+                                    <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" aria-hidden />
+                                ) : (
+                                    <FileDown size={14} strokeWidth={2.2} className="text-zinc-500 shrink-0" aria-hidden />
+                                )}
+                                PDF toda la delegación
+                            </button>
+                        </div>
+                    ) : null
+                }
             />
 
             <div className="grid gap-4 md:grid-cols-2 md:items-stretch">
                 <Card title={dependencias.length > 1 ? 'Unidades responsables' : 'Unidad responsable'}>
                     <div className="px-5 py-4">
+                        {pdfNotice?.type === 'err' ? (
+                            <p className="text-[12px] text-red-600 dark:text-red-400 mb-3 leading-snug" role="alert">
+                                {pdfNotice.text}
+                            </p>
+                        ) : null}
+                        {canExportarPdfAcuses && dependencias.length > 0 ? (
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mb-3 leading-snug">
+                                Los acuses en PDF respetan el <strong className="font-semibold text-zinc-600 dark:text-zinc-300">ejercicio</strong> seleccionado en el encabezado de la página.
+                            </p>
+                        ) : null}
                         {dependencias.length === 0 ? (
                             <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                                 No hay dependencias vinculadas a esta delegación en el catálogo.
@@ -278,21 +421,38 @@ export default function DelegacionEmpleadosPage() {
                             <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                                 {dependencias.map((dep, i) => (
                                     <li key={`${dep.clave}-${i}`} className="py-3 first:pt-0 last:pb-0">
-                                        <div className="flex gap-3">
-                                            <span
-                                                className="mt-0.5 w-px shrink-0 rounded-full bg-brand-gold/40 self-stretch min-h-[2.25rem]"
-                                                aria-hidden
-                                            />
-                                            <div className="min-w-0">
-                                                <p className="text-[12px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 tracking-tight">
-                                                    {dep.clave}
-                                                </p>
-                                                {dep.nombre ? (
-                                                    <p className="mt-1 text-[13px] text-zinc-600 dark:text-zinc-400 leading-snug">
-                                                        {dep.nombre}
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                                            <div className="flex gap-3 min-w-0 flex-1">
+                                                <span
+                                                    className="mt-0.5 w-px shrink-0 rounded-full bg-brand-gold/40 self-stretch min-h-[2.25rem]"
+                                                    aria-hidden
+                                                />
+                                                <div className="min-w-0">
+                                                    <p className="text-[12px] font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 tracking-tight">
+                                                        {dep.clave}
                                                     </p>
-                                                ) : null}
+                                                    {dep.nombre ? (
+                                                        <p className="mt-1 text-[13px] text-zinc-600 dark:text-zinc-400 leading-snug">
+                                                            {dep.nombre}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
                                             </div>
+                                            {canExportarPdfAcuses && dep.clave ? (
+                                                <button
+                                                    type="button"
+                                                    disabled={pdfLoadingKind !== null}
+                                                    onClick={() => downloadAcusesPdf({ dependenciaClave: dep.clave })}
+                                                    className="inline-flex items-center justify-center gap-2 shrink-0 self-start sm:self-center rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                                                >
+                                                    {pdfLoadingKind === dep.clave ? (
+                                                        <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" aria-hidden />
+                                                    ) : (
+                                                        <FileDown size={14} strokeWidth={2.2} className="text-zinc-500" aria-hidden />
+                                                    )}
+                                                    PDF esta UR
+                                                </button>
+                                            ) : null}
                                         </div>
                                     </li>
                                 ))}

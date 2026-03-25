@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Eye, FileDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
-import { api } from '../lib/api';
+import { api, resolveApiUrl } from '../lib/api';
+
+const selectEjercicioClass =
+    'rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2.5 py-2 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40';
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
@@ -62,12 +65,16 @@ export default function DelegacionesPage() {
     const navigate = useNavigate();
     const { can } = useAuth();
     const canEdit = can('editar_delegaciones');
+    const canExportarPdfAcuses = can('ver_delegaciones') || can('ver_empleados') || can('ver_mi_delegacion');
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [confirm, setConfirm] = useState(null);
     const [saving, setSaving] = useState(false);
     const [editing, setEditing] = useState(null);
+    const [pdfAnio, setPdfAnio] = useState(() => new Date().getFullYear());
+    const [pdfLoadingId, setPdfLoadingId] = useState(null);
+    const [pdfErr, setPdfErr] = useState(null);
 
     const load = () => {
         setLoading(true);
@@ -83,6 +90,77 @@ export default function DelegacionesPage() {
         const t = setTimeout(load, 350);
         return () => clearTimeout(t);
     }, [search]);
+
+    useEffect(() => {
+        api.get('/api/periodos/activo')
+            .then((r) => {
+                const anio = r.data?.anio;
+                if (typeof anio === 'number' && anio >= 2000 && anio <= 2100) {
+                    setPdfAnio(anio);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const aniosPdfOpciones = useMemo(() => {
+        const cy = new Date().getFullYear();
+        const list = [];
+        for (let y = cy + 2; y >= cy - 25; y -= 1) {
+            list.push(y);
+        }
+        return list;
+    }, []);
+
+    const downloadPdfDelegacion = async (row) => {
+        if (!row?.id || pdfLoadingId != null) {
+            return;
+        }
+        const anio = Number(pdfAnio);
+        if (!Number.isFinite(anio) || anio < 2000 || anio > 2100) {
+            setPdfErr('Seleccione un ejercicio (año) válido para el PDF.');
+            return;
+        }
+        setPdfErr(null);
+        setPdfLoadingId(row.id);
+        try {
+            const token = typeof document !== 'undefined'
+                ? document.querySelector('meta[name="csrf-token"]')?.content ?? ''
+                : '';
+            const q = new URLSearchParams({ anio: String(anio) });
+            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${row.id}/acuses-pdf?${q.toString()}`);
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/pdf',
+                    'X-CSRF-TOKEN': token,
+                },
+            });
+            if (!res.ok) {
+                let msg = `Error ${res.status}`;
+                try {
+                    const j = await res.json();
+                    if (j.message) {
+                        msg = j.message;
+                    }
+                } catch {
+                    /* cuerpo no JSON */
+                }
+                setPdfErr(msg);
+                return;
+            }
+            const blob = await res.blob();
+            const safeDel = String(row.clave ?? 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Acuses_vestuario_${safeDel}_Ej${anio}.pdf`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) {
+            setPdfErr(e.message || 'No se pudo generar el PDF.');
+        } finally {
+            setPdfLoadingId(null);
+        }
+    };
 
     const handleDelete = async () => {
         setSaving(true);
@@ -116,7 +194,11 @@ export default function DelegacionesPage() {
         <div>
             <PageHeader
                 title="Delegaciones"
-                description="Catálogo de delegaciones del sistema."
+                description={
+                    canExportarPdfAcuses
+                        ? 'Catálogo de delegaciones. En cada fila: ver empleados y delegado, o descargar PDF de acuses de vestuario (ejercicio elegido debajo del título de la tabla).'
+                        : 'Catálogo de delegaciones del sistema.'
+                }
                 actions={
                     canEdit ? (
                         <>
@@ -135,6 +217,42 @@ export default function DelegacionesPage() {
             />
 
             <Card title={`Delegaciones (${data.length})`}>
+                {canExportarPdfAcuses ? (
+                    <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <label htmlFor="delegaciones-pdf-anio" className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                Ejercicio (PDF)
+                            </label>
+                            <select
+                                id="delegaciones-pdf-anio"
+                                value={pdfAnio}
+                                onChange={(e) => setPdfAnio(Number(e.target.value))}
+                                className={selectEjercicioClass}
+                                aria-label="Año del ejercicio para los PDF de acuses desde esta tabla"
+                            >
+                                {aniosPdfOpciones.map((y) => (
+                                    <option key={y} value={y}>
+                                        {y}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug max-w-xl">
+                            Use el icono de documento en cada fila para descargar los acuses de <strong className="font-semibold text-zinc-600 dark:text-zinc-300">toda esa delegación</strong> en un solo PDF.
+                        </p>
+                    </div>
+                ) : null}
+                {pdfErr ? (
+                    <p className="text-[12px] text-red-600 dark:text-red-400 px-5 pt-3" role="alert">
+                        {pdfErr}
+                    </p>
+                ) : null}
+                {pdfLoadingId != null ? (
+                    <p className="text-[12px] text-zinc-500 dark:text-zinc-400 px-5 pt-2 flex items-center gap-2">
+                        <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin shrink-0" aria-hidden />
+                        Generando PDF…
+                    </p>
+                ) : null}
                 <DataTable
                     columns={columns}
                     data={data}
@@ -145,6 +263,13 @@ export default function DelegacionesPage() {
                             icon: <Eye size={13} strokeWidth={2.2} aria-hidden />,
                             onClick: (row) => navigate(`/dashboard/delegaciones/${row.id}`),
                         },
+                        ...(canExportarPdfAcuses
+                            ? [{
+                                label: 'PDF acuses de vestuario (toda la delegación)',
+                                icon: <FileDown size={13} strokeWidth={2.2} aria-hidden />,
+                                onClick: (row) => downloadPdfDelegacion(row),
+                            }]
+                            : []),
                     ]}
                     onEdit={canEdit ? ((row) => setEditing(row)) : undefined}
                     onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}

@@ -95,12 +95,27 @@ class AcuseVestuarioPdfController extends Controller
 
     private function usuarioPuedeExportarDelegacion(Request $request, int $delegacionId): bool
     {
-        if ($request->user()->can('ver_empleados')) {
+        if ($request->user()->can('ver_empleados') || $request->user()->can('ver_delegaciones')) {
             return true;
         }
 
         return $request->user()->can('ver_mi_delegacion')
             && $this->delegacionIdsQueGestionaElUsuario($request)->contains($delegacionId);
+    }
+
+    /** Incluir colaborador en PDF lote: misma delegación y permiso acorde al rol. */
+    private function puedeIncluirEmpleadoEnLoteDelegacion(Request $request, Empleado $emp, int $delegacionId): bool
+    {
+        if ((int) $emp->delegacion_id !== $delegacionId) {
+            return false;
+        }
+
+        if ($request->user()->can('ver_empleados') || $request->user()->can('ver_delegaciones')) {
+            return true;
+        }
+
+        return $request->user()->can('ver_mi_delegacion')
+            && $this->delegadoPuedeGestionarEmpleadoId($request, (int) $emp->id);
     }
 
     private function renderPdfBinary(Empleado $emp, ?int $anioQuery): string
@@ -156,9 +171,34 @@ class AcuseVestuarioPdfController extends Controller
             return response()->json(['message' => 'Año no válido.'], 422);
         }
 
-        $ids = Empleado::query()->where('delegacion_id', $delegacion)->orderBy('nue')->pluck('id');
+        $depClaveFiltro = trim((string) $request->get('dependencia_clave', ''));
+        $dependenciaIdFiltro = null;
+        if ($depClaveFiltro !== '') {
+            $depId = (int) (DB::table('dependencias')->where('clave', $depClaveFiltro)->value('id') ?? 0);
+            if ($depId < 1) {
+                return response()->json(['message' => 'Unidad responsable no encontrada.'], 422);
+            }
+            $vinculada = DB::table('dependencia_delegacion')
+                ->where('delegacion_id', $delegacion)
+                ->where('dependencia_id', $depId)
+                ->exists();
+            if (! $vinculada) {
+                return response()->json(['message' => 'Esta UR no está vinculada a la delegación indicada.'], 422);
+            }
+            $dependenciaIdFiltro = $depId;
+        }
+
+        $empQuery = Empleado::query()->where('delegacion_id', $delegacion);
+        if ($dependenciaIdFiltro !== null) {
+            $empQuery->where('dependencia_id', $dependenciaIdFiltro);
+        }
+        $ids = $empQuery->orderBy('nue')->pluck('id');
         if ($ids->isEmpty()) {
-            return response()->json(['message' => 'No hay colaboradores en esta delegación.'], 422);
+            $msg = $dependenciaIdFiltro !== null
+                ? 'No hay colaboradores de esta delegación adscritos a la unidad responsable indicada.'
+                : 'No hay colaboradores en esta delegación.';
+
+            return response()->json(['message' => $msg], 422);
         }
 
         $acusets = [];
@@ -167,7 +207,7 @@ class AcuseVestuarioPdfController extends Controller
             if (! $emp) {
                 continue;
             }
-            if (! $this->usuarioPuedeVerAcuseEmpleado($request, (int) $eid)) {
+            if (! $this->puedeIncluirEmpleadoEnLoteDelegacion($request, $emp, $delegacion)) {
                 continue;
             }
             $acusets[] = $this->acuseService->datasetFor($emp, $anioQuery, false);
@@ -183,7 +223,13 @@ class AcuseVestuarioPdfController extends Controller
             ->output();
 
         $clave = preg_replace('/[^a-zA-Z0-9_-]+/', '_', (string) ($del->clave ?? 'delegacion')) ?? 'delegacion';
-        $filename = 'Acuses_vestuario_'.$clave.'.pdf';
+        $slugUr = $depClaveFiltro !== ''
+            ? '_UR_'.(preg_replace('/[^a-zA-Z0-9_-]+/', '_', $depClaveFiltro) ?? 'ur')
+            : '';
+        $slugEjercicio = $request->has('anio')
+            ? '_Ej'.preg_replace('/[^0-9]+/', '', (string) $request->get('anio'))
+            : '';
+        $filename = 'Acuses_vestuario_'.$clave.$slugUr.$slugEjercicio.'.pdf';
 
         return response($binary, 200, [
             'Content-Type' => 'application/pdf',
