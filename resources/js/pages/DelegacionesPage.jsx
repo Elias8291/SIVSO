@@ -4,9 +4,7 @@ import { Plus, Eye, FileDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
-
-const selectEjercicioClass =
-    'rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2.5 py-2 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40';
+import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 
@@ -102,14 +100,11 @@ export default function DelegacionesPage() {
             .catch(() => {});
     }, []);
 
-    const aniosPdfOpciones = useMemo(() => {
-        const cy = new Date().getFullYear();
-        const list = [];
-        for (let y = cy + 2; y >= cy - 25; y -= 1) {
-            list.push(y);
-        }
-        return list;
-    }, []);
+    const calAnio = new Date().getFullYear();
+    const aniosPdfOpciones = useMemo(
+        () => aniosPdfConValorSeleccionado(aniosParaPdfSeleccion(), pdfAnio),
+        [pdfAnio, calAnio]
+    );
 
     const downloadPdfDelegacion = async (row) => {
         if (!row?.id || pdfLoadingId != null) {
@@ -218,27 +213,30 @@ export default function DelegacionesPage() {
 
             <Card title={`Delegaciones (${data.length})`}>
                 {canExportarPdfAcuses ? (
-                    <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <label htmlFor="delegaciones-pdf-anio" className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                Ejercicio (PDF)
+                    <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 flex flex-col gap-3">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                            <label htmlFor="delegaciones-pdf-anio" className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                                Ejercicio del PDF
                             </label>
                             <select
                                 id="delegaciones-pdf-anio"
-                                value={pdfAnio}
+                                value={String(pdfAnio)}
                                 onChange={(e) => setPdfAnio(Number(e.target.value))}
-                                className={selectEjercicioClass}
+                                className="w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2.5 text-[15px] sm:text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-0 sm:min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 touch-manipulation"
                                 aria-label="Año del ejercicio para los PDF de acuses desde esta tabla"
                             >
                                 {aniosPdfOpciones.map((y) => (
-                                    <option key={y} value={y}>
+                                    <option key={y} value={String(y)}>
                                         {y}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug max-w-xl">
+                        <p className="hidden sm:block text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug max-w-xl">
                             Use el icono de documento en cada fila para descargar los acuses de <strong className="font-semibold text-zinc-600 dark:text-zinc-300">toda esa delegación</strong> en un solo PDF.
+                        </p>
+                        <p className="sm:hidden text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                            En cada fila: <span className="font-semibold text-zinc-600 dark:text-zinc-300">icono PDF</span> = acuses de toda la delegación.
                         </p>
                     </div>
                 ) : null}

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronUp, FileDown, FileText } from 'lucide-react';
 import { PageHeader, DataTable } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
+import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
 
 export default function MiDelegacionPage() {
@@ -18,6 +19,12 @@ export default function MiDelegacionPage() {
     const [pdfEjercicioAnio, setPdfEjercicioAnio] = useState(() => new Date().getFullYear());
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
+
+    const calAnio = new Date().getFullYear();
+    const aniosPdfOpciones = useMemo(
+        () => aniosPdfConValorSeleccionado(aniosParaPdfSeleccion(), pdfEjercicioAnio),
+        [pdfEjercicioAnio, calAnio]
+    );
 
     const openAcusePdf = (empleadoId) => {
         const url = resolveApiUrl(`/api/mi-delegacion/empleados/${empleadoId}/acuse-pdf`);
@@ -265,21 +272,21 @@ export default function MiDelegacionPage() {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 disabled={pdfLoteLoadingId !== null}
-                                className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all disabled:opacity-50"
+                                className="flex-1 min-w-0 min-h-[44px] sm:min-h-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all disabled:opacity-50 touch-manipulation"
                             />
-                            <label className="flex items-center gap-2 shrink-0 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50/80 dark:bg-zinc-800/40">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Año PDF
+                            <label className="flex flex-col gap-2 sm:flex-row sm:items-center shrink-0 px-3 py-2.5 sm:py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50/80 dark:bg-zinc-800/40 w-full sm:w-auto">
+                                <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                                    Ejercicio PDF
                                 </span>
                                 <select
-                                    value={pdfEjercicioAnio}
+                                    value={String(pdfEjercicioAnio)}
                                     onChange={(e) => setPdfEjercicioAnio(Number(e.target.value))}
                                     disabled={pdfLoteLoadingId !== null}
-                                    className="bg-transparent text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 border-0 focus:ring-0 cursor-pointer py-0.5 pr-6 min-w-[4.5rem]"
+                                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-[15px] sm:text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer touch-manipulation sm:border-0 sm:bg-transparent sm:px-0 sm:py-0.5 sm:pr-6 sm:min-w-[4.5rem]"
                                     aria-label="Año del ejercicio para el PDF de acuses de toda la delegación"
                                 >
-                                    {Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                                        <option key={y} value={y}>
+                                    {aniosPdfOpciones.map((y) => (
+                                        <option key={y} value={String(y)}>
                                             {y}
                                         </option>
                                     ))}
@@ -357,7 +364,12 @@ export default function MiDelegacionPage() {
                                                 {pdfLoteLoadingId === del.id ? 'Generando…' : 'PDF todos'}
                                             </button>
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">
-                                                {del.trabajadores_count} colaboradores
+                                                {(typeof del.trabajadores_count === 'number' && del.trabajadores_count > 0
+                                                    ? del.trabajadores_count
+                                                    : (Array.isArray(empleadosPorDelegacion[del.id]) && empleadosPorDelegacion[del.id].length > 0
+                                                        ? empleadosPorDelegacion[del.id].length
+                                                        : (del.trabajadores_count ?? 0)))}{' '}
+                                                colaboradores
                                             </span>
                                             <button
                                                 type="button"

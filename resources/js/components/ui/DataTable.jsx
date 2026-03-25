@@ -101,7 +101,7 @@ export default function DataTable({
             <div className="hidden md:block w-full overflow-x-auto">
                 <table className="w-full text-left min-w-[640px]">
                     <thead>
-                        <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                        <tr className="border-b border-zinc-300/90 dark:border-zinc-600/80">
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
@@ -134,8 +134,8 @@ export default function DataTable({
                                         </tr>
                                     ) : null}
                                     <tr
-                                        className={`group transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 ${
-                                            i < data.length - 1 ? 'border-b border-zinc-100 dark:border-zinc-800/50' : ''
+                                        className={`group transition-colors hover:bg-zinc-50/90 dark:hover:bg-zinc-800/40 ${
+                                            i < data.length - 1 ? 'border-b border-zinc-200 dark:border-zinc-700/80' : ''
                                         } ${rowClassName ? rowClassName(row, i, data) : ''}`}
                                     >
                                         {columns.map((col) => (
@@ -161,19 +161,19 @@ export default function DataTable({
                 </table>
             </div>
 
-            {/* ── MÓVIL: tarjetas (< md), una columna para legibilidad ───── */}
-            <div className="md:hidden border-t border-zinc-200 dark:border-zinc-800">
+            {/* ── MÓVIL: tarjetas (< md), borde y espacio claros entre registros ───── */}
+            <div className="md:hidden border-t border-zinc-200 dark:border-zinc-700 px-2 sm:px-3 py-3 space-y-3">
                 {data.map((row, i) => {
                     const gh = renderGroupHeader?.(row, i, data) ?? null;
                     return (
                         <Fragment key={`${row[rowKey] ?? 'row'}-${i}-m`}>
                             {gh ? (
-                                <div className="px-5 py-3 bg-zinc-50/90 dark:bg-zinc-900/50 border-b border-zinc-200/80 dark:border-zinc-700/80">
+                                <div className="px-3 py-2.5 rounded-lg bg-zinc-100/90 dark:bg-zinc-800/70 border border-zinc-200 dark:border-zinc-600">
                                     {gh}
                                 </div>
                             ) : null}
                             <div
-                                className={`px-5 py-4 space-y-3 border-b border-zinc-100 dark:border-zinc-800/60 last:border-b-0 ${rowClassName ? rowClassName(row, i, data) : ''}`}
+                                className={`rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900/60 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.25)] px-4 py-4 space-y-3 ${rowClassName ? rowClassName(row, i, data) : ''}`}
                             >
                                 <dl className="flex flex-col gap-3 min-w-0">
                                     {columns.filter((c) => !c.hideOnMobile).map((col) => (
@@ -194,7 +194,7 @@ export default function DataTable({
                                 </dl>
 
                                 {hasActions && (
-                                    <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-3 mt-1 border-t border-zinc-200/90 dark:border-zinc-600/80">
                                         <ActionButtons row={row} />
                                     </div>
                                 )}

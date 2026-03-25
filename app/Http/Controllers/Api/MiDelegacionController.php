@@ -185,20 +185,22 @@ class MiDelegacionController extends Controller
             return response()->json(['data' => [], 'message' => $message, 'resumen' => null]);
         }
 
-        $delegacionIds = $delegaciones->pluck('delegacion_id')->unique()->values();
+        $delegacionIds = $delegaciones->pluck('delegacion_id')->unique()->values()->map(fn ($id) => (int) $id)->values();
         $delegadosRegistradosCount = $delegaciones->pluck('delegado_id')->unique()->count();
 
         $periodo = Periodo::where('estado', 'abierto')->orderByDesc('anio')->first();
         $anioVigente = $periodo ? (int) $periodo->anio : (int) date('Y');
 
+        // Claves int: pluck(cnt, delegacion_id) falla en algunos drivers (clave string vs int) y devuelve 0 al indexar.
         $trabCounts = DB::table('empleados')
-            ->whereIn('delegacion_id', $delegacionIds)
+            ->whereIn('delegacion_id', $delegacionIds->all())
             ->selectRaw('delegacion_id, COUNT(*) AS cnt')
             ->groupBy('delegacion_id')
-            ->pluck('cnt', 'delegacion_id');
+            ->get()
+            ->mapWithKeys(fn ($row) => [(int) $row->delegacion_id => (int) $row->cnt]);
 
         $actualizadosPorDelegacion = DB::table('empleados AS e')
-            ->whereIn('e.delegacion_id', $delegacionIds)
+            ->whereIn('e.delegacion_id', $delegacionIds->all())
             ->whereExists(function ($q) use ($anioVigente) {
                 $q->selectRaw('1')
                     ->from('selecciones AS s')
@@ -207,19 +209,20 @@ class MiDelegacionController extends Controller
             })
             ->groupBy('e.delegacion_id')
             ->selectRaw('e.delegacion_id, COUNT(*) AS cnt')
-            ->pluck('cnt', 'delegacion_id');
+            ->get()
+            ->mapWithKeys(fn ($row) => [(int) $row->delegacion_id => (int) $row->cnt]);
 
         $colaboradoresTotal = (int) DB::table('empleados')
-            ->whereIn('delegacion_id', $delegacionIds)
+            ->whereIn('delegacion_id', $delegacionIds->all())
             ->count();
 
-        $actualizadosTotal = (int) $actualizadosPorDelegacion->sum();
+        $actualizadosTotal = (int) $actualizadosPorDelegacion->values()->sum();
         $pendientes = max(0, $colaboradoresTotal - $actualizadosTotal);
         $pct = $colaboradoresTotal > 0
             ? (int) round(100 * $actualizadosTotal / $colaboradoresTotal)
             : 0;
 
-        $data = $delegaciones->map(function ($d) {
+        $data = $delegaciones->map(function ($d) use ($trabCounts, $actualizadosPorDelegacion) {
             $rfc = trim((string) ($d->delegado_user_rfc ?? ''));
             $uName = trim((string) ($d->delegado_user_name ?? ''));
             $delegadoUsuario = ($rfc !== '' || $uName !== '')
@@ -232,14 +235,14 @@ class MiDelegacionController extends Controller
                 'delegado_id' => (int) $d->delegado_id,
                 'delegado_nombre' => trim((string) ($d->nombre ?? '')) !== '' ? trim($d->nombre) : null,
                 'delegado_usuario' => $delegadoUsuario,
-                'trabajadores_count' => (int) ($trabCounts[$d->delegacion_id] ?? 0),
-                'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion[$d->delegacion_id] ?? 0),
+                'trabajadores_count' => (int) ($trabCounts->get((int) $d->delegacion_id) ?? 0),
+                'actualizados_ejercicio' => (int) ($actualizadosPorDelegacion->get((int) $d->delegacion_id) ?? 0),
             ];
         })->values()->all();
 
         $resumen = [
             'ejercicio_vigente' => $anioVigente,
-            'delegaciones_count' => $delegacionIds->count(),
+            'delegaciones_count' => $delegaciones->pluck('delegacion_id')->unique()->count(),
             'delegados_registro_count' => $delegadosRegistradosCount,
             'colaboradores_total' => $colaboradoresTotal,
             'actualizados_ejercicio' => $actualizadosTotal,

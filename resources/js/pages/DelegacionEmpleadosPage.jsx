@@ -4,9 +4,7 @@ import { ArrowLeft, ChevronDown, FileDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader, Card, DataTable } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
-
-const selectEjercicioClass =
-    'rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-2.5 py-2 text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40';
+import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
 
 export default function DelegacionEmpleadosPage() {
     const { delegacionId } = useParams();
@@ -89,14 +87,11 @@ export default function DelegacionEmpleadosPage() {
         [delegacionId]
     );
 
-    const aniosPdfOpciones = useMemo(() => {
-        const cy = new Date().getFullYear();
-        const list = [];
-        for (let y = cy + 2; y >= cy - 25; y -= 1) {
-            list.push(y);
-        }
-        return list;
-    }, []);
+    const calAnio = new Date().getFullYear();
+    const aniosPdfOpciones = useMemo(
+        () => aniosPdfConValorSeleccionado(aniosParaPdfSeleccion(), pdfAnio),
+        [pdfAnio, calAnio]
+    );
 
     const downloadAcusesPdf = async ({ dependenciaClave = null } = {}) => {
         if (!idNum || Number.isNaN(idNum)) {
@@ -363,20 +358,20 @@ export default function DelegacionEmpleadosPage() {
                 description={descParts.join(' · ')}
                 actions={
                     canExportarPdfAcuses ? (
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <label htmlFor="pdf-ejercicio-delegacion" className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                    Ejercicio
+                        <div className="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-stretch sm:gap-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 min-w-0 w-full sm:w-auto">
+                                <label htmlFor="pdf-ejercicio-delegacion" className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 shrink-0">
+                                    Ejercicio PDF
                                 </label>
                                 <select
                                     id="pdf-ejercicio-delegacion"
-                                    value={pdfAnio}
+                                    value={String(pdfAnio)}
                                     onChange={(e) => setPdfAnio(Number(e.target.value))}
-                                    className={selectEjercicioClass}
+                                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2.5 text-[15px] sm:text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 min-w-0 sm:min-w-[5.75rem] focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 touch-manipulation"
                                     aria-label="Año del ejercicio para los PDF de acuses"
                                 >
                                     {aniosPdfOpciones.map((y) => (
-                                        <option key={y} value={y}>
+                                        <option key={y} value={String(y)}>
                                             {y}
                                         </option>
                                     ))}
@@ -386,7 +381,7 @@ export default function DelegacionEmpleadosPage() {
                                 type="button"
                                 disabled={pdfLoadingKind !== null}
                                 onClick={() => downloadAcusesPdf({})}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors whitespace-nowrap"
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2.5 text-[11px] sm:text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors whitespace-nowrap touch-manipulation"
                             >
                                 {pdfLoadingKind === 'full' ? (
                                     <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" aria-hidden />
