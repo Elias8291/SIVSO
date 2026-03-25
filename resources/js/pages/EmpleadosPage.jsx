@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, UserCheck, ArrowRightLeft, ChevronDown, X, Key, Search } from 'lucide-react';
+import { Plus, ArrowRightLeft, ChevronDown, X, Key, Search, Shirt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, Card, DataTable,
@@ -124,6 +124,7 @@ export default function EmpleadosPage() {
     const navigate = useNavigate();
     const { can } = useAuth();
     const canEdit = can('editar_empleados');
+    const canVerProductosEmpleado = can('ver_productos_empleado');
     const [changeDelegacion, setChangeDelegacion] = useState(null);
     const [dependencias, setDependencias] = useState([]);
     const [delegaciones, setDelegaciones] = useState([]);
@@ -320,12 +321,20 @@ export default function EmpleadosPage() {
                             onEdit={canEdit ? ((row) => navigate(`/dashboard/empleados/${row.id}/editar`)) : undefined}
                             onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                             emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay empleados registrados.'}
-                            extraActions={canEdit ? [{
-                                label: 'Reasignar',
-                                icon: <ArrowRightLeft size={14} />,
-                                onClick: (row) => setChangeDelegacion(row),
-                                variant: 'primary',
-                            }] : []}
+                            extraActions={[
+                                ...(canVerProductosEmpleado ? [{
+                                    label: 'Ver productos',
+                                    icon: <Shirt size={14} strokeWidth={2.5} />,
+                                    onClick: (row) => navigate(`/dashboard/empleados/${row.id}/vestuario`),
+                                    variant: 'secondary',
+                                }] : []),
+                                ...(canEdit ? [{
+                                    label: 'Reasignar',
+                                    icon: <ArrowRightLeft size={14} />,
+                                    onClick: (row) => setChangeDelegacion(row),
+                                    variant: 'primary',
+                                }] : []),
+                            ]}
                         />
                     </div>
                     {meta.last_page > 1 && (

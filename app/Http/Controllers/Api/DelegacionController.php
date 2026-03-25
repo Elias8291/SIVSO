@@ -47,12 +47,7 @@ class DelegacionController extends Controller
                 ->with(['delegacion:id,clave'])
                 ->whereIn('delegacion_id', $delegacionIds);
 
-            $empQuery->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('nue', 'like', "%{$search}%")
-                ->orWhere('nombre', 'like', "%{$search}%")
-                ->orWhere('apellido_paterno', 'like', "%{$search}%")
-                ->orWhere('apellido_materno', 'like', "%{$search}%")
-            )
-            );
+            $empQuery->when($search !== '', fn ($q) => $q->whereBusquedaEmpleado($search));
 
             $empleados = $empQuery
                 ->orderByRaw('apellido_paterno, apellido_materno, nombre')

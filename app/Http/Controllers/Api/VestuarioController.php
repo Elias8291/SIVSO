@@ -875,10 +875,10 @@ class VestuarioController extends Controller
     public function empleadoVestuario(Request $request, int $empleado): JsonResponse
     {
         $user = $request->user();
-        if (! $user->can('ver_empleados')) {
-            if (! $user->can('ver_mi_delegacion') || ! $this->delegadoPuedeGestionarEmpleadoId($request, $empleado)) {
-                return response()->json(['message' => 'No tiene permiso para ver el vestuario de este colaborador.'], 403);
-            }
+        $comoDelegado = $user->can('ver_mi_delegacion') && $this->delegadoPuedeGestionarEmpleadoId($request, $empleado);
+        $desdeModuloEmpleados = $user->can('ver_empleados') && $user->can('ver_productos_empleado');
+        if (! $comoDelegado && ! $desdeModuloEmpleados) {
+            return response()->json(['message' => 'No tiene permiso para ver el vestuario de este colaborador.'], 403);
         }
 
         $emp = Empleado::with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])->find($empleado);

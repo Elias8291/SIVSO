@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import AppLayout from './components/layout/AppLayout';
 import RequirePermission from './components/RequirePermission';
+import RequireEmpleadoVestuario from './components/RequireEmpleadoVestuario';
 import LoginPage from './pages/LoginPage';
 import CambiarContrasenaPage from './pages/CambiarContrasenaPage';
 import {
@@ -129,9 +130,9 @@ export default function App({ initialState }) {
                             <Route
                                 path="empleados/:empleadoId/vestuario"
                                 element={
-                                    <RequirePermission anyOf={['ver_empleados', 'ver_mi_delegacion']}>
+                                    <RequireEmpleadoVestuario>
                                         <MiDelegacionVestuarioPage />
-                                    </RequirePermission>
+                                    </RequireEmpleadoVestuario>
                                 }
                             />
 

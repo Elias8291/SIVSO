@@ -14,7 +14,7 @@ export default function DelegacionEmpleadosPage() {
     const { can } = useAuth();
     const idNum = delegacionId ? parseInt(delegacionId, 10) : NaN;
     const canVerEmpleados = can('ver_empleados');
-    const canVerVestuario = can('ver_empleados') || can('ver_mi_delegacion');
+    const canVerVestuario = can('ver_mi_delegacion') || (can('ver_empleados') && can('ver_productos_empleado'));
     const canExportarPdfAcuses = can('ver_delegaciones') || canVerVestuario;
 
     const [delegacion, setDelegacion] = useState(null);

@@ -5,12 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
             // Principal / UI
@@ -21,6 +22,7 @@ class RolesPermissionsSeeder extends Seeder
             'ver_catalogo',
             'editar_catalogo',
             'ver_empleados',
+            'ver_productos_empleado',
             'editar_empleados',
             // Vestuario / selecciones
             'ver_selecciones',
@@ -86,6 +88,7 @@ class RolesPermissionsSeeder extends Seeder
             'ver_organizacion',
             'ver_catalogo',
             'ver_empleados',
+            'ver_productos_empleado',
             'ver_selecciones',
             'ver_reportes',
             'ver_dependencias',

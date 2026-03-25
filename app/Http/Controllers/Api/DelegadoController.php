@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Delegado;
 use App\Models\Empleado;
 use App\Models\User;
+use App\Support\BusquedaTextoSql;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class DelegadoController extends Controller
 {
@@ -65,9 +67,28 @@ class DelegadoController extends Controller
             }
         }
 
-        $query->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('d.nombre', 'like', "%{$search}%")
-            ->orWhere('dl.clave', 'like', "%{$search}%")
-        ));
+        $query->when($search !== '', function ($q) use ($search) {
+            $tokens = preg_split('/\s+/u', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($tokens as $token) {
+                $q->where(function ($q2) use ($token) {
+                    $ascii = Str::ascii($token);
+                    $foldPattern = '%'.BusquedaTextoSql::escapeLike(mb_strtoupper($ascii !== '' ? $ascii : $token, 'UTF-8')).'%';
+                    $likeT = '%'.BusquedaTextoSql::escapeLike($token).'%';
+                    $likeA = ($ascii !== '' && $ascii !== $token) ? '%'.BusquedaTextoSql::escapeLike($ascii).'%' : null;
+
+                    $q2->where(function ($q3) use ($likeT, $likeA, $foldPattern) {
+                        $q3->where('d.nombre', 'like', $likeT)
+                            ->orWhere('dl.clave', 'like', $likeT);
+                        if ($likeA !== null) {
+                            $q3->orWhere('d.nombre', 'like', $likeA)
+                                ->orWhere('dl.clave', 'like', $likeA);
+                        }
+                        $q3->orWhereRaw(BusquedaTextoSql::sqlSpanishFoldUpper('d.nombre').' LIKE ?', [$foldPattern])
+                            ->orWhereRaw(BusquedaTextoSql::sqlSpanishFoldUpper('dl.clave').' LIKE ?', [$foldPattern]);
+                    });
+                });
+            }
+        });
 
         $rows = $query->select([
             'd.id', 'd.nombre', 'dl.clave AS delegacion_clave', 'dl.id AS delegacion_id',
@@ -185,17 +206,23 @@ class DelegadoController extends Controller
 
         if ($search !== '') {
             $byId = array_filter($byId, function ($v) use ($search) {
-                if (stripos((string) ($v['nombre'] ?? ''), $search) !== false) {
-                    return true;
+                $partes = [
+                    (string) ($v['nombre'] ?? ''),
+                    (string) (($v['user'] ?? [])['rfc'] ?? ''),
+                ];
+                foreach ($v['delegaciones'] ?? [] as $del) {
+                    $partes[] = (string) ($del['clave'] ?? '');
                 }
-                $rfc = (string) (($v['user'] ?? [])['rfc'] ?? '');
-                if ($rfc !== '' && stripos($rfc, $search) !== false) {
-                    return true;
+                if (! empty($v['empleado']['nombre_completo'])) {
+                    $partes[] = (string) $v['empleado']['nombre_completo'];
+                }
+                if (! empty($v['empleado']['nue'])) {
+                    $partes[] = (string) $v['empleado']['nue'];
                 }
 
-                return collect($v['delegaciones'] ?? [])->contains(
-                    fn ($del) => stripos((string) ($del['clave'] ?? ''), $search) !== false
-                );
+                $haystack = implode(' ', array_filter($partes));
+
+                return BusquedaTextoSql::phpHaystackTieneTokens($haystack, $search);
             });
         }
 

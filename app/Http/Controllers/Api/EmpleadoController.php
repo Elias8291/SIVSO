@@ -125,12 +125,7 @@ class EmpleadoController extends Controller
             $query->whereHas('delegacion', fn ($q) => $q->where('clave', $delClave));
         }
 
-        $query->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('nue', 'like', "%{$search}%")
-            ->orWhere('nombre', 'like', "%{$search}%")
-            ->orWhere('apellido_paterno', 'like', "%{$search}%")
-            ->orWhere('apellido_materno', 'like', "%{$search}%")
-        )
-        )
+        $query->when($search !== '', fn ($q) => $q->whereBusquedaEmpleado($search))
             ->orderByRaw('apellido_paterno, apellido_materno, nombre');
 
         $paginated = $query->paginate($perPage);
