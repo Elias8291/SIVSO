@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use stdClass;
 
 class AcuseVestuarioService
 {
@@ -24,7 +25,24 @@ class AcuseVestuarioService
      */
     public function getSelecciones(int $empleadoId, int $anio): Collection
     {
-        return DB::table('selecciones AS s')
+        $map = $this->getSeleccionesParaEmpleados([$empleadoId], $anio);
+
+        return $map[$empleadoId] ?? collect();
+    }
+
+    /**
+     * Una sola consulta para varios colaboradores (mismo año).
+     *
+     * @param  array<int>  $empleadoIds
+     * @return array<int, Collection<int, array<string, mixed>>>
+     */
+    public function getSeleccionesParaEmpleados(array $empleadoIds, int $anio): array
+    {
+        if ($empleadoIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('selecciones AS s')
             ->join('producto_tallas AS pt', 'pt.id', '=', 's.producto_talla_id')
             ->join('productos AS p', 'p.id', '=', 'pt.producto_id')
             ->join('tallas AS t', 't.id', '=', 'pt.talla_id')
@@ -32,33 +50,222 @@ class AcuseVestuarioService
                 $j->on('pp.producto_id', '=', 'p.id')->on('pp.anio', '=', 's.anio');
             })
             ->join('partidas AS pa', 'pa.id', '=', 'p.partida_id')
-            ->where('s.empleado_id', $empleadoId)
+            ->whereIn('s.empleado_id', $empleadoIds)
             ->where('s.anio', $anio)
             ->select([
+                's.empleado_id',
                 's.id', 's.cantidad', 's.anio', 's.producto_talla_id',
                 'p.id AS producto_id', 'p.descripcion', 'p.marca', 'p.unidad', 'p.medida',
                 'pp.clave AS codigo', 'pp.precio_unitario',
                 't.nombre AS talla', 't.id AS talla_id',
                 'pa.numero AS partida',
             ])
+            ->orderBy('s.empleado_id')
             ->orderBy('pa.numero')
             ->orderBy('p.descripcion')
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'producto_talla_id' => (int) $c->producto_talla_id,
-                'producto_id' => $c->producto_id,
-                'anio' => (int) $c->anio,
-                'cantidad' => (int) $c->cantidad,
-                'talla' => $c->talla,
-                'talla_id' => $c->talla_id,
-                'codigo' => $c->codigo,
-                'descripcion' => $c->descripcion,
-                'marca' => $c->marca,
-                'unidad' => $c->unidad,
-                'medida' => $c->medida,
-                'partida' => $c->partida,
-            ]);
+            ->get();
+
+        $grouped = [];
+        foreach ($empleadoIds as $eid) {
+            $grouped[(int) $eid] = collect();
+        }
+        foreach ($rows as $c) {
+            $eid = (int) $c->empleado_id;
+            if (! isset($grouped[$eid])) {
+                $grouped[$eid] = collect();
+            }
+            $grouped[$eid]->push($this->mapSeleccionRow($c));
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapSeleccionRow(stdClass $c): array
+    {
+        return [
+            'id' => $c->id,
+            'producto_talla_id' => (int) $c->producto_talla_id,
+            'producto_id' => $c->producto_id,
+            'anio' => (int) $c->anio,
+            'cantidad' => (int) $c->cantidad,
+            'talla' => $c->talla,
+            'talla_id' => $c->talla_id,
+            'codigo' => $c->codigo,
+            'descripcion' => $c->descripcion,
+            'marca' => $c->marca,
+            'unidad' => $c->unidad,
+            'medida' => $c->medida,
+            'partida' => $c->partida,
+        ];
+    }
+
+    /**
+     * Misma lógica que {@see lineasAcuseParaEmpleado} sin $anioFijo, en lote (pocas consultas SQL).
+     *
+     * @param  array<int>  $empleadoIds
+     * @return array<int, array{lineas: Collection<int, array<string, mixed>>, anio_datos: int}>
+     */
+    public function lineasAcuseParaVariosEmpleados(array $empleadoIds, ?int $anioSolicitado): array
+    {
+        if ($empleadoIds === []) {
+            return [];
+        }
+
+        $anioVigente = $this->ejercicioVigenteAnio();
+        $anio = $anioSolicitado ?? $anioVigente;
+        $primera = $this->getSeleccionesParaEmpleados($empleadoIds, $anio);
+
+        $result = [];
+        $needFallback = [];
+
+        foreach ($empleadoIds as $eid) {
+            $eid = (int) $eid;
+            $lineas = $primera[$eid] ?? collect();
+            if ($lineas->isEmpty() && ($anioSolicitado === null || $anio === $anioVigente)) {
+                $needFallback[] = $eid;
+            } else {
+                $result[$eid] = ['lineas' => $lineas, 'anio_datos' => $anio];
+            }
+        }
+
+        if ($needFallback === []) {
+            return $result;
+        }
+
+        $ultimos = DB::table('selecciones')
+            ->whereIn('empleado_id', $needFallback)
+            ->groupBy('empleado_id')
+            ->selectRaw('empleado_id, MAX(anio) as max_anio')
+            ->pluck('max_anio', 'empleado_id');
+
+        $byAnio = [];
+        foreach ($needFallback as $eid) {
+            $u = $ultimos[$eid] ?? null;
+            if ($u === null) {
+                $result[$eid] = ['lineas' => collect(), 'anio_datos' => $anio];
+
+                continue;
+            }
+            $y = (int) $u;
+            if (! isset($byAnio[$y])) {
+                $byAnio[$y] = [];
+            }
+            $byAnio[$y][] = $eid;
+        }
+
+        foreach ($byAnio as $anio2 => $eids) {
+            $segunda = $this->getSeleccionesParaEmpleados($eids, $anio2);
+            foreach ($eids as $eid) {
+                $lineas = $segunda[$eid] ?? collect();
+                $result[$eid] = ['lineas' => $lineas, 'anio_datos' => $anio2];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Datasets para PDF lote: consultas agrupadas + logo y delegado una sola vez.
+     *
+     * @param  Collection<int, Empleado>  $empleados
+     * @return array<int, array<string, mixed>>
+     */
+    public function datasetsParaPdfLote(Collection $empleados, ?int $anioQuery): array
+    {
+        $empleados = $empleados->values();
+        if ($empleados->isEmpty()) {
+            return [];
+        }
+
+        $empleados->loadMissing(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
+
+        $ids = $empleados->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $lineasPorId = $this->lineasAcuseParaVariosEmpleados($ids, $anioQuery);
+
+        $logo = $this->logoAcuseDataUri();
+        $first = $empleados->first();
+        $delegacionClaveNorm = trim((string) ($first->delegacion?->clave ?? ''));
+        $nombreDelegadoAcuse = $delegacionClaveNorm !== ''
+            ? $this->nombreDelegadoParaDelegacionClave($delegacionClaveNorm)
+            : $this->nombreDelegadoParaDelegacionId($first->delegacion_id);
+
+        $out = [];
+        foreach ($empleados as $emp) {
+            $resolved = $lineasPorId[(int) $emp->id] ?? ['lineas' => collect(), 'anio_datos' => $anioQuery ?? $this->ejercicioVigenteAnio()];
+            $out[] = $this->composeAcuseViewData(
+                $emp,
+                $resolved['lineas'],
+                $resolved['anio_datos'],
+                $logo,
+                $nombreDelegadoAcuse
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function composeAcuseViewData(
+        Empleado $emp,
+        Collection $lineas,
+        int $anioDatos,
+        ?string $logoDataUri = null,
+        ?string $nombreDelegadoPrecomputado = null
+    ): array {
+        $emp->loadMissing(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
+        $licitacion = env('ACUSE_LICITACION', 'LPN-SA-SA-0036-08/2025');
+        $codigoUr = env('ACUSE_CODIGO_UR', $emp->delegacion?->clave ?? '—');
+
+        $rows = $lineas->values()->map(function (array $row, int $idx) {
+            return [
+                'num' => $idx + 1,
+                'descripcion' => $this->textoDescripcionLinea($row),
+                'talla' => (string) ($row['talla'] ?? '—'),
+                'cantidad' => (int) ($row['cantidad'] ?? 0),
+            ];
+        });
+
+        $totalPiezas = (int) $rows->sum('cantidad');
+        $claveDel = strtoupper(trim((string) ($emp->delegacion?->clave ?? 'X')));
+        $folio = $claveDel.'-'.$emp->id;
+
+        $nombreDelegadoAcuse = $nombreDelegadoPrecomputado;
+        if ($nombreDelegadoAcuse === null) {
+            $delegacionClaveNorm = trim((string) ($emp->delegacion?->clave ?? ''));
+            $nombreDelegadoAcuse = $delegacionClaveNorm !== ''
+                ? $this->nombreDelegadoParaDelegacionClave($delegacionClaveNorm)
+                : $this->nombreDelegadoParaDelegacionId($emp->delegacion_id);
+        }
+
+        $tokenIntegridad = $this->tokenIntegridad($emp->id, $anioDatos, $lineas);
+
+        $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos, $tokenIntegridad);
+
+        $logo = $logoDataUri ?? $this->logoAcuseDataUri();
+
+        return [
+            'anio_encabezado' => $anioDatos,
+            'licitacion' => $licitacion,
+            'codigo_ur' => $codigoUr,
+            'folio' => $folio,
+            'nombre_empleado' => strtoupper($emp->nombre_completo),
+            'nue' => trim((string) ($emp->nue ?? '')),
+            'secretaria_dependencia' => strtoupper(trim((string) ($emp->dependencia?->nombre ?? ''))),
+            'rows' => $rows->all(),
+            'total_piezas' => $totalPiezas,
+            'nombre_delegado' => $nombreDelegadoAcuse,
+            'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS.',
+            'logo_data_uri' => $logo,
+            'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),
+            'consulta_publica_url' => $consultaUrl,
+            'verificacion_ok' => null,
+            'verificacion_mensaje' => null,
+        ];
     }
 
     /**
@@ -261,53 +468,8 @@ class AcuseVestuarioService
      */
     public function datasetFor(Empleado $emp, ?int $anioQuery, bool $anioFijo = false): array
     {
-        $emp->loadMissing(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
-        $licitacion = env('ACUSE_LICITACION', 'LPN-SA-SA-0036-08/2025');
-        $codigoUr = env('ACUSE_CODIGO_UR', $emp->delegacion?->clave ?? '—');
-
         $resolved = $this->lineasAcuseParaEmpleado($emp, $anioQuery, $anioFijo);
-        $lineas = $resolved['lineas'];
-        $anioDatos = $resolved['anio_datos'];
 
-        $rows = $lineas->values()->map(function (array $row, int $idx) {
-            return [
-                'num' => $idx + 1,
-                'descripcion' => $this->textoDescripcionLinea($row),
-                'talla' => (string) ($row['talla'] ?? '—'),
-                'cantidad' => (int) ($row['cantidad'] ?? 0),
-            ];
-        });
-
-        $totalPiezas = (int) $rows->sum('cantidad');
-        $claveDel = strtoupper(trim((string) ($emp->delegacion?->clave ?? 'X')));
-        $folio = $claveDel.'-'.$emp->id;
-
-        $delegacionClaveNorm = trim((string) ($emp->delegacion?->clave ?? ''));
-        $nombreDelegadoAcuse = $delegacionClaveNorm !== ''
-            ? $this->nombreDelegadoParaDelegacionClave($delegacionClaveNorm)
-            : $this->nombreDelegadoParaDelegacionId($emp->delegacion_id);
-
-        $tokenIntegridad = $this->tokenIntegridad($emp->id, $anioDatos, $lineas);
-
-        $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos, $tokenIntegridad);
-
-        return [
-            'anio_encabezado' => $anioDatos,
-            'licitacion' => $licitacion,
-            'codigo_ur' => $codigoUr,
-            'folio' => $folio,
-            'nombre_empleado' => strtoupper($emp->nombre_completo),
-            'nue' => trim((string) ($emp->nue ?? '')),
-            'secretaria_dependencia' => strtoupper(trim((string) ($emp->dependencia?->nombre ?? ''))),
-            'rows' => $rows->all(),
-            'total_piezas' => $totalPiezas,
-            'nombre_delegado' => $nombreDelegadoAcuse,
-            'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS.',
-            'logo_data_uri' => $this->logoAcuseDataUri(),
-            'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),
-            'consulta_publica_url' => $consultaUrl,
-            'verificacion_ok' => null,
-            'verificacion_mensaje' => null,
-        ];
+        return $this->composeAcuseViewData($emp, $resolved['lineas'], $resolved['anio_datos']);
     }
 }

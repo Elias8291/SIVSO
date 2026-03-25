@@ -124,7 +124,7 @@ class AcuseVestuarioPdfController extends Controller
 
         return Pdf::loadView('pdf.acuse-vestuario', $data)
             ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
+            ->setOption('isRemoteEnabled', false)
             ->output();
     }
 
@@ -188,12 +188,15 @@ class AcuseVestuarioPdfController extends Controller
             $dependenciaIdFiltro = $depId;
         }
 
-        $empQuery = Empleado::query()->where('delegacion_id', $delegacion);
+        $empQuery = Empleado::query()
+            ->with(['dependencia:id,clave,nombre', 'delegacion:id,clave'])
+            ->where('delegacion_id', $delegacion);
         if ($dependenciaIdFiltro !== null) {
             $empQuery->where('dependencia_id', $dependenciaIdFiltro);
         }
-        $ids = $empQuery->orderBy('nue')->pluck('id');
-        if ($ids->isEmpty()) {
+        $empleados = $empQuery->orderBy('nue')->get();
+
+        if ($empleados->isEmpty()) {
             $msg = $dependenciaIdFiltro !== null
                 ? 'No hay colaboradores de esta delegación adscritos a la unidad responsable indicada.'
                 : 'No hay colaboradores en esta delegación.';
@@ -201,25 +204,19 @@ class AcuseVestuarioPdfController extends Controller
             return response()->json(['message' => $msg], 422);
         }
 
-        $acusets = [];
-        foreach ($ids as $eid) {
-            $emp = Empleado::find($eid);
-            if (! $emp) {
-                continue;
-            }
-            if (! $this->puedeIncluirEmpleadoEnLoteDelegacion($request, $emp, $delegacion)) {
-                continue;
-            }
-            $acusets[] = $this->acuseService->datasetFor($emp, $anioQuery, false);
-        }
+        $filtrados = $empleados->filter(
+            fn (Empleado $emp) => $this->puedeIncluirEmpleadoEnLoteDelegacion($request, $emp, $delegacion)
+        );
 
-        if ($acusets === []) {
+        if ($filtrados->isEmpty()) {
             return response()->json(['message' => 'No hay acuses que pueda exportar para esta delegación.'], 422);
         }
 
+        $acusets = $this->acuseService->datasetsParaPdfLote($filtrados, $anioQuery);
+
         $binary = Pdf::loadView('pdf.acuse-vestuario-lote', ['acusets' => $acusets])
             ->setPaper('a4', 'portrait')
-            ->setOption('isRemoteEnabled', true)
+            ->setOption('isRemoteEnabled', false)
             ->output();
 
         $clave = preg_replace('/[^a-zA-Z0-9_-]+/', '_', (string) ($del->clave ?? 'delegacion')) ?? 'delegacion';
