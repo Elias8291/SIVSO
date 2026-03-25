@@ -34,29 +34,32 @@ const Header = ({ onMenuClick }) => {
     }, [showNotificaciones]);
 
     return (
-        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-50 flex items-center justify-between px-3 sm:px-8 xl:px-14">
+        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-50 flex items-center gap-2 min-w-0 px-3 sm:px-8 xl:px-14">
 
-            {/* Breadcrumb + menú móvil */}
-            <div className="flex items-center gap-2.5">
+            {/* Breadcrumb + menú — min-w-0 + truncate evita que el título tape los iconos en móvil vertical */}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
                 <button
                     type="button"
                     onClick={onMenuClick}
-                    className="lg:hidden p-2 -ml-2 rounded-xl text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all"
+                    className="shrink-0 lg:hidden p-2 -ml-1 rounded-xl text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-all touch-manipulation [-webkit-tap-highlight-color:transparent]"
                     aria-label="Abrir menú"
                 >
                     <Menu size={20} strokeWidth={1.8} />
                 </button>
-                <span className="text-[12px] text-zinc-400 dark:text-zinc-600 font-medium tracking-wider uppercase">
+                <span className="shrink-0 text-[11px] sm:text-[12px] text-zinc-400 dark:text-zinc-600 font-medium tracking-wider uppercase">
                     SIVSO
                 </span>
-                <span className="text-zinc-300 dark:text-zinc-700 text-xs">/</span>
-                <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide uppercase">
+                <span className="shrink-0 text-zinc-300 dark:text-zinc-700 text-xs">/</span>
+                <span
+                    className="min-w-0 text-[12px] sm:text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 tracking-wide uppercase truncate"
+                    title={pageLabel}
+                >
                     {pageLabel}
                 </span>
             </div>
 
-            {/* Acciones */}
-            <div className="flex items-center gap-1.5">
+            {/* Acciones: shrink-0 para que nunca desaparezcan bajo el título en portrait */}
+            <div className="relative z-[60] flex shrink-0 items-center gap-0.5 sm:gap-1.5">
                 {/* Notificaciones */}
                 {showNotificaciones && (
                     <button
@@ -82,7 +85,7 @@ const Header = ({ onMenuClick }) => {
                         e.stopPropagation();
                         toggleTheme();
                     }}
-                    className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:bg-zinc-200/80 dark:active:bg-zinc-700/60 transition-all touch-manipulation [-webkit-tap-highlight-color:transparent]"
+                    className="min-h-[48px] min-w-[48px] sm:min-h-[44px] sm:min-w-[44px] shrink-0 flex items-center justify-center rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 active:bg-zinc-200/80 dark:active:bg-zinc-700/60 transition-all touch-manipulation [-webkit-tap-highlight-color:transparent] isolate"
                     aria-label="Cambiar tema"
                 >
                     {isDarkMode
