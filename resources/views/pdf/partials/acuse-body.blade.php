@@ -41,9 +41,6 @@
         <td class="k">CLAVE DE RESUMEN</td>
         <td style="font-family: DejaVu Sans, monospace; font-size: 9px; letter-spacing: 0.06em;">
             {{ $clave_resumen_vestuario ?? '—' }}
-            <span style="font-size: 7px; font-weight: normal; display: block; margin-top: 4px; text-transform: none; line-height: 1.35;">
-                Resume en un solo código los artículos con su talla y cantidad. Si al escanear el QR la clave es la misma, no hace falta cotejar fila por fila.
-            </span>
         </td>
     </tr>
 </table>
