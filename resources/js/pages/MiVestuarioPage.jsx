@@ -39,6 +39,7 @@ export default function MiVestuarioPage() {
     const [filterSearch, setFilterSearch] = useState('');
     const debouncedFilter = useDebounce(filterSearch, 250);
     const [periodoActivo, setPeriodoActivo] = useState(null);
+    const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
 
     const load = useCallback((anioParam) => {
         setLoading(true);
