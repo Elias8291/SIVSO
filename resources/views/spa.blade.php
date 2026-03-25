@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>SIVSO | Sistema Integral de Vestuario</title>
+    <script>
+        (function () {
+            try {
+                var k = 'sivso-theme';
+                var v = localStorage.getItem(k);
+                if (v === 'dark') document.documentElement.classList.add('dark');
+                else if (v === 'light') document.documentElement.classList.remove('dark');
+                else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                    document.documentElement.classList.add('dark');
+            } catch (e) {}
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/main.jsx'])

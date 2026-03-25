@@ -7,6 +7,7 @@ use App\Models\Delegado;
 use App\Models\Empleado;
 use App\Models\Periodo;
 use App\Models\User;
+use App\Services\EmpleadoUsuarioVinculacionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -233,11 +234,13 @@ class EmpleadoController extends Controller
         }
 
         $data = $request->validate([
-            'rfc' => ['required', 'string', 'max:20', 'unique:users,rfc'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'rfc' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
             'password' => 'required|string|min:8|confirmed',
             'name' => 'nullable|string|max:255',
         ]);
+
+        $rfcNorm = strtoupper(preg_replace('/\s+/', '', trim((string) $data['rfc'])));
 
         $nombreCompleto = trim(implode(' ', array_filter([
             $e->nombre,
@@ -249,31 +252,47 @@ class EmpleadoController extends Controller
             ? trim($data['name'])
             : ($nombreCompleto !== '' ? $nombreCompleto : 'Usuario');
 
-        $user = User::create([
-            'name' => $name,
-            'rfc' => strtoupper(trim($data['rfc'])),
-            'email' => $data['email'] ?? null,
-            'password' => $data['password'],
-            'nue' => $e->nue,
-            'activo' => true,
-        ]);
+        try {
+            $result = EmpleadoUsuarioVinculacionService::crearOReutilizarParaEmpleado(
+                $e,
+                $rfcNorm,
+                $data['email'] ?? null,
+                $data['password'],
+                $name,
+                false,
+            );
+        } catch (\RuntimeException $ex) {
+            $map = [
+                'empleado_ya_vinculado' => 'Este empleado ya tiene un usuario vinculado.',
+                'rfc_nue_mismatch' => 'Ya existe un usuario con ese RFC asociado a otro NUE distinto al de este empleado.',
+                'rfc_duplicado' => 'Ya existe otro usuario con ese RFC.',
+                'email_duplicado' => 'Ya existe un usuario con ese correo electrónico.',
+            ];
+            $code = $ex->getMessage();
 
-        $user->assignRole('empleado');
+            return response()->json([
+                'message' => $map[$code] ?? 'No se pudo registrar el usuario.',
+            ], 422);
+        }
 
-        Empleado::where('user_id', $user->id)->where('id', '!=', $e->id)->update(['user_id' => null]);
-
-        $e->user_id = $user->id;
-        $e->save();
+        $user = $result['user'];
+        $messages = [
+            'created' => 'Usuario creado y vinculado correctamente.',
+            'reused_rfc' => 'Ya existía un usuario con ese RFC; se vinculó a este empleado.',
+            'reused_nue' => 'Ya existía un usuario con el NUE de este empleado; se actualizó el RFC y la contraseña y se vinculó al colaborador.',
+        ];
+        $message = $messages[$result['reused']] ?? $messages['created'];
+        $status = $result['reused'] === 'created' ? 201 : 200;
 
         return response()->json([
-            'message' => 'Usuario creado y vinculado correctamente.',
+            'message' => $message,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'rfc' => $user->rfc,
                 'email' => $user->email,
             ],
-        ], 201);
+        ], $status);
     }
 
     public function update(Request $request, int $empleado): JsonResponse
