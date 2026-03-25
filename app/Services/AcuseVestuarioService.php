@@ -190,6 +190,20 @@ class AcuseVestuarioService
         return $this->tokenIntegridad($empleadoId, $anio, $lineas);
     }
 
+    /**
+     * Clave pública corta para cotejar de un vistazo papel vs. pantalla (mismas líneas = misma clave).
+     * Resume artículo (vía selección/talla en sistema) y cantidades; no usa APP_KEY.
+     *
+     * @param  Collection<int, array<string, mixed>>  $lineas
+     */
+    public function claveResumenVestuario(int $empleadoId, int $anio, Collection $lineas): string
+    {
+        $payload = $this->canonicalPayloadIntegridad($empleadoId, $anio, $lineas);
+        $hex = substr(hash('sha256', 'SIVSO-KRV1|'.$payload), 0, 16);
+
+        return strtoupper(collect(str_split($hex, 4))->implode('-'));
+    }
+
     private function hmacSecretForAcuse(): string
     {
         $k = (string) config('app.key', '');
@@ -267,7 +281,7 @@ class AcuseVestuarioService
         $folio = $claveDel.'-'.$emp->id;
 
         $tokenIntegridad = $this->tokenIntegridad($emp->id, $anioDatos, $lineas);
-        $codigoIntegridadLegible = strtoupper(collect(str_split($tokenIntegridad, 4))->implode('-'));
+        $claveResumenVestuario = $this->claveResumenVestuario($emp->id, $anioDatos, $lineas);
 
         $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos, $tokenIntegridad);
 
@@ -279,14 +293,14 @@ class AcuseVestuarioService
             'nombre_empleado' => strtoupper($emp->nombre_completo),
             'nue' => trim((string) ($emp->nue ?? '')),
             'secretaria_dependencia' => strtoupper(trim((string) ($emp->dependencia?->nombre ?? ''))),
+            'clave_resumen_vestuario' => $claveResumenVestuario,
             'rows' => $rows->all(),
             'total_piezas' => $totalPiezas,
             'nombre_delegado' => $this->nombreDelegadoParaDelegacionId($emp->delegacion_id),
-            'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS QUE NO ESTÉN EN UN RECTÁNGULO',
+            'aviso_rectangulo' => 'NO SE RECIBIRÁ ESTE FORMATO SI PRESENTA TACHADURAS O ENMENDADURAS.',
             'logo_data_uri' => $this->logoAcuseDataUri(),
             'qr_data_uri' => $this->qrCodeDataUri($consultaUrl),
             'consulta_publica_url' => $consultaUrl,
-            'codigo_integridad' => $codigoIntegridadLegible,
             'verificacion_ok' => null,
             'verificacion_mensaje' => null,
         ];

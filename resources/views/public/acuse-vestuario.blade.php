@@ -38,6 +38,10 @@
         </div>
     @endif
 
+    <p style="font-size:12px;color:#52525b;margin:0 0 16px;line-height:1.45;">
+        Compare la <strong>clave de resumen</strong> de la tabla con la de su documento impreso: si coinciden, los productos, tallas y cantidades son los mismos sin revisar uno por uno.
+    </p>
+
     @include('pdf.partials.acuse-body')
     <p style="margin-top:20px;font-size:10px;color:#666;text-align:center;">
         Constancia de consulta pública. El enlace caduca según la fecha firmada del sistema.

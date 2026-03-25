@@ -23,9 +23,6 @@
         font-weight: bold;
         text-transform: uppercase;
         margin: 8px auto 10px;
-        border: 2px solid #000;
-        padding: 6px 8px;
-        max-width: 100%;
         text-align: center;
         line-height: 1.4;
     }
