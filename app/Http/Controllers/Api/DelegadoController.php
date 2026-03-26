@@ -445,12 +445,29 @@ class DelegadoController extends Controller
             'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password' => 'required|string|min:8|confirmed',
             'name' => 'nullable|string|max:255',
+            'empleado_id' => 'nullable|integer|exists:empleados,id',
         ]);
 
         $name = ! empty($data['name']) ? trim($data['name']) : ($delegado->nombre ?: 'Delegado');
 
         try {
             return DB::transaction(function () use ($data, $delegado, $name) {
+                $empleadoIdObjetivo = $data['empleado_id'] ?? $delegado->empleado_id;
+                if ($empleadoIdObjetivo) {
+                    $emp = Empleado::find($empleadoIdObjetivo);
+                    if (! $emp) {
+                        throw new \RuntimeException('empleado_no_encontrado');
+                    }
+                    $delegacionIds = DB::table('delegado_delegacion')
+                        ->where('delegado_id', $delegado->id)
+                        ->pluck('delegacion_id');
+                    if (! $delegacionIds->contains((int) $emp->delegacion_id)) {
+                        throw new \RuntimeException('empleado_fuera_delegacion');
+                    }
+                    $delegado->empleado_id = (int) $empleadoIdObjetivo;
+                    $delegado->save();
+                }
+
                 $user = User::create([
                     'name' => $name,
                     'rfc' => strtoupper(trim($data['rfc'])),
@@ -506,6 +523,16 @@ class DelegadoController extends Controller
                 return response()->json([
                     'message' => 'El registro de empleado quedó vinculado a otro usuario. Actualice la pantalla e intente de nuevo.',
                 ], 409);
+            }
+            if ($e->getMessage() === 'empleado_no_encontrado') {
+                return response()->json([
+                    'message' => 'El empleado seleccionado no existe.',
+                ], 422);
+            }
+            if ($e->getMessage() === 'empleado_fuera_delegacion') {
+                return response()->json([
+                    'message' => 'El empleado seleccionado no pertenece a las delegaciones de este delegado.',
+                ], 422);
             }
 
             throw $e;

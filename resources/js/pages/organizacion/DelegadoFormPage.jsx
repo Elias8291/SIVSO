@@ -29,6 +29,7 @@ const EMPTY_CREAR_USUARIO = {
     email: '',
     password: '',
     password_confirmation: '',
+    empleado_id: '',
 };
 
 export default function DelegadoFormPage() {
@@ -56,6 +57,8 @@ export default function DelegadoFormPage() {
     const [crearUsuarioForm, setCrearUsuarioForm] = useState(EMPTY_CREAR_USUARIO);
     const [errorsCrearUsuario, setErrorsCrearUsuario] = useState({});
     const [savingCrearUsuario, setSavingCrearUsuario] = useState(false);
+    const [empleadosSugeridos, setEmpleadosSugeridos] = useState([]);
+    const [buscandoEmpleados, setBuscandoEmpleados] = useState(false);
 
     const [item, setItem] = useState(null);
 
@@ -194,12 +197,37 @@ export default function DelegadoFormPage() {
     const abrirModalCrearUsuario = () => {
         setCrearUsuarioForm({
             ...EMPTY_CREAR_USUARIO,
-            name: item?.empleado?.nombre_completo || item?.delegaciones?.[0]?.clave || '',
+            name: item?.empleado?.nombre_completo || item?.nombre || '',
             rfc: '',
+            empleado_id: item?.empleado?.id ? String(item.empleado.id) : '',
         });
         setErrorsCrearUsuario({});
         setModalCrearUsuario(true);
     };
+
+    useEffect(() => {
+        if (!modalCrearUsuario || !isEdit) return;
+        const queryBase = (item?.empleado?.nombre_completo || item?.nombre || '').trim();
+        if (!queryBase) {
+            setEmpleadosSugeridos([]);
+            return;
+        }
+        setBuscandoEmpleados(true);
+        api.get(`/api/empleados?search=${encodeURIComponent(queryBase)}&per_page=50`)
+            .then((r) => {
+                const rows = Array.isArray(r?.data?.data) ? r.data.data : (Array.isArray(r?.data) ? r.data : []);
+                const filtrados = rows.filter((e) => {
+                    const pertenece = !item?.delegaciones?.length || item.delegaciones.some((d) => d.clave === e.delegacion_clave);
+                    return pertenece;
+                });
+                setEmpleadosSugeridos(filtrados);
+                if (!crearUsuarioForm.empleado_id && filtrados.length === 1) {
+                    setCrearUsuarioForm((p) => ({ ...p, empleado_id: String(filtrados[0].id) }));
+                }
+            })
+            .catch(() => setEmpleadosSugeridos([]))
+            .finally(() => setBuscandoEmpleados(false));
+    }, [modalCrearUsuario, isEdit, item?.id, item?.nombre, item?.empleado?.id, item?.empleado?.nombre_completo, item?.delegaciones, crearUsuarioForm.empleado_id]);
 
     const handleCrearUsuario = async (e) => {
         e.preventDefault();
@@ -430,6 +458,25 @@ export default function DelegadoFormPage() {
                     <p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">
                         Indique el <strong className="text-zinc-800 dark:text-zinc-200">RFC</strong> para el acceso y una contraseña segura.
                     </p>
+                    <Field label="Empleado (auto sugerido)" error={errorsCrearUsuario.empleado_id?.[0]}>
+                        <select
+                            value={crearUsuarioForm.empleado_id}
+                            onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, empleado_id: e.target.value }))}
+                            className={selectClass}
+                        >
+                            <option value="">Sin vincular</option>
+                            {empleadosSugeridos.map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                    {emp.nombre_completo} — NUE {emp.nue || 'S/N'} — {emp.delegacion_clave || 'SIN DEL'}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                            {buscandoEmpleados
+                                ? 'Buscando coincidencias en empleados...'
+                                : 'Se muestran empleados que coinciden por nombre del delegado y pertenecen a sus delegaciones.'}
+                        </p>
+                    </Field>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <Field label="Nombre para la cuenta" error={errorsCrearUsuario.name?.[0]}>
                             <input

@@ -328,6 +328,19 @@ export default function EmpleadoFormPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50/70 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800/30">
+                                        <p className="text-[12px] text-zinc-600 dark:text-zinc-400">
+                                            Busque por nombre o RFC para vincular rápido.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setUserSearch(nombreCompleto)}
+                                            disabled={!nombreCompleto}
+                                            className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-700 hover:bg-white disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                                        >
+                                            Buscar por nombre del colaborador
+                                        </button>
+                                    </div>
                                     <SearchInput
                                         value={userSearch}
                                         onChange={(e) => setUserSearch(e.target.value)}
@@ -359,7 +372,7 @@ export default function EmpleadoFormPage() {
                         {isEdit && !userLinked && (
                             <div className="flex flex-col gap-3 rounded-xl border border-dashed border-brand-gold/35 bg-brand-gold/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                                 <p className="text-[12px] text-zinc-600 dark:text-zinc-400 leading-snug">
-                                    Cree una cuenta nueva con RFC y contraseña para que este colaborador acceda al sistema.
+                                    Si no existe usuario, cree una cuenta nueva; se vincula automaticamente con este empleado.
                                 </p>
                                 <button
                                     type="button"
