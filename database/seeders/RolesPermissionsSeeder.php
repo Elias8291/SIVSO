@@ -47,6 +47,51 @@ class RolesPermissionsSeeder extends Seeder
             'ver_partidas',
             'editar_partidas',
             'ver_mi_delegacion',
+
+            // Permisos por módulo (acción explícita)
+            'mi_vestuario.ver',
+            'mi_vestuario.actualizar',
+            'mi_vestuario.eliminar',
+
+            'catalogo.crear',
+            'catalogo.actualizar',
+            'catalogo.eliminar',
+
+            'empleados.crear',
+            'empleados.actualizar',
+            'empleados.eliminar',
+
+            'dependencias.crear',
+            'dependencias.actualizar',
+            'dependencias.eliminar',
+
+            'delegaciones.crear',
+            'delegaciones.actualizar',
+            'delegaciones.eliminar',
+
+            'delegados.crear',
+            'delegados.actualizar',
+            'delegados.eliminar',
+
+            'partidas.crear',
+            'partidas.actualizar',
+            'partidas.eliminar',
+
+            'periodos.crear',
+            'periodos.actualizar',
+            'periodos.eliminar',
+
+            'usuarios.crear',
+            'usuarios.actualizar',
+            'usuarios.eliminar',
+
+            'roles.crear',
+            'roles.actualizar',
+            'roles.eliminar',
+
+            'permisos.crear',
+            'permisos.actualizar',
+            'permisos.eliminar',
         ];
 
         foreach ($permissions as $p) {
