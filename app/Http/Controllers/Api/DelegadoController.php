@@ -15,6 +15,20 @@ use Illuminate\Support\Str;
 
 class DelegadoController extends Controller
 {
+    private function asegurarRolesDelegado(int $userId): void
+    {
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+        if (! $user->hasRole('delegado')) {
+            $user->assignRole('delegado');
+        }
+        if (! $user->hasRole('empleado')) {
+            $user->assignRole('empleado');
+        }
+    }
+
     private function normalizarNombreDelegado(string $nombre): string
     {
         $n = trim($nombre);
@@ -373,6 +387,10 @@ class DelegadoController extends Controller
         }
         $delegado->delegaciones()->attach($delegacionId, ['ur' => $urClave]);
 
+        if (! empty($data['user_id'])) {
+            $this->asegurarRolesDelegado((int) $data['user_id']);
+        }
+
         return response()->json(['message' => 'Delegado creado correctamente.', 'id' => $delegado->id], 201);
     }
 
@@ -416,6 +434,10 @@ class DelegadoController extends Controller
             'user_id' => array_key_exists('user_id', $data) ? $data['user_id'] : $delegado->user_id,
             'empleado_id' => array_key_exists('empleado_id', $data) ? $data['empleado_id'] : $delegado->empleado_id,
         ]);
+
+        if (! empty($delegado->user_id)) {
+            $this->asegurarRolesDelegado((int) $delegado->user_id);
+        }
 
         return response()->json(['message' => 'Delegado actualizado correctamente.']);
     }

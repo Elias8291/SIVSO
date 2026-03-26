@@ -65,6 +65,18 @@ class Empleado extends Model
                         foreach (['nue', 'nombre', 'apellido_paterno', 'apellido_materno'] as $col) {
                             $q2->orWhereRaw(BusquedaTextoSql::sqlSpanishFoldUpper($col).' LIKE ?', [$foldPattern]);
                         }
+
+                        // Permite buscar también por delegación (clave/nombre) desde el buscador general.
+                        $q2->orWhereHas('delegacion', function (Builder $dq) use ($likeT, $likeA, $foldPattern) {
+                            $dq->where('clave', 'like', $likeT)
+                                ->orWhere('nombre', 'like', $likeT)
+                                ->orWhereRaw(BusquedaTextoSql::sqlSpanishFoldUpper('clave').' LIKE ?', [$foldPattern])
+                                ->orWhereRaw(BusquedaTextoSql::sqlSpanishFoldUpper('nombre').' LIKE ?', [$foldPattern]);
+                            if ($likeA !== null) {
+                                $dq->orWhere('clave', 'like', $likeA)
+                                    ->orWhere('nombre', 'like', $likeA);
+                            }
+                        });
                     });
                 });
             }

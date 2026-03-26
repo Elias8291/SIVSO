@@ -145,11 +145,15 @@ class MiDelegacionController extends Controller
     {
         $user = $request->user();
         $delegaciones = collect();
+        $urFiltro = strtoupper(trim((string) $request->get('ur', '')));
+        if ($urFiltro === '') {
+            $urFiltro = null;
+        }
 
         $delegado = Delegado::where('user_id', $user->id)->first();
 
         if ($delegado) {
-            $delegaciones = DB::table('delegado_delegacion AS dd')
+            $qDelegaciones = DB::table('delegado_delegacion AS dd')
                 ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
                 ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
                 ->leftJoin('users AS du', 'du.id', '=', 'd.user_id')
@@ -159,17 +163,21 @@ class MiDelegacionController extends Controller
                     'd.nombre',
                     'dl.id AS delegacion_id',
                     'dl.clave',
+                    'dd.ur AS ur',
                     'du.name AS delegado_user_name',
                     'du.rfc AS delegado_user_rfc',
                 ])
-                ->orderBy('dl.clave')
-                ->get();
+                ->orderBy('dl.clave');
+            if ($urFiltro !== null) {
+                $qDelegaciones->where('dd.ur', $urFiltro);
+            }
+            $delegaciones = $qDelegaciones->get();
         }
 
         if ($delegaciones->isEmpty() && $user->nue) {
             $empleado = Empleado::where('nue', $user->nue)->first();
             if ($empleado && $empleado->delegacion_id) {
-                $delegaciones = DB::table('delegado_delegacion AS dd')
+                $qDelegaciones = DB::table('delegado_delegacion AS dd')
                     ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id')
                     ->join('delegados AS d', 'd.id', '=', 'dd.delegado_id')
                     ->leftJoin('users AS du', 'du.id', '=', 'd.user_id')
@@ -179,10 +187,14 @@ class MiDelegacionController extends Controller
                         'd.nombre',
                         'dl.id AS delegacion_id',
                         'dl.clave',
+                        'dd.ur AS ur',
                         'du.name AS delegado_user_name',
                         'du.rfc AS delegado_user_rfc',
-                    ])
-                    ->get();
+                    ]);
+                if ($urFiltro !== null) {
+                    $qDelegaciones->where('dd.ur', $urFiltro);
+                }
+                $delegaciones = $qDelegaciones->get();
             }
         }
 
@@ -243,6 +255,7 @@ class MiDelegacionController extends Controller
             return [
                 'id' => $d->delegacion_id,
                 'clave' => $d->clave,
+                'ur' => $d->ur,
                 'delegado_id' => (int) $d->delegado_id,
                 'delegado_nombre' => trim((string) ($d->nombre ?? '')) !== '' ? trim($d->nombre) : null,
                 'delegado_usuario' => $delegadoUsuario,

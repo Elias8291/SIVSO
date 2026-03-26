@@ -48,17 +48,24 @@ export default function DelegadosPage() {
             key: 'delegaciones',
             label: 'Delegación / usuario',
             render: (v, row) => (
-                <div>
-                    <div className="flex flex-wrap gap-1">
+                <div className="space-y-1.5">
+                    <div className="flex flex-wrap gap-1.5">
                         {(v ?? []).slice(0, 6).map((d, i) => (
-                            <span key={i} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-gold/10 text-brand-gold">{d.clave}</span>
+                            <span key={i} className="rounded bg-brand-gold/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-gold">
+                                {d.clave}
+                            </span>
                         ))}
                     </div>
+                    {row.user?.name && (
+                        <p className="text-[12px] font-semibold uppercase tracking-wide text-zinc-800 dark:text-zinc-100">
+                            {row.user.name}
+                        </p>
+                    )}
                     {row.user && (
-                        <p className="text-[11px] text-brand-gold font-mono mt-1">{row.user.rfc || row.user.email}</p>
+                        <p className="mt-0.5 font-mono text-[11px] text-zinc-500 dark:text-zinc-400">{row.user.rfc || row.user.email}</p>
                     )}
                     {row.nombre?.trim() ? (
-                        <p className="text-[11px] text-zinc-400 mt-0.5">{row.nombre}</p>
+                        <p className="text-[11px] text-zinc-400">{row.nombre}</p>
                     ) : null}
                 </div>
             ),
@@ -66,7 +73,7 @@ export default function DelegadosPage() {
         {
             key: 'delegaciones_count',
             label: 'Delegaciones',
-            render: (v) => <span className="text-[13px] text-zinc-500">{v}</span>,
+            render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">{v}</span>,
         },
         {
             key: 'trabajadores_total',
@@ -96,16 +103,25 @@ export default function DelegadosPage() {
                 />
             </FilterToolbar>
 
-            <Card title={`Delegados (${data.length})`}>
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    loading={loading}
-                    onEdit={canEdit ? ((row) => navigate(`/dashboard/delegados/${row.id}/editar`)) : undefined}
-                    onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
-                    emptyMessage="Sin delegados registrados."
-                />
-            </Card>
+            <div className="lg:mx-2">
+                <Card
+                    title="Directorio de Delegados"
+                    action={data.length > 0 ? (
+                        <span className="rounded bg-zinc-100 px-2.5 py-1 font-mono text-[11px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                            {data.length} registros
+                        </span>
+                    ) : null}
+                >
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        loading={loading}
+                        onEdit={canEdit ? ((row) => navigate(`/dashboard/delegados/${row.id}/editar`)) : undefined}
+                        onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
+                        emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay delegados registrados.'}
+                    />
+                </Card>
+            </div>
 
             <ConfirmDialog
                 open={!!confirm}

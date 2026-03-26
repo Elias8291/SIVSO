@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, X, ChevronDown, UserPlus, Key } from 'lucide-react';
+import { ArrowLeft, X, ChevronDown, UserPlus, Key, Eye, EyeOff } from 'lucide-react';
 import { api } from '../lib/api';
 import { Modal, PageHeader, Card, SearchInput } from '../components/ui';
 
@@ -56,6 +56,7 @@ export default function EmpleadoFormPage() {
     const [crearUsuarioForm, setCrearUsuarioForm] = useState(EMPTY_CREAR_USUARIO);
     const [errorsCrearUsuario, setErrorsCrearUsuario] = useState({});
     const [savingCrearUsuario, setSavingCrearUsuario] = useState(false);
+    const [mostrarPasswordCrearUsuario, setMostrarPasswordCrearUsuario] = useState(false);
     /** Valores al cargar edición: para avisos de vestuario / presupuesto UR. */
     const [ubicacionInicial, setUbicacionInicial] = useState({ ur: '', delegacion: '' });
 
@@ -164,6 +165,7 @@ export default function EmpleadoFormPage() {
             }
             setModalCrearUsuario(false);
             setCrearUsuarioForm(EMPTY_CREAR_USUARIO);
+            setMostrarPasswordCrearUsuario(false);
         } catch (err) {
             setErrorsCrearUsuario(err.errors ?? { general: [err.message] });
         } finally {
@@ -477,19 +479,29 @@ export default function EmpleadoFormPage() {
                     </Field>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Contraseña" error={errorsCrearUsuario.password?.[0]}>
-                            <input
-                                type="password"
-                                value={crearUsuarioForm.password}
-                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password: e.target.value }))}
-                                placeholder="Mínimo 8 caracteres"
-                                autoComplete="new-password"
-                                required
-                                className={inputClass}
-                            />
+                            <div className="relative">
+                                <input
+                                    type={mostrarPasswordCrearUsuario ? 'text' : 'password'}
+                                    value={crearUsuarioForm.password}
+                                    onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password: e.target.value }))}
+                                    placeholder="Mínimo 8 caracteres"
+                                    autoComplete="new-password"
+                                    required
+                                    className={`${inputClass} pr-11`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setMostrarPasswordCrearUsuario((v) => !v)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                    aria-label={mostrarPasswordCrearUsuario ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {mostrarPasswordCrearUsuario ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </Field>
                         <Field label="Confirmar contraseña" error={errorsCrearUsuario.password_confirmation?.[0]}>
                             <input
-                                type="password"
+                                type={mostrarPasswordCrearUsuario ? 'text' : 'password'}
                                 value={crearUsuarioForm.password_confirmation}
                                 onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password_confirmation: e.target.value }))}
                                 placeholder="Repetir contraseña"

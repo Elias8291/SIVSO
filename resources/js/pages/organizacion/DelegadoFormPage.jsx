@@ -1,36 +1,164 @@
 /**
- * Crear o editar delegado — vista completa (no modal).
- * La creación de cuenta de usuario sigue en un modal secundario.
+ * Crear o editar delegado.
+ * Flujo: 1) buscar/crear empleado  →  2) vincular/crear usuario  →  3) guardar.
  */
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, UserPlus, X } from 'lucide-react';
+import {
+    ArrowLeft, Eye, EyeOff, Search, UserPlus, X,
+    CheckCircle2, ChevronRight, UserCircle2,
+} from 'lucide-react';
 import { api } from '../../lib/api';
-import { SearchInput, Modal } from '../../components/ui';
+import { Modal } from '../../components/ui';
 
-const inputClass = 'w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation';
-const selectClass = 'w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation';
+/* ─── Estilos compartidos ─────────────────────────────────────────── */
+const inputCls = 'w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation';
+const selectCls = 'w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation';
 
-function Field({ label, error, children }) {
+function Field({ label, error, hint, children }) {
     return (
         <div className="space-y-1.5">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 {label}
             </label>
             {children}
+            {hint && <p className="text-[11px] text-zinc-400 leading-relaxed">{hint}</p>}
             {error && <p className="text-[11px] text-red-500">{error}</p>}
         </div>
     );
 }
 
-const EMPTY_CREAR_USUARIO = {
-    name: '',
-    rfc: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    empleado_id: '',
-};
+function SectionCard({ title, description, children }) {
+    return (
+        <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="border-b border-zinc-50 px-5 py-4 dark:border-zinc-800/60 sm:px-6">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{title}</p>
+                {description && <p className="mt-0.5 text-[12px] text-zinc-400 dark:text-zinc-500">{description}</p>}
+            </div>
+            <div className="p-5 sm:p-6 space-y-4">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+/* ─── Componente de búsqueda en tiempo real de empleados ──────────── */
+function EmpleadoSearch({ value, onChange, onClear }) {
+    return (
+        <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+            <input
+                type="text"
+                value={value}
+                onChange={onChange}
+                placeholder="Buscar por nombre o NUE…"
+                className={`${inputCls} pl-9 pr-9`}
+                autoComplete="off"
+            />
+            {value && (
+                <button
+                    type="button"
+                    onClick={onClear}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                >
+                    <X size={14} />
+                </button>
+            )}
+        </div>
+    );
+}
+
+/* ─── Tarjeta de empleado seleccionado ───────────────────────────── */
+function EmpleadoCard({ empleado, onDesvincular }) {
+    return (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+            <div className="flex items-start gap-3 min-w-0">
+                <CheckCircle2 size={18} className="shrink-0 mt-0.5 text-emerald-500" strokeWidth={2} />
+                <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100 uppercase tracking-wide leading-snug">
+                        {empleado.nombre_completo}
+                    </p>
+                    <p className="font-mono text-[11px] text-zinc-500 mt-0.5">
+                        NUE {empleado.nue || '—'} · {empleado.delegacion_clave || empleado.dependencia_clave || '—'}
+                    </p>
+                </div>
+            </div>
+            <button
+                type="button"
+                onClick={onDesvincular}
+                className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors"
+                aria-label="Desvincular empleado"
+            >
+                <X size={14} strokeWidth={2.5} />
+            </button>
+        </div>
+    );
+}
+
+/* ─── Tarjeta de usuario vinculado ───────────────────────────────── */
+function UsuarioCard({ user, onDesvincular }) {
+    return (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-brand-gold/30 bg-brand-gold/5 px-4 py-3">
+            <div className="flex items-start gap-3 min-w-0">
+                <UserCircle2 size={18} className="shrink-0 mt-0.5 text-brand-gold" strokeWidth={2} />
+                <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">{user.name}</p>
+                    <p className="font-mono text-[11px] text-zinc-500 mt-0.5">RFC {user.rfc || '—'}</p>
+                </div>
+            </div>
+            <button
+                type="button"
+                onClick={onDesvincular}
+                className="shrink-0 rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 transition-colors"
+                aria-label="Desvincular usuario"
+            >
+                <X size={14} strokeWidth={2.5} />
+            </button>
+        </div>
+    );
+}
+
+/* ─── Estado vacío y lista de resultados ─────────────────────────── */
+function ResultadoEmpleados({ resultados, cargando, busqueda, onSeleccionar }) {
+    if (!busqueda.trim()) return null;
+    if (cargando) return (
+        <div className="flex items-center gap-2 px-1 py-2 text-[12px] text-zinc-400">
+            <span className="size-4 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin shrink-0" />
+            Buscando…
+        </div>
+    );
+    if (resultados.length === 0) return (
+        <p className="px-1 text-[12px] text-zinc-400">Sin resultados para «{busqueda}».</p>
+    );
+    return (
+        <div className="overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/60">
+            {resultados.map((emp) => (
+                <button
+                    key={emp.id}
+                    type="button"
+                    onClick={() => onSeleccionar(emp)}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-brand-gold/5 transition-colors min-h-[52px]"
+                >
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 uppercase truncate">
+                            {emp.nombre_completo}
+                        </p>
+                        <p className="font-mono text-[11px] text-zinc-400 mt-0.5">
+                            NUE {emp.nue || '—'} · {emp.delegacion_clave || '—'}
+                        </p>
+                    </div>
+                    <ChevronRight size={14} className="shrink-0 text-zinc-300" />
+                </button>
+            ))}
+        </div>
+    );
+}
+
+/* ══════════════════════════════════════════════════════════════════ */
+/*  Página principal                                                  */
+/* ══════════════════════════════════════════════════════════════════ */
+const EMPTY_USUARIO = { name: '', rfc: '', email: '', password: '', password_confirmation: '' };
+const EMPTY_NUEVO_EMPLEADO = { nue: '', nombre: '', apellido_paterno: '', apellido_materno: '', dependencia_clave: '', delegacion_clave: '' };
 
 export default function DelegadoFormPage() {
     const { id } = useParams();
@@ -41,44 +169,72 @@ export default function DelegadoFormPage() {
 
     const urContext = location.state?.ur ?? new URLSearchParams(location.search).get('ur');
 
-    const [form, setForm] = useState({ delegacion_id: '', user_id: '', empleado_id: '' });
+    /* ── Estado principal ──────────────────────────────────────── */
     const [delegaciones, setDelegaciones] = useState([]);
-    const [candidatosEmpleados, setCandidatosEmpleados] = useState([]);
+    const [delegacionId, setDelegacionId] = useState('');
+    const [nombreDelegado, setNombreDelegado] = useState('');
+
+    /* empleado vinculado al delegado */
+    const [empleadoVinculado, setEmpleadoVinculado] = useState(null);
+
+    /* usuario vinculado al delegado */
+    const [usuarioVinculado, setUsuarioVinculado] = useState(null);
+
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(isEdit);
 
-    const [userSearch, setUserSearch] = useState('');
-    const [userResults, setUserResults] = useState([]);
-    const [userLinked, setUserLinked] = useState(null);
-    const userSearchTimer = useRef(null);
+    /* ── Búsqueda de empleados ─────────────────────────────────── */
+    const [busqEmpleado, setBusqEmpleado] = useState('');
+    const [resultadosEmpleado, setResultadosEmpleado] = useState([]);
+    const [cargandoEmpleado, setCargandoEmpleado] = useState(false);
+    const timerEmpleado = useRef(null);
 
-    const [modalCrearUsuario, setModalCrearUsuario] = useState(false);
-    const [crearUsuarioForm, setCrearUsuarioForm] = useState(EMPTY_CREAR_USUARIO);
-    const [errorsCrearUsuario, setErrorsCrearUsuario] = useState({});
-    const [savingCrearUsuario, setSavingCrearUsuario] = useState(false);
-    const [empleadosSugeridos, setEmpleadosSugeridos] = useState([]);
-    const [buscandoEmpleados, setBuscandoEmpleados] = useState(false);
+    /* ── Búsqueda de usuarios existentes ───────────────────────── */
+    const [busqUsuario, setBusqUsuario] = useState('');
+    const [resultadosUsuario, setResultadosUsuario] = useState([]);
+    const timerUsuario = useRef(null);
 
-    const [item, setItem] = useState(null);
+    /* ── Modal crear usuario nuevo ─────────────────────────────── */
+    const [modalUsuario, setModalUsuario] = useState(false);
+    const [formUsuario, setFormUsuario] = useState(EMPTY_USUARIO);
+    const [errUsuario, setErrUsuario] = useState({});
+    const [savingUsuario, setSavingUsuario] = useState(false);
+    const [verPassword, setVerPassword] = useState(false);
 
+    /* ── Modal crear empleado nuevo ─────────────────────────────── */
+    const [modalEmpleado, setModalEmpleado] = useState(false);
+    const [formEmpleado, setFormEmpleado] = useState(EMPTY_NUEVO_EMPLEADO);
+    const [errEmpleado, setErrEmpleado] = useState({});
+    const [savingEmpleado, setSavingEmpleado] = useState(false);
+    const [dependencias, setDependencias] = useState([]);
+    const [delegacionesEmpleado, setDelegacionesEmpleado] = useState([]);
+
+    /* ── Cargar delegaciones para selector (creación) ──────────── */
     useEffect(() => {
         const url = urContext
             ? `/api/delegaciones?ur=${encodeURIComponent(urContext)}`
             : '/api/delegaciones/all';
         api.get(url)
-            .then((r) => {
-                const rows = r.data ?? [];
-                setDelegaciones(Array.isArray(rows) ? rows : []);
-            })
+            .then((r) => setDelegaciones(Array.isArray(r.data) ? r.data : []))
             .catch(() => setDelegaciones([]));
     }, [urContext]);
 
+    /* ── Cargar datos para modal de nuevo empleado ─────────────── */
+    useEffect(() => {
+        if (!modalEmpleado) return;
+        api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => {});
+    }, [modalEmpleado]);
+
+    useEffect(() => {
+        const dep = formEmpleado.dependencia_clave;
+        if (!dep) { setDelegacionesEmpleado([]); return; }
+        api.get(`/api/delegaciones?ur=${dep}`).then(r => setDelegacionesEmpleado(r.data ?? [])).catch(() => {});
+    }, [formEmpleado.dependencia_clave]);
+
+    /* ── Cargar delegado existente al editar ───────────────────── */
     useEffect(() => {
         if (!isEdit) {
-            setForm({ delegacion_id: '', user_id: '', empleado_id: '' });
-            setUserLinked(null);
-            setItem(null);
             setLoading(false);
             return;
         }
@@ -86,104 +242,69 @@ export default function DelegadoFormPage() {
         api.get(`/api/delegados/${id}`)
             .then((res) => {
                 const row = res.data;
-                if (!row?.id) {
-                    navigate('/dashboard/delegados', { replace: true });
-                    return;
+                if (!row?.id) { navigate('/dashboard/delegados', { replace: true }); return; }
+                setNombreDelegado(row.nombre || '');
+                if (row.empleado) {
+                    setEmpleadoVinculado({
+                        id: row.empleado.id,
+                        nombre_completo: row.empleado.nombre_completo,
+                        nue: row.empleado.nue,
+                        delegacion_clave: row.delegaciones?.[0]?.clave || '',
+                    });
                 }
-                setItem(row);
-                setForm({
-                    user_id: row.user_id ?? '',
-                    empleado_id: row.empleado_id != null ? String(row.empleado_id) : '',
-                });
-                if (row.user) {
-                    setUserLinked(row.user);
-                } else {
-                    setUserLinked(null);
-                }
+                if (row.user) setUsuarioVinculado(row.user);
             })
             .catch(() => navigate('/dashboard/delegados', { replace: true }))
             .finally(() => setLoading(false));
     }, [id, isEdit, navigate]);
 
+    /* ── Búsqueda de empleados (debounced) ─────────────────────── */
     useEffect(() => {
-        let cancelled = false;
-        if (isEdit && item?.delegaciones?.length > 0) {
-            Promise.all(
-                item.delegaciones.map((d) =>
-                    api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(d.clave)}&per_page=200`),
-                ),
-            )
-                .then((results) => {
-                    if (cancelled) return;
-                    const map = new Map();
-                    results.forEach((r) => (r.data ?? []).forEach((e) => map.set(e.id, e)));
-                    setCandidatosEmpleados(
-                        [...map.values()].sort((a, b) =>
-                            (a.nombre_completo || '').localeCompare(b.nombre_completo || '', 'es'),
-                        ),
-                    );
+        clearTimeout(timerEmpleado.current);
+        const q = busqEmpleado.trim();
+        if (q.length < 2) { setResultadosEmpleado([]); return; }
+        setCargandoEmpleado(true);
+        timerEmpleado.current = setTimeout(() => {
+            api.get(`/api/empleados?search=${encodeURIComponent(q)}&per_page=30`)
+                .then((r) => {
+                    const rows = Array.isArray(r?.data?.data) ? r.data.data
+                        : Array.isArray(r?.data) ? r.data : [];
+                    setResultadosEmpleado(rows);
                 })
-                .catch(() => {
-                    if (!cancelled) setCandidatosEmpleados([]);
-                });
-        } else if (!isEdit && form.delegacion_id) {
-            const del = delegaciones.find((d) => String(d.id) === String(form.delegacion_id));
-            if (del?.clave) {
-                api.get(`/api/empleados?delegacion_clave=${encodeURIComponent(del.clave)}&per_page=200`)
-                    .then((r) => {
-                        if (!cancelled) setCandidatosEmpleados(r.data ?? []);
-                    })
-                    .catch(() => {
-                        if (!cancelled) setCandidatosEmpleados([]);
-                    });
-            } else if (!cancelled) {
-                setCandidatosEmpleados([]);
-            }
-        } else if (!cancelled) {
-            setCandidatosEmpleados([]);
-        }
-        return () => {
-            cancelled = true;
-        };
-    }, [isEdit, item?.id, item?.delegaciones, form.delegacion_id, delegaciones]);
+                .catch(() => setResultadosEmpleado([]))
+                .finally(() => setCargandoEmpleado(false));
+        }, 350);
+        return () => clearTimeout(timerEmpleado.current);
+    }, [busqEmpleado]);
 
+    /* ── Búsqueda de usuarios (debounced) ──────────────────────── */
     useEffect(() => {
-        clearTimeout(userSearchTimer.current);
-        if (!userSearch.trim()) {
-            setUserResults([]);
-            return;
-        }
-        userSearchTimer.current = setTimeout(() => {
-            api.get(`/api/usuarios?search=${encodeURIComponent(userSearch)}&per_page=8`)
-                .then((r) => setUserResults(r.data ?? []))
+        clearTimeout(timerUsuario.current);
+        const q = busqUsuario.trim();
+        if (!q) { setResultadosUsuario([]); return; }
+        timerUsuario.current = setTimeout(() => {
+            api.get(`/api/usuarios?search=${encodeURIComponent(q)}&per_page=8`)
+                .then((r) => setResultadosUsuario(r.data ?? []))
                 .catch(() => {});
         }, 350);
-        return () => clearTimeout(userSearchTimer.current);
-    }, [userSearch]);
+        return () => clearTimeout(timerUsuario.current);
+    }, [busqUsuario]);
 
-    const resetUserSearch = () => {
-        setUserSearch('');
-        setUserResults([]);
-    };
-
+    /* ── Guardar delegado ──────────────────────────────────────── */
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         setErrors({});
         try {
             const payload = {
-                user_id: form.user_id || null,
-                empleado_id: form.empleado_id ? parseInt(form.empleado_id, 10) : null,
+                user_id: usuarioVinculado?.id || null,
+                empleado_id: empleadoVinculado?.id || null,
             };
             if (isEdit) {
                 await api.put(`/api/delegados/${id}`, payload);
             } else {
-                payload.delegacion_id = parseInt(form.delegacion_id, 10);
-                // En este flujo `ur` viene del contexto (la UR desde donde se abrió el formulario).
-                // El backend lo guarda en el pivote `delegado_delegacion` para que los filtros por UR funcionen.
-                if (urContext) {
-                    payload.ur = urContext;
-                }
+                payload.delegacion_id = parseInt(delegacionId, 10);
+                if (urContext) payload.ur = urContext;
                 await api.post('/api/delegados', payload);
             }
             navigate('/dashboard/delegados', { replace: true });
@@ -194,62 +315,82 @@ export default function DelegadoFormPage() {
         }
     };
 
-    const abrirModalCrearUsuario = () => {
-        setCrearUsuarioForm({
-            ...EMPTY_CREAR_USUARIO,
-            name: item?.empleado?.nombre_completo || item?.nombre || '',
-            rfc: '',
-            empleado_id: item?.empleado?.id ? String(item.empleado.id) : '',
+    /* ── Crear usuario nuevo ───────────────────────────────────── */
+    const abrirModalUsuario = () => {
+        setFormUsuario({
+            ...EMPTY_USUARIO,
+            name: empleadoVinculado?.nombre_completo || '',
         });
-        setErrorsCrearUsuario({});
-        setModalCrearUsuario(true);
+        setErrUsuario({});
+        setVerPassword(false);
+        setModalUsuario(true);
     };
-
-    useEffect(() => {
-        if (!modalCrearUsuario || !isEdit) return;
-        const queryBase = (item?.empleado?.nombre_completo || item?.nombre || '').trim();
-        if (!queryBase) {
-            setEmpleadosSugeridos([]);
-            return;
-        }
-        setBuscandoEmpleados(true);
-        api.get(`/api/empleados?search=${encodeURIComponent(queryBase)}&per_page=50`)
-            .then((r) => {
-                const rows = Array.isArray(r?.data?.data) ? r.data.data : (Array.isArray(r?.data) ? r.data : []);
-                const filtrados = rows.filter((e) => {
-                    const pertenece = !item?.delegaciones?.length || item.delegaciones.some((d) => d.clave === e.delegacion_clave);
-                    return pertenece;
-                });
-                setEmpleadosSugeridos(filtrados);
-                if (!crearUsuarioForm.empleado_id && filtrados.length === 1) {
-                    setCrearUsuarioForm((p) => ({ ...p, empleado_id: String(filtrados[0].id) }));
-                }
-            })
-            .catch(() => setEmpleadosSugeridos([]))
-            .finally(() => setBuscandoEmpleados(false));
-    }, [modalCrearUsuario, isEdit, item?.id, item?.nombre, item?.empleado?.id, item?.empleado?.nombre_completo, item?.delegaciones, crearUsuarioForm.empleado_id]);
 
     const handleCrearUsuario = async (e) => {
         e.preventDefault();
         if (!isEdit) return;
-        setSavingCrearUsuario(true);
-        setErrorsCrearUsuario({});
+        setSavingUsuario(true);
+        setErrUsuario({});
         try {
-            const res = await api.post(`/api/delegados/${id}/crear-usuario`, crearUsuarioForm);
+            const payload = {
+                ...formUsuario,
+                empleado_id: empleadoVinculado?.id || null,
+            };
+            const res = await api.post(`/api/delegados/${id}/crear-usuario`, payload);
             const u = res.user ?? res;
             if (u?.id) {
-                setUserLinked({ id: u.id, name: u.name, rfc: u.rfc });
-                setForm((p) => ({ ...p, user_id: u.id }));
+                setUsuarioVinculado({ id: u.id, name: u.name, rfc: u.rfc });
             }
-            setModalCrearUsuario(false);
-            setCrearUsuarioForm(EMPTY_CREAR_USUARIO);
+            setModalUsuario(false);
         } catch (err) {
-            setErrorsCrearUsuario(err.errors ?? { general: [err.message] });
+            setErrUsuario(err.errors ?? { general: [err.message] });
         } finally {
-            setSavingCrearUsuario(false);
+            setSavingUsuario(false);
         }
     };
 
+    /* ── Crear empleado nuevo ──────────────────────────────────── */
+    const abrirModalEmpleado = () => {
+        const partes = busqEmpleado.trim().split(/\s+/);
+        setFormEmpleado({
+            ...EMPTY_NUEVO_EMPLEADO,
+            nombre: partes[0] || '',
+            apellido_paterno: partes[1] || '',
+            apellido_materno: partes[2] || '',
+        });
+        setErrEmpleado({});
+        setModalEmpleado(true);
+    };
+
+    const handleCrearEmpleado = async (e) => {
+        e.preventDefault();
+        setSavingEmpleado(true);
+        setErrEmpleado({});
+        try {
+            const res = await api.post('/api/empleados', formEmpleado);
+            const nuevoId = res.id;
+            if (nuevoId) {
+                const detalle = await api.get(`/api/empleados/${nuevoId}`);
+                const emp = detalle.data ?? detalle;
+                setEmpleadoVinculado({
+                    id: emp.id,
+                    nombre_completo: emp.nombre_completo || emp.nombre || '',
+                    nue: emp.nue,
+                    delegacion_clave: emp.delegacion_clave || '',
+                });
+                setFormUsuario((p) => ({ ...p, name: emp.nombre_completo || emp.nombre || '' }));
+                setBusqEmpleado('');
+                setResultadosEmpleado([]);
+            }
+            setModalEmpleado(false);
+        } catch (err) {
+            setErrEmpleado(err.errors ?? { general: [err.message] });
+        } finally {
+            setSavingEmpleado(false);
+        }
+    };
+
+    /* ── Render ─────────────────────────────────────────────────── */
     if (loading) {
         return (
             <div className="flex justify-center py-16">
@@ -260,277 +401,393 @@ export default function DelegadoFormPage() {
 
     return (
         <>
-            <div className="mx-auto w-full max-w-2xl px-1 sm:px-2">
+            <div className="mx-auto w-full max-w-2xl px-2 pb-12">
                 <Link
                     to="/dashboard/delegados"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-brand-gold mb-6 transition-colors"
                 >
                     <ArrowLeft size={16} strokeWidth={2} />
                     Volver a Delegados
                 </Link>
 
-                <div className="rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="border-b border-zinc-50 px-5 py-5 dark:border-zinc-800/60 sm:px-8">
-                        <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">
-                            {isEdit ? 'Editar delegado' : 'Nuevo delegado'}
-                        </h2>
-                        <p className="mt-1 text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                            {isEdit
-                                ? 'Vincule usuario del sistema y, si aplica, el registro de empleado del padrón.'
-                                : 'Asigne una delegación y, opcionalmente, usuario y empleado. Podrá crear la cuenta al editar el registro.'}
-                        </p>
+                <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-1">
+                    {isEdit ? 'Editar delegado' : 'Nuevo delegado'}
+                </h1>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mb-8">
+                    Vincule el empleado del padrón y después cree o asigne su cuenta de acceso.
+                </p>
+
+                {errors.general && (
+                    <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+                        {errors.general}
                     </div>
+                )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-8">
-                        {errors.general && (
-                            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-500/10">
-                                {errors.general}
-                            </p>
-                        )}
+                <form onSubmit={handleSubmit} className="space-y-5">
 
-                        {!isEdit && (
-                            <Field label="Delegación asignada" error={errors.delegacion_id?.[0]}>
+                    {/* ── Delegación (solo creación) ──────────────── */}
+                    {!isEdit && (
+                        <SectionCard title="Delegación asignada">
+                            <Field label="Delegación" error={errors.delegacion_id?.[0]}>
                                 <select
-                                    value={form.delegacion_id}
-                                    onChange={(e) => setForm({ ...form, delegacion_id: e.target.value, empleado_id: '' })}
+                                    value={delegacionId}
+                                    onChange={(e) => setDelegacionId(e.target.value)}
                                     required
-                                    className={selectClass}
+                                    className={selectCls}
                                 >
                                     <option value="">Seleccionar…</option>
                                     {delegaciones.map((d) => (
                                         <option key={d.id} value={d.id}>
-                                            {d.clave}
-                                            {d.nombre ? ` — ${d.nombre}` : ''}
+                                            {d.clave}{d.nombre ? ` — ${d.nombre}` : ''}
                                         </option>
                                     ))}
                                 </select>
                             </Field>
-                        )}
+                        </SectionCard>
+                    )}
 
-                        {((isEdit && item?.delegaciones?.length > 0) || (!isEdit && form.delegacion_id)) && (
-                            <Field label="Registro de empleado (opcional)" error={errors.empleado_id?.[0]}>
-                                <select
-                                    value={form.empleado_id}
-                                    onChange={(e) => setForm({ ...form, empleado_id: e.target.value })}
-                                    className={selectClass}
-                                >
-                                    <option value="">Sin vincular</option>
-                                    {candidatosEmpleados.map((e) => (
-                                        <option key={e.id} value={e.id}>
-                                            {e.nombre_completo} — NUE {e.nue}
-                                        </option>
-                                    ))}
-                                </select>
-                                <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                                    Si el delegado figura en el padrón, elija su fila. La cuenta nueva quedará vinculada a delegado y empleado.
-                                </p>
-                            </Field>
-                        )}
-
-                        <Field label="Usuario del sistema (opcional)" error={errors.user_id?.[0]}>
-                            {userLinked ? (
-                                <div className="flex items-center justify-between rounded-xl border border-brand-gold/35 bg-brand-gold/5 px-3 py-3">
-                                    <div>
-                                        <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">{userLinked.name}</p>
-                                        <p className="font-mono text-[11px] text-zinc-400">{userLinked.rfc || userLinked.email}</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setUserLinked(null);
-                                            setForm((p) => ({ ...p, user_id: '' }));
-                                            resetUserSearch();
-                                        }}
-                                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-                                    >
-                                        <X size={14} strokeWidth={2.5} />
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5">
-                                    <SearchInput
-                                        value={userSearch}
-                                        onChange={(e) => setUserSearch(e.target.value)}
-                                        placeholder="Nombre o RFC…"
-                                        inputClassName="text-base sm:text-sm"
-                                    />
-                                    {userResults.length > 0 && (
-                                        <div className="max-h-36 divide-y divide-zinc-50 overflow-y-auto overflow-hidden rounded-xl border border-zinc-100 dark:divide-zinc-800/60 dark:border-zinc-800">
-                                            {userResults.map((u) => (
-                                                <button
-                                                    key={u.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setUserLinked(u);
-                                                        setForm((p) => ({ ...p, user_id: u.id }));
-                                                        resetUserSearch();
-                                                    }}
-                                                    className="flex min-h-[44px] w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-brand-gold/5"
-                                                >
-                                                    <div className="min-w-0 flex-1">
-                                                        <p className="truncate text-[13px] font-semibold text-zinc-800 dark:text-zinc-200">{u.name}</p>
-                                                        <p className="font-mono text-[11px] text-zinc-400">{u.rfc || u.email}</p>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {!userResults.length && userSearch && (
-                                        <p className="px-1 text-[12px] text-zinc-400">Sin resultados.</p>
-                                    )}
-                                </div>
-                            )}
-                        </Field>
-
-                        {isEdit && !userLinked && (
-                            <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50/50 p-4 dark:border-zinc-700 dark:bg-zinc-800/20">
-                                <p className="mb-3 text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-                                    Cree una cuenta con RFC y contraseña; se asignan los roles delegado y empleado.
-                                </p>
+                    {/* ── Paso 1: Empleado ────────────────────────── */}
+                    <SectionCard
+                        title="Paso 1 · Empleado del padrón"
+                        description="Busque al colaborador por nombre o NUE. Si no existe, puede crearlo."
+                    >
+                        {isEdit && nombreDelegado ? (
+                            <div className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-800/40">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 shrink-0">Delegado</span>
+                                <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-200 uppercase tracking-wide">{nombreDelegado}</span>
+                            </div>
+                        ) : null}
+                        {empleadoVinculado ? (
+                            <EmpleadoCard
+                                empleado={empleadoVinculado}
+                                onDesvincular={() => {
+                                    setEmpleadoVinculado(null);
+                                    setResultadosEmpleado([]);
+                                }}
+                            />
+                        ) : (
+                            <div className="space-y-3">
+                                <EmpleadoSearch
+                                    value={busqEmpleado}
+                                    onChange={(e) => setBusqEmpleado(e.target.value)}
+                                    onClear={() => { setBusqEmpleado(''); setResultadosEmpleado([]); }}
+                                />
+                                <ResultadoEmpleados
+                                    resultados={resultadosEmpleado}
+                                    cargando={cargandoEmpleado}
+                                    busqueda={busqEmpleado}
+                                    onSeleccionar={(emp) => {
+                                        setEmpleadoVinculado(emp);
+                                        setResultadosEmpleado([]);
+                                    }}
+                                />
                                 <button
                                     type="button"
-                                    onClick={abrirModalCrearUsuario}
-                                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 px-4 py-3 text-[13px] font-bold text-zinc-800 transition-colors hover:bg-white dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto"
+                                    onClick={abrirModalEmpleado}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-2.5 text-[12px] font-semibold text-zinc-600 hover:border-brand-gold/40 hover:text-brand-gold dark:border-zinc-700 dark:text-zinc-400 transition-colors"
                                 >
-                                    <UserPlus size={16} strokeWidth={2} />
-                                    Crear usuario
+                                    <UserPlus size={14} strokeWidth={2} />
+                                    Crear empleado nuevo
                                 </button>
                             </div>
                         )}
+                    </SectionCard>
 
-                        {!isEdit && (
-                            <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
-                                Guarde primero; luego podrá crear cuenta o vincular usuario desde la edición.
-                            </p>
+                    {/* ── Paso 2: Usuario ─────────────────────────── */}
+                    <SectionCard
+                        title="Paso 2 · Cuenta de acceso"
+                        description="Vincule un usuario existente o cree uno nuevo para este delegado."
+                    >
+                        {usuarioVinculado ? (
+                            <UsuarioCard
+                                user={usuarioVinculado}
+                                onDesvincular={() => {
+                                    setUsuarioVinculado(null);
+                                    setBusqUsuario('');
+                                }}
+                            />
+                        ) : (
+                            <div className="space-y-3">
+                                {/* Buscar usuario existente */}
+                                <div className="relative">
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        value={busqUsuario}
+                                        onChange={(e) => setBusqUsuario(e.target.value)}
+                                        placeholder="Buscar usuario existente por nombre o RFC…"
+                                        className={`${inputCls} pl-9`}
+                                        autoComplete="off"
+                                    />
+                                </div>
+                                {resultadosUsuario.length > 0 && (
+                                    <div className="overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/60">
+                                        {resultadosUsuario.map((u) => (
+                                            <button
+                                                key={u.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setUsuarioVinculado(u);
+                                                    setBusqUsuario('');
+                                                    setResultadosUsuario([]);
+                                                }}
+                                                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-brand-gold/5 transition-colors min-h-[52px]"
+                                            >
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 truncate">{u.name}</p>
+                                                    <p className="font-mono text-[11px] text-zinc-400 mt-0.5">RFC {u.rfc || '—'}</p>
+                                                </div>
+                                                <ChevronRight size={14} className="shrink-0 text-zinc-300" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {busqUsuario && resultadosUsuario.length === 0 && (
+                                    <p className="text-[12px] text-zinc-400">Sin resultados.</p>
+                                )}
+
+                                {/* Crear cuenta nueva (solo en edición) */}
+                                {isEdit ? (
+                                    <button
+                                        type="button"
+                                        onClick={abrirModalUsuario}
+                                        className="inline-flex w-full items-center justify-center gap-2 min-h-[44px] rounded-xl border border-brand-gold/35 bg-brand-gold/5 px-4 py-2.5 text-[13px] font-bold text-brand-gold hover:bg-brand-gold/10 transition-colors touch-manipulation"
+                                    >
+                                        <UserPlus size={15} strokeWidth={2.2} />
+                                        Crear cuenta nueva para este delegado
+                                    </button>
+                                ) : (
+                                    <p className="text-[12px] text-zinc-400">
+                                        Guarde primero; luego podrá crear la cuenta desde la edición.
+                                    </p>
+                                )}
+                            </div>
                         )}
+                    </SectionCard>
 
-                        <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 pt-6 dark:border-zinc-800/80 sm:flex-row sm:justify-end">
-                            <Link
-                                to="/dashboard/delegados"
-                                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 sm:w-auto"
-                            >
-                                Cancelar
-                            </Link>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto"
-                            >
-                                {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    {/* ── Botones ──────────────────────────────────── */}
+                    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                        <Link
+                            to="/dashboard/delegados"
+                            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 sm:w-auto"
+                        >
+                            Cancelar
+                        </Link>
+                        <button
+                            type="submit"
+                            disabled={saving || (!isEdit && !delegacionId)}
+                            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto"
+                        >
+                            {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear delegado'}
+                        </button>
+                    </div>
+                </form>
             </div>
 
+            {/* ══ Modal: crear cuenta de usuario ══════════════════════════ */}
             <Modal
-                open={modalCrearUsuario}
-                onClose={() => !savingCrearUsuario && setModalCrearUsuario(false)}
+                open={modalUsuario}
+                onClose={() => !savingUsuario && setModalUsuario(false)}
                 title="Nueva cuenta de usuario"
                 size="2xl"
                 footer={
                     <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button
                             type="button"
-                            disabled={savingCrearUsuario}
-                            onClick={() => setModalCrearUsuario(false)}
+                            disabled={savingUsuario}
+                            onClick={() => setModalUsuario(false)}
                             className="min-h-[44px] w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-600 dark:border-zinc-700 dark:text-zinc-400 sm:w-auto"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
-                            form="form-crear-usuario-delegado"
-                            disabled={savingCrearUsuario}
+                            form="form-nuevo-usuario-delegado"
+                            disabled={savingUsuario}
                             className="min-h-[44px] w-full rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto"
                         >
-                            {savingCrearUsuario ? 'Creando…' : 'Crear y vincular'}
+                            {savingUsuario ? 'Creando…' : 'Crear y vincular'}
                         </button>
                     </div>
                 }
             >
-                <form id="form-crear-usuario-delegado" onSubmit={handleCrearUsuario} className="space-y-4">
-                    {errorsCrearUsuario.general && (
+                <form id="form-nuevo-usuario-delegado" onSubmit={handleCrearUsuario} className="space-y-4">
+                    {errUsuario.general && (
                         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-500/10">
-                            {Array.isArray(errorsCrearUsuario.general) ? errorsCrearUsuario.general[0] : errorsCrearUsuario.general}
+                            {Array.isArray(errUsuario.general) ? errUsuario.general[0] : errUsuario.general}
                         </p>
                     )}
-                    <p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-                        Indique el <strong className="text-zinc-800 dark:text-zinc-200">RFC</strong> para el acceso y una contraseña segura.
-                    </p>
-                    <Field label="Empleado (auto sugerido)" error={errorsCrearUsuario.empleado_id?.[0]}>
-                        <select
-                            value={crearUsuarioForm.empleado_id}
-                            onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, empleado_id: e.target.value }))}
-                            className={selectClass}
-                        >
-                            <option value="">Sin vincular</option>
-                            {empleadosSugeridos.map((emp) => (
-                                <option key={emp.id} value={emp.id}>
-                                    {emp.nombre_completo} — NUE {emp.nue || 'S/N'} — {emp.delegacion_clave || 'SIN DEL'}
-                                </option>
-                            ))}
-                        </select>
-                        <p className="mt-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {buscandoEmpleados
-                                ? 'Buscando coincidencias en empleados...'
-                                : 'Se muestran empleados que coinciden por nombre del delegado y pertenecen a sus delegaciones.'}
-                        </p>
-                    </Field>
+
+                    {empleadoVinculado && (
+                        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 px-4 py-3 text-[12px] text-zinc-600 dark:text-zinc-400">
+                            Empleado: <strong className="text-zinc-800 dark:text-zinc-200">{empleadoVinculado.nombre_completo}</strong>
+                            {empleadoVinculado.nue && <span className="font-mono ml-2 text-zinc-400">NUE {empleadoVinculado.nue}</span>}
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Field label="Nombre para la cuenta" error={errorsCrearUsuario.name?.[0]}>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Nombre completo</label>
                             <input
                                 type="text"
-                                value={crearUsuarioForm.name}
-                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, name: e.target.value }))}
+                                value={formUsuario.name}
+                                onChange={(e) => setFormUsuario((p) => ({ ...p, name: e.target.value }))}
                                 placeholder="Nombre completo"
-                                className={inputClass}
+                                className={inputCls}
                             />
-                        </Field>
-                        <Field label="RFC (usuario)" error={errorsCrearUsuario.rfc?.[0]}>
+                            {errUsuario.name?.[0] && <p className="text-[11px] text-red-500">{errUsuario.name[0]}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">RFC (usuario de acceso) *</label>
                             <input
                                 type="text"
-                                value={crearUsuarioForm.rfc}
-                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, rfc: e.target.value.toUpperCase() }))}
+                                value={formUsuario.rfc}
+                                onChange={(e) => setFormUsuario((p) => ({ ...p, rfc: e.target.value.toUpperCase() }))}
                                 placeholder="Ej. ABCD123456EF7"
                                 maxLength={20}
                                 required
-                                className={inputClass}
+                                className={inputCls}
                             />
-                        </Field>
+                            {errUsuario.rfc?.[0] && <p className="text-[11px] text-red-500">{errUsuario.rfc[0]}</p>}
+                        </div>
                     </div>
-                    <Field label="Correo (opcional)" error={errorsCrearUsuario.email?.[0]}>
+
+                    <div className="space-y-1.5">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Correo electrónico (opcional)</label>
                         <input
                             type="email"
-                            value={crearUsuarioForm.email}
-                            onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, email: e.target.value }))}
+                            value={formUsuario.email}
+                            onChange={(e) => setFormUsuario((p) => ({ ...p, email: e.target.value }))}
                             placeholder="correo@institucion.gob.mx"
-                            className={inputClass}
+                            className={inputCls}
                         />
-                    </Field>
+                        {errUsuario.email?.[0] && <p className="text-[11px] text-red-500">{errUsuario.email[0]}</p>}
+                    </div>
+
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Field label="Contraseña" error={errorsCrearUsuario.password?.[0]}>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Contraseña *</label>
+                            <div className="relative">
+                                <input
+                                    type={verPassword ? 'text' : 'password'}
+                                    value={formUsuario.password}
+                                    onChange={(e) => setFormUsuario((p) => ({ ...p, password: e.target.value }))}
+                                    placeholder="Mínimo 8 caracteres"
+                                    autoComplete="new-password"
+                                    required
+                                    className={`${inputCls} pr-11`}
+                                />
+                                <button type="button" onClick={() => setVerPassword((v) => !v)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                    aria-label={verPassword ? 'Ocultar' : 'Mostrar'}
+                                >
+                                    {verPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
+                            {errUsuario.password?.[0] && <p className="text-[11px] text-red-500">{errUsuario.password[0]}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Confirmar contraseña *</label>
                             <input
-                                type="password"
-                                value={crearUsuarioForm.password}
-                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password: e.target.value }))}
-                                placeholder="Mínimo 8 caracteres"
+                                type={verPassword ? 'text' : 'password'}
+                                value={formUsuario.password_confirmation}
+                                onChange={(e) => setFormUsuario((p) => ({ ...p, password_confirmation: e.target.value }))}
+                                placeholder="Repetir contraseña"
                                 autoComplete="new-password"
                                 required
-                                className={inputClass}
+                                className={inputCls}
                             />
-                        </Field>
-                        <Field label="Confirmar" error={errorsCrearUsuario.password_confirmation?.[0]}>
-                            <input
-                                type="password"
-                                value={crearUsuarioForm.password_confirmation}
-                                onChange={(e) => setCrearUsuarioForm((p) => ({ ...p, password_confirmation: e.target.value }))}
-                                placeholder="Repetir"
-                                autoComplete="new-password"
-                                required
-                                className={inputClass}
-                            />
-                        </Field>
+                            {errUsuario.password_confirmation?.[0] && <p className="text-[11px] text-red-500">{errUsuario.password_confirmation[0]}</p>}
+                        </div>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* ══ Modal: crear empleado nuevo ══════════════════════════════ */}
+            <Modal
+                open={modalEmpleado}
+                onClose={() => !savingEmpleado && setModalEmpleado(false)}
+                title="Registrar nuevo empleado"
+                size="2xl"
+                footer={
+                    <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            disabled={savingEmpleado}
+                            onClick={() => setModalEmpleado(false)}
+                            className="min-h-[44px] w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-600 dark:border-zinc-700 dark:text-zinc-400 sm:w-auto"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            form="form-nuevo-empleado-delegado"
+                            disabled={savingEmpleado}
+                            className="min-h-[44px] w-full rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto"
+                        >
+                            {savingEmpleado ? 'Creando…' : 'Crear empleado'}
+                        </button>
+                    </div>
+                }
+            >
+                <form id="form-nuevo-empleado-delegado" onSubmit={handleCrearEmpleado} className="space-y-4">
+                    {errEmpleado.general && (
+                        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-500 dark:bg-red-500/10">
+                            {Array.isArray(errEmpleado.general) ? errEmpleado.general[0] : errEmpleado.general}
+                        </p>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Nombre(s) *</label>
+                            <input type="text" value={formEmpleado.nombre}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, nombre: e.target.value }))}
+                                placeholder="Nombre(s)" required className={inputCls} />
+                            {errEmpleado.nombre?.[0] && <p className="text-[11px] text-red-500">{errEmpleado.nombre[0]}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">NUE *</label>
+                            <input type="text" value={formEmpleado.nue}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, nue: e.target.value }))}
+                                placeholder="Número único de empleado" maxLength={15} required className={inputCls} />
+                            {errEmpleado.nue?.[0] && <p className="text-[11px] text-red-500">{errEmpleado.nue[0]}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Apellido paterno</label>
+                            <input type="text" value={formEmpleado.apellido_paterno}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, apellido_paterno: e.target.value }))}
+                                placeholder="Opcional" className={inputCls} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Apellido materno</label>
+                            <input type="text" value={formEmpleado.apellido_materno}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, apellido_materno: e.target.value }))}
+                                placeholder="Opcional" className={inputCls} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Unidad responsable (UR) *</label>
+                            <select value={formEmpleado.dependencia_clave}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, dependencia_clave: e.target.value, delegacion_clave: '' }))}
+                                required className={selectCls}>
+                                <option value="">Seleccione UR…</option>
+                                {dependencias.map((d) => <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>)}
+                            </select>
+                            {errEmpleado.dependencia_clave?.[0] && <p className="text-[11px] text-red-500">{errEmpleado.dependencia_clave[0]}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500">Delegación *</label>
+                            <select value={formEmpleado.delegacion_clave}
+                                onChange={(e) => setFormEmpleado((p) => ({ ...p, delegacion_clave: e.target.value }))}
+                                disabled={!formEmpleado.dependencia_clave}
+                                required className={`${selectCls} ${!formEmpleado.dependencia_clave ? 'opacity-50' : ''}`}>
+                                <option value="">Seleccione delegación…</option>
+                                {delegacionesEmpleado.map((d) => <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>)}
+                            </select>
+                            {errEmpleado.delegacion_clave?.[0] && <p className="text-[11px] text-red-500">{errEmpleado.delegacion_clave[0]}</p>}
+                        </div>
                     </div>
                 </form>
             </Modal>

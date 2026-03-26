@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Building2, Calendar, ChevronDown, ChevronUp, FileText, KeyRound, ListFilter, Unlock } from 'lucide-react';
 import { DataTable, SearchInput, Modal, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
 
 export default function MiDelegacionPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const urParamInicial = (searchParams.get('ur') || '').trim().toUpperCase();
     const [delegaciones, setDelegaciones] = useState([]);
     const [empleadosPorDelegacion, setEmpleadosPorDelegacion] = useState({});
     const [loading, setLoading] = useState(true);
@@ -29,7 +31,14 @@ export default function MiDelegacionPage() {
     const [filtroEstadoVestuario, setFiltroEstadoVestuario] = useState('todos');
     /** todos | con_cuenta | sin_cuenta */
     const [filtroAcceso, setFiltroAcceso] = useState('todos');
+    /** ur por URL/contexto */
+    const [filtroUr, setFiltroUr] = useState(urParamInicial || 'todas');
     const [reactivandoId, setReactivandoId] = useState(null);
+
+    const ursDisponibles = useMemo(
+        () => [...new Set((delegaciones || []).map((d) => (d?.ur || '').trim()).filter(Boolean))].sort(),
+        [delegaciones],
+    );
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
 
@@ -40,12 +49,14 @@ export default function MiDelegacionPage() {
     }, [delegaciones, filtroDelegacion]);
 
     const filtrosActivos =
-        filtroDelegacion !== 'todas'
+        filtroUr !== 'todas'
+        || filtroDelegacion !== 'todas'
         || filtroEstadoVestuario !== 'todos'
         || filtroAcceso !== 'todos'
         || search.trim() !== '';
 
     const limpiarFiltros = () => {
+        setFiltroUr('todas');
         setFiltroDelegacion('todas');
         setFiltroEstadoVestuario('todos');
         setFiltroAcceso('todos');
@@ -148,7 +159,9 @@ export default function MiDelegacionPage() {
     }, [pdfModal, anioPreferidoPdf]);
 
     useEffect(() => {
-        api.get('/api/mi-delegacion')
+        const qs = filtroUr !== 'todas' ? `?ur=${encodeURIComponent(filtroUr)}` : '';
+        setLoading(true);
+        api.get(`/api/mi-delegacion${qs}`)
             .then((res) => {
                 const data = res.data ?? [];
                 setDelegaciones(data);
@@ -160,7 +173,17 @@ export default function MiDelegacionPage() {
                 setMessage(err.message || 'Error al cargar delegaciones.');
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [filtroUr]);
+
+    useEffect(() => {
+        const next = new URLSearchParams(window.location.search);
+        if (filtroUr !== 'todas') {
+            next.set('ur', filtroUr);
+        } else {
+            next.delete('ur');
+        }
+        setSearchParams(next, { replace: true });
+    }, [filtroUr, setSearchParams]);
 
     useEffect(() => {
         if (delegaciones.length === 0) return;
@@ -355,6 +378,25 @@ export default function MiDelegacionPage() {
                             ) : null
                         }
                     >
+                        {delegaciones.length > 1 ? (
+                            <FilterSelectShell id="mi-del-filtro-ur" label="Unidad responsable" icon={Building2} locked={false}>
+                                <select
+                                    id="mi-del-filtro-ur"
+                                    value={filtroUr}
+                                    onChange={(e) => {
+                                        setFiltroUr(e.target.value);
+                                        setFiltroDelegacion('todas');
+                                    }}
+                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                >
+                                    <option value="todas">Todas</option>
+                                    {ursDisponibles.map((ur) => (
+                                        <option key={ur} value={ur}>{ur}</option>
+                                    ))}
+                                </select>
+                            </FilterSelectShell>
+                        ) : null}
+
                         {delegaciones.length > 1 ? (
                             <FilterSelectShell id="mi-del-filtro-del" label="Delegación" icon={Building2} locked={false}>
                                 <select
