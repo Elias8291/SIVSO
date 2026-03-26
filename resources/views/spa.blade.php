@@ -41,7 +41,7 @@
             ];
             $appState['permissions'] = $user->getAllPermissions()->pluck('name')->values()->all();
             $appState['roles'] = $user->getRoleNames()->values()->all();
-            $appState['mustChangePassword'] = false;
+            $appState['mustChangePassword'] = (bool) ($user->must_change_password ?? false);
             $appState['logoutUrl'] = route('logout');
         }
     @endphp

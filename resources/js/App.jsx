@@ -38,6 +38,8 @@ import {
 import { DependenciaFormPage, DelegacionFormPage, DelegadoFormPage } from './pages/organizacion';
 
 export default function App({ initialState }) {
+    const mustChangePassword = Boolean(initialState?.mustChangePassword);
+
     const authValue = initialState
         ? {
             user: initialState.user,
@@ -46,6 +48,7 @@ export default function App({ initialState }) {
             csrfToken: initialState.csrfToken,
             permissions: initialState.permissions ?? [],
             roles: initialState.roles ?? [],
+            mustChangePassword,
             logout: () => {
                 document.getElementById('logout-form')?.submit();
             },
@@ -57,6 +60,7 @@ export default function App({ initialState }) {
             logoutUrl: null,
             permissions: [],
             roles: [],
+            mustChangePassword: false,
             logout: () => {},
         };
 

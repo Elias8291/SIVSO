@@ -39,10 +39,12 @@ async function request(method, url, body) {
     let json;
     try { json = await res.json(); } catch { json = {}; }
 
+    if (json?.must_change_password && typeof window !== 'undefined') {
+        window.location.replace('/cambiar-contrasena');
+        return;
+    }
+
     if (!res.ok) {
-        if (json?.must_change_password && typeof window !== 'undefined') {
-            window.location.href = '/cambiar-contrasena';
-        }
         const message = json?.message ?? json?.error ?? `Error ${res.status}`;
         const errors  = json?.errors ?? null;
         const err = new Error(message);

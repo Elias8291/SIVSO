@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AppLayout = () => {
+    const { mustChangePassword } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    useEffect(() => {
+        if (mustChangePassword) {
+            window.location.replace('/cambiar-contrasena');
+        }
+    }, [mustChangePassword]);
+
+    if (mustChangePassword) return null;
 
     return (
         <div className="flex min-h-screen text-zinc-900 dark:text-zinc-100 font-sans transition-colors duration-300">
