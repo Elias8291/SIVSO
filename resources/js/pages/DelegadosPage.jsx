@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
+import {
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Modal,
+    FilterToolbar,
+} from '../components/ui';
 import { api } from '../lib/api';
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
@@ -478,17 +481,16 @@ export default function DelegadosPage() {
                         <PageAddButton onClick={() => setEditing('new')} label="Nuevo delegado" />
                     ) : null
                 }
-                search={(
-                    <div className="w-full max-w-xl">
-                        <SearchInput
-                            label="Buscar delegado"
-                            placeholder="Nombre o clave…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                )}
             />
+
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar delegado"
+                    placeholder="Nombre o clave…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </FilterToolbar>
 
             <Card title={`Delegados (${data.length})`}>
                 <DataTable

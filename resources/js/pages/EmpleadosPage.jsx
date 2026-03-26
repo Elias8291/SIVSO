@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRightLeft, ChevronDown, X, Key, Shirt } from 'lucide-react';
+import { ArrowRightLeft, Building2, ChevronDown, Key, Layers, Shirt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, PageAddButton, Card, DataTable,
     StatusBadge, ConfirmDialog, Pagination, Modal,
+    FilterSelectShell, FilterToolbar, FilterToolbarRow,
 } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
@@ -105,18 +106,6 @@ function ModalCambiarDelegacion({ empleado, onClose, onSuccess, dependencias }) 
                 </form>
             )}
         </Modal>
-    );
-}
-
-/* ── Chip de filtro ────────────────────────────────────────────────────────── */
-function FilterChip({ label, onClear }) {
-    return (
-        <span className="inline-flex items-center gap-2 pl-3 pr-1 py-1 bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest transition-colors">
-            {label}
-            <button onClick={onClear} className="size-5 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center transition-colors">
-                <X size={12} strokeWidth={2.5} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white" />
-            </button>
-        </span>
     );
 }
 
@@ -224,9 +213,13 @@ export default function EmpleadosPage() {
         },
     ];
 
-    /* ── Chips de filtro activos ─────────────────────────────────────────── */
-    const depLabel = dependencias.find(d => String(d.clave) === String(filterDep));
-    const delLabel = delegaciones.find(d => d.clave === filterDel);
+    const filtrosActivos = Boolean(filterDep || filterDel || search.trim());
+
+    const limpiarFiltros = () => {
+        setFilterDep('');
+        setFilterDel('');
+        setSearch('');
+    };
 
     return (
         <div>
@@ -241,61 +234,59 @@ export default function EmpleadosPage() {
                         />
                     ) : null
                 }
-                search={
-                    <div className="w-full max-w-xl">
-                        <SearchInput
-                            label="Buscar empleado"
-                            placeholder="NUE o nombre…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                }
             />
 
-            {/* Filtros formales */}
-            <div className="mb-10 lg:px-2">
-                <div className="flex flex-col sm:flex-row gap-8">
-                    <div className="flex-1 max-w-md w-full relative group">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Filtrar Unidad Responsable</label>
-                        <Sel value={filterDep} onChange={(e) => { setFilterDep(e.target.value); setFilterDel(''); }}>
-                            <option value="">Cualquier dependencia...</option>
-                            {dependencias.map(d => (
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar empleado"
+                    placeholder="NUE o nombre…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FilterToolbarRow
+                    end={
+                        filtrosActivos ? (
+                            <button
+                                type="button"
+                                onClick={limpiarFiltros}
+                                className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 transition-colors hover:border-brand-gold/30 hover:bg-brand-gold/5 hover:text-brand-gold dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-brand-gold/40"
+                            >
+                                Limpiar filtros
+                            </button>
+                        ) : null
+                    }
+                >
+                    <FilterSelectShell id="emp-filtro-ur" label="Unidad responsable" icon={Building2} className="min-w-0 sm:max-w-md sm:flex-1">
+                        <select
+                            id="emp-filtro-ur"
+                            value={filterDep}
+                            onChange={(e) => { setFilterDep(e.target.value); setFilterDel(''); }}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                        >
+                            <option value="">Todas</option>
+                            {dependencias.map((d) => (
                                 <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>
                             ))}
-                        </Sel>
-                    </div>
-                    <div className="flex-1 max-w-md w-full relative group">
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">Filtrar Delegación</label>
-                        <Sel value={filterDel} onChange={(e) => setFilterDel(e.target.value)} disabled={!filterDep}>
-                            <option value="">Cualquier delegación...</option>
-                            {delegaciones.map(d => (
+                        </select>
+                    </FilterSelectShell>
+                    <FilterSelectShell id="emp-filtro-del" label="Delegación" icon={Layers} locked={!filterDep} className="min-w-0 sm:max-w-md sm:flex-1">
+                        <select
+                            id="emp-filtro-del"
+                            value={filterDel}
+                            onChange={(e) => setFilterDel(e.target.value)}
+                            disabled={!filterDep}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none disabled:cursor-not-allowed dark:text-zinc-100"
+                        >
+                            <option value="">Todas</option>
+                            {delegaciones.map((d) => (
                                 <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>
                             ))}
-                        </Sel>
-                    </div>
-                </div>
-            </div>
+                        </select>
+                    </FilterSelectShell>
+                </FilterToolbarRow>
+            </FilterToolbar>
 
-            {/* Chips de filtros activos */}
-            {(filterDep || filterDel) && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {filterDep && (
-                        <FilterChip
-                            label={depLabel ? `${depLabel.clave} — ${depLabel.nombre?.slice(0, 30)}` : filterDep}
-                            onClear={() => { setFilterDep(''); setFilterDel(''); }}
-                        />
-                    )}
-                    {filterDel && (
-                        <FilterChip
-                            label={delLabel ? `Del. ${delLabel.clave}` : filterDel}
-                            onClear={() => setFilterDel('')}
-                        />
-                    )}
-                </div>
-            )}
-
-            <div className="mt-4 lg:mx-2">
+            <div className="lg:mx-2">
                 <Card
                     title="Directorio de Colaboradores"
                     action={

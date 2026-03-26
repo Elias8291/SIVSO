@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
-import { PageHeader, SearchInput } from '../components/ui';
+import { Calendar, TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
+import { PageHeader, SearchInput, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 
 const fmt = (n) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 }).format(n ?? 0);
@@ -286,29 +286,46 @@ export default function PartidasPage() {
             <PageHeader
                 title="Partidas Presupuestales"
                 description={`Gasto por partida · Ejercicio ${anioVista} · ${fmtNum(totalPiezas)} piezas · ${rows.length} dependencias`}
-                actions={
-                    <div className="flex items-center gap-2">
+            />
+
+            <FilterToolbar className="mb-6">
+                <FilterToolbarRow>
+                    <FilterSelectShell id="partidas-anio" label="Ejercicio" icon={Calendar} className="min-w-0 sm:w-[8.5rem]">
                         <select
+                            id="partidas-anio"
                             value={anio ?? data?.anio ?? anioActual}
                             onChange={(e) => handleAnioChange(Number(e.target.value))}
-                            className="text-[14px] font-semibold border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 focus:outline-none"
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
                         >
                             {anosOpts.map((y) => (
                                 <option key={y} value={y}>{y}</option>
                             ))}
                         </select>
-                        <button
-                            type="button"
-                            onClick={() => load(anio)}
-                            disabled={loading}
-                            className="flex items-center gap-1.5 px-3 py-2 text-[14px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-brand-gold hover:text-brand-gold transition-all disabled:opacity-50"
-                        >
-                            <RefreshCw size={13} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
-                            Actualizar
-                        </button>
+                    </FilterSelectShell>
+                    <button
+                        type="button"
+                        onClick={() => load(anio)}
+                        disabled={loading}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 shadow-sm transition-colors hover:border-brand-gold/35 hover:bg-brand-gold/5 hover:text-brand-gold disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-brand-gold/40"
+                    >
+                        <RefreshCw size={14} strokeWidth={2} className={loading ? 'animate-spin' : ''} aria-hidden />
+                        Actualizar
+                    </button>
+                </FilterToolbarRow>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4">
+                    <div className="min-w-0 flex-1 sm:max-w-xl">
+                        <SearchInput
+                            label="Filtrar dependencias"
+                            placeholder="Dependencia o clave UR…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
-                }
-            />
+                    <span className="text-[12px] font-medium text-zinc-500 dark:text-zinc-400 sm:pb-2">
+                        {rows.length} dependencia{rows.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+            </FilterToolbar>
 
             {typeof anioRef === 'number' && (totalEstimado > 0 || totalPendiente > 0) && (
                 <p className="text-[13px] text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed px-1">
@@ -371,21 +388,6 @@ export default function PartidasPage() {
                         icon={<CheckCircle size={18} strokeWidth={1.8} />}
                     />
                 )}
-            </div>
-
-            {/* Filtro */}
-            <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="w-full min-w-0 sm:max-w-md">
-                    <SearchInput
-                        label="Filtrar dependencias"
-                        placeholder="Dependencia o clave UR…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <span className="text-[13px] text-zinc-400 shrink-0">
-                    {rows.length} dependencia{rows.length !== 1 ? 's' : ''}
-                </span>
             </div>
 
             {/* Tabla pivot */}

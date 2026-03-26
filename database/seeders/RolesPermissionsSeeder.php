@@ -17,6 +17,7 @@ class RolesPermissionsSeeder extends Seeder
             // Principal / UI
             'ver_dashboard',
             'ver_notificaciones',
+            'enviar_notificaciones',
             'ver_organizacion',
             // Catálogo y empleados
             'ver_catalogo',

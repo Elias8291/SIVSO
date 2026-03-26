@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToggleLeft } from 'lucide-react';
-import { PageHeader, Card, DataTable, StatusBadge, ConfirmDialog, Pagination, SearchInput, PageAddButton } from '../components/ui';
+import { ToggleLeft, UserCheck } from 'lucide-react';
+import {
+    PageHeader, Card, DataTable, StatusBadge, ConfirmDialog, Pagination, SearchInput, PageAddButton,
+    FilterToolbar, FilterToolbarRow, FilterSelectShell,
+} from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
 export default function UsuariosPage() {
     const navigate = useNavigate();
+    const [filtroActivo, setFiltroActivo] = useState('');
+    const activoExtra = filtroActivo === '' ? undefined : filtroActivo;
     const { data: users, meta, loading, search, setSearch, page, setPage, reload } =
-        usePaginatedApi('/api/usuarios', { perPage: 15 });
+        usePaginatedApi('/api/usuarios', {
+            perPage: 15,
+            extra: { activo: activoExtra },
+            extraKey: `activo:${filtroActivo}`,
+        });
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
@@ -73,18 +82,32 @@ export default function UsuariosPage() {
             <PageHeader
                 title="Usuarios"
                 description="Gestión de cuentas de acceso al sistema."
+                actions={
+                    <PageAddButton onClick={() => navigate('/dashboard/usuarios/nuevo')} label="Nuevo usuario" />
+                }
             />
-            <div className="mb-8 flex flex-row flex-wrap items-end gap-3 sm:flex-nowrap">
-                <div className="min-w-0 max-w-xl flex-1">
-                    <SearchInput
-                        label="Buscar usuario"
-                        placeholder="Nombre, RFC o correo…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <PageAddButton onClick={() => navigate('/dashboard/usuarios/nuevo')} label="Nuevo usuario" />
-            </div>
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar usuario"
+                    placeholder="Nombre, RFC o correo…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FilterToolbarRow>
+                    <FilterSelectShell id="usuarios-activo" label="Estado de cuenta" icon={UserCheck} className="min-w-0 sm:w-[11rem]">
+                        <select
+                            id="usuarios-activo"
+                            value={filtroActivo}
+                            onChange={(e) => setFiltroActivo(e.target.value)}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                        >
+                            <option value="">Todos</option>
+                            <option value="1">Activos</option>
+                            <option value="0">Inactivos</option>
+                        </select>
+                    </FilterSelectShell>
+                </FilterToolbarRow>
+            </FilterToolbar>
 
             <Card title={`Usuarios${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable

@@ -208,6 +208,10 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
         Route::post('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
         Route::delete('notificaciones/{id}', [NotificacionController::class, 'destroy']);
     });
+    Route::middleware('permission:enviar_notificaciones|gestionar_usuarios')->post(
+        'notificaciones/enviar',
+        [NotificacionController::class, 'enviar']
+    );
 });
 
 Route::middleware(['auth', 'password.changed'])->group(function () {

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Pagination } from '../components/ui';
+import { Shield } from 'lucide-react';
+import {
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Pagination,
+    FilterToolbar, FilterToolbarRow, FilterSelectShell,
+} from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
@@ -21,8 +25,13 @@ function parsePermissionDisplay(name) {
 
 export default function PermisosPage() {
     const navigate = useNavigate();
+    const [guardFilter, setGuardFilter] = useState('');
     const { data: permisos, meta, loading, search, setSearch, page, setPage, reload } =
-        usePaginatedApi('/api/permisos', { perPage: 20 });
+        usePaginatedApi('/api/permisos', {
+            perPage: 20,
+            extra: { guard_name: guardFilter || undefined },
+            extraKey: `guard:${guardFilter}`,
+        });
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
@@ -79,17 +88,29 @@ export default function PermisosPage() {
                 actions={
                     <PageAddButton onClick={() => navigate('/dashboard/permisos/nuevo')} label="Nuevo permiso" />
                 }
-                search={
-                    <div className="w-full max-w-xl">
-                        <SearchInput
-                            label="Buscar permiso"
-                            placeholder="Nombre del permiso…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                }
             />
+
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar permiso"
+                    placeholder="Nombre del permiso…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FilterToolbarRow>
+                    <FilterSelectShell id="permisos-guard" label="Guard" icon={Shield} className="min-w-0 sm:w-[10rem]">
+                        <select
+                            id="permisos-guard"
+                            value={guardFilter}
+                            onChange={(e) => setGuardFilter(e.target.value)}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                        >
+                            <option value="">Todos</option>
+                            <option value="web">web</option>
+                        </select>
+                    </FilterSelectShell>
+                </FilterToolbarRow>
+            </FilterToolbar>
 
             <Card title={`Permisos${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable columns={columns} data={permisos} loading={loading}

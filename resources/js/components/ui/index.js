@@ -2,6 +2,8 @@ export { default as NavItem }        from './NavItem';
 export { default as StatCard }       from './StatCard';
 export { default as PageHeader }     from './PageHeader';
 export { default as SearchInput }    from './SearchInput';
+export { default as FilterSelectShell } from './FilterSelectShell';
+export { FilterToolbar, FilterToolbarRow } from './FilterToolbar';
 export { default as PageAddButton }  from './PageAddButton';
 export { default as PasswordInput }  from './PasswordInput';
 export { default as StatusBadge }    from './StatusBadge';

@@ -1,14 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield } from 'lucide-react';
-import { PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Pagination } from '../components/ui';
+import {
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Pagination,
+    FilterToolbar, FilterToolbarRow, FilterSelectShell,
+} from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
 export default function RolesPage() {
     const navigate = useNavigate();
+    const [guardFilter, setGuardFilter] = useState('');
     const { data: roles, meta, loading, search, setSearch, page, setPage, reload } =
-        usePaginatedApi('/api/roles', { perPage: 15 });
+        usePaginatedApi('/api/roles', {
+            perPage: 15,
+            extra: { guard_name: guardFilter || undefined },
+            extraKey: `guard:${guardFilter}`,
+        });
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
@@ -58,17 +66,29 @@ export default function RolesPage() {
                 actions={
                     <PageAddButton onClick={() => navigate('/dashboard/roles/nuevo')} label="Nuevo rol" />
                 }
-                search={
-                    <div className="w-full max-w-xl">
-                        <SearchInput
-                            label="Buscar rol"
-                            placeholder="Nombre del rol…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                }
             />
+
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar rol"
+                    placeholder="Nombre del rol…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FilterToolbarRow>
+                    <FilterSelectShell id="roles-guard" label="Guard" icon={Shield} className="min-w-0 sm:w-[10rem]">
+                        <select
+                            id="roles-guard"
+                            value={guardFilter}
+                            onChange={(e) => setGuardFilter(e.target.value)}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                        >
+                            <option value="">Todos</option>
+                            <option value="web">web</option>
+                        </select>
+                    </FilterSelectShell>
+                </FilterToolbarRow>
+            </FilterToolbar>
 
             <Card title={`Roles${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable columns={columns} data={roles} loading={loading}

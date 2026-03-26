@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Shirt, AlertCircle, Plus, FileDown, CheckCircle } from 'lucide-react';
+import { Calendar, Shirt, AlertCircle, Plus, FileDown, CheckCircle } from 'lucide-react';
 import { api, resolveApiUrl } from '../lib/api';
-import { Modal, SearchInput } from '../components/ui';
+import { Modal, SearchInput, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
 
 import {
@@ -407,52 +407,16 @@ export default function MiVestuarioPage() {
                     <h2 className="text-lg font-bold leading-tight tracking-tight text-zinc-900 dark:text-white sm:text-xl">
                         Mi Vestuario
                     </h2>
-                    <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 sm:text-[12px]">Ejercicio</span>
-                            {aniosSelect.length > 1 ? (
-                                <>
-                                    <select
-                                        value={anio ?? data.anio}
-                                        onChange={(e) => handleAnioChange(Number(e.target.value))}
-                                        aria-label="Año del vestuario"
-                                        className="max-w-[5.5rem] cursor-pointer rounded-md border border-brand-gold/20 bg-brand-gold/5 py-0.5 pl-1.5 pr-6 text-[11px] font-bold text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold/30 sm:max-w-none sm:text-[12px]"
-                                    >
-                                        {aniosSelect.map((a) => (
-                                            <option key={a} value={a}>{a}</option>
-                                        ))}
-                                    </select>
-                                    {(anio ?? data.anio) === ejercicioVigente && (
-                                        <span className="rounded border border-brand-gold/25 bg-brand-gold/5 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-brand-gold">
-                                            Vigente
-                                        </span>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-[12px] font-bold text-brand-gold">{anio ?? data.anio}</span>
-                                    {(anio ?? data.anio) === ejercicioVigente && (
-                                        <span className="rounded border border-brand-gold/25 bg-brand-gold/5 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-brand-gold">
-                                            Vigente
-                                        </span>
-                                    )}
-                                </>
-                            )}
-                            {(anio ?? data.anio) !== ejercicioVigente && (
-                                <span className="rounded bg-zinc-100 px-1.5 py-0 text-[9px] font-semibold text-zinc-500 dark:bg-zinc-800">histórico</span>
-                            )}
-                        </div>
-                        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 sm:text-[12px]">
-                            <span className="shrink-0">NUE {data.empleado.nue}</span>
-                            <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>
-                                ·
-                            </span>
-                            <span className="min-w-0 max-w-full truncate sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
-                        </div>
+                    <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 sm:text-[12px]">
+                        <span className="shrink-0">NUE {data.empleado.nue}</span>
+                        <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>
+                            ·
+                        </span>
+                        <span className="min-w-0 max-w-full truncate sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
                     </div>
                 </div>
 
-                <div className="mt-3 w-full max-w-xl sm:mt-4">
+                <FilterToolbar className="mt-3">
                     <SearchInput
                         id="mi-vestuario-busqueda"
                         label="Filtrar artículos"
@@ -460,7 +424,37 @@ export default function MiVestuarioPage() {
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Nombre o clave…"
                     />
-                </div>
+                    <FilterToolbarRow>
+                        {aniosSelect.length > 1 ? (
+                            <FilterSelectShell id="mi-vestuario-anio" label="Ejercicio" icon={Calendar} className="min-w-0 sm:w-[9.5rem]">
+                                <select
+                                    id="mi-vestuario-anio"
+                                    value={anio ?? data.anio}
+                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                    aria-label="Año del vestuario"
+                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                >
+                                    {aniosSelect.map((a) => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            </FilterSelectShell>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Ejercicio</span>
+                                <span className="text-[12px] font-bold text-brand-gold">{anio ?? data.anio}</span>
+                            </div>
+                        )}
+                        {(anio ?? data.anio) === ejercicioVigente && (
+                            <span className="rounded border border-brand-gold/25 bg-brand-gold/5 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-brand-gold">
+                                Vigente
+                            </span>
+                        )}
+                        {(anio ?? data.anio) !== ejercicioVigente && (
+                            <span className="rounded bg-zinc-100 px-1.5 py-0 text-[9px] font-semibold text-zinc-500 dark:bg-zinc-800">histórico</span>
+                        )}
+                    </FilterToolbarRow>
+                </FilterToolbar>
 
                 <div className="mt-3">
                     <VestuarioResumenTotales

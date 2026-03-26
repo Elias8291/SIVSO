@@ -34,6 +34,14 @@ class UserController extends Controller
             });
         }
 
+        if ($request->filled('activo')) {
+            $raw = $request->get('activo');
+            $activo = filter_var($raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($activo !== null) {
+                $query->where('activo', $activo);
+            }
+        }
+
         $paginated = $query->paginate($perPage);
 
         // 1 sola query para todos los roles de la página (evita N+1)

@@ -1,8 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToggleLeft, ToggleRight, LayoutGrid, List } from 'lucide-react';
+import { Calendar, ToggleLeft, ToggleRight, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader, SearchInput, PageAddButton, Card, DataTable, StatusBadge, ConfirmDialog, Pagination } from '../components/ui';
+import {
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, StatusBadge, ConfirmDialog, Pagination,
+    FilterSelectShell, FilterToolbar, FilterToolbarRow,
+} from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
@@ -156,48 +159,48 @@ export default function ProductosPage() {
                         <PageAddButton onClick={() => navigate('/dashboard/productos/nuevo')} label="Nuevo producto" />
                     ) : null
                 }
-                search={
-                    <div className="flex flex-wrap items-end gap-3 w-full">
-                        <div className="flex-1 min-w-0 max-w-xl">
-                            <SearchInput
-                                label="Buscar producto"
-                                placeholder="Descripción, clave, código o marca…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <label className="sr-only">Año</label>
-                            <select
-                                value={anioFiltro}
-                                onChange={(e) => setAnioFiltro(Number(e.target.value))}
-                                className="px-2.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-white dark:bg-zinc-900 text-[12px] font-bold text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-brand-gold/25"
-                                title="Filtrar precios por ejercicio"
-                            >
-                                {aniosOpciones.map((a) => (
-                                    <option key={a} value={a}>{a}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700/60 rounded-xl p-1 shrink-0">
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-zinc-100 dark:bg-zinc-800 text-brand-gold' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                                title="Vista de cuadrícula"
-                            >
-                                <LayoutGrid size={16} strokeWidth={2} />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`p-1.5 rounded-lg transition-all ${viewMode === 'table' ? 'bg-zinc-100 dark:bg-zinc-800 text-brand-gold' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                                title="Vista de lista"
-                            >
-                                <List size={16} strokeWidth={2} />
-                            </button>
-                        </div>
-                    </div>
-                }
             />
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar producto"
+                    placeholder="Descripción, clave, código o marca…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+                <FilterToolbarRow>
+                    <FilterSelectShell id="productos-anio" label="Ejercicio (precios)" icon={Calendar} className="min-w-0 sm:w-[9rem]">
+                        <select
+                            id="productos-anio"
+                            value={anioFiltro}
+                            onChange={(e) => setAnioFiltro(Number(e.target.value))}
+                            title="Filtrar precios por ejercicio"
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                        >
+                            {aniosOpciones.map((a) => (
+                                <option key={a} value={a}>{a}</option>
+                            ))}
+                        </select>
+                    </FilterSelectShell>
+                    <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('grid')}
+                            className={`rounded-md p-2 transition-all ${viewMode === 'grid' ? 'bg-zinc-100 text-brand-gold dark:bg-zinc-800' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                            title="Vista de cuadrícula"
+                        >
+                            <LayoutGrid size={16} strokeWidth={2} aria-hidden />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('table')}
+                            className={`rounded-md p-2 transition-all ${viewMode === 'table' ? 'bg-zinc-100 text-brand-gold dark:bg-zinc-800' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                            title="Vista de lista"
+                        >
+                            <List size={16} strokeWidth={2} aria-hidden />
+                        </button>
+                    </div>
+                </FilterToolbarRow>
+            </FilterToolbar>
 
             {viewMode === 'table' ? (
                 <Card title={`Productos${meta.total ? ` (${meta.total})` : ''} · ${anioFiltro}`}>

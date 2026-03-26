@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog } from '../components/ui';
+import {
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog,
+    FilterToolbar,
+} from '../components/ui';
 import { api } from '../lib/api';
 
 export default function DependenciasPage() {
@@ -79,17 +82,16 @@ export default function DependenciasPage() {
                         />
                     ) : null
                 }
-                search={
-                    <div className="w-full max-w-xl">
-                        <SearchInput
-                            label="Buscar dependencia"
-                            placeholder="Clave o nombre…"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
-                }
             />
+
+            <FilterToolbar className="mb-8">
+                <SearchInput
+                    label="Buscar dependencia"
+                    placeholder="Clave o nombre…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </FilterToolbar>
 
             <Card title={`Dependencias (${data.length})`}>
                 <DataTable

@@ -3,9 +3,9 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Shirt, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
+import { Calendar, Shirt, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
 import { api } from '../lib/api';
-import { Modal, SearchInput } from '../components/ui';
+import { Modal, SearchInput, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
 import {
     mergedRow,
@@ -417,46 +417,54 @@ export default function MiDelegacionVestuarioPage() {
                         {emp.nue && <span className="text-zinc-500"> · NUE {emp.nue}</span>}
                         {emp.delegacion_clave && <span className="text-zinc-500"> · {emp.delegacion_clave}</span>}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
-                        {aniosSelect.length > 1 ? (
-                            <select
-                                value={anio ?? data.anio}
-                                onChange={(e) => handleAnioChange(Number(e.target.value))}
-                                className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
-                            >
-                                {aniosSelect.map((a) => (
-                                    <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
-                        )}
-                        {(anio ?? data.anio) !== ejercicioVigente && (
-                            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
-                        )}
-                        {puedeReactivar && edicionCerradaEmp && (anio ?? data.anio) === ejercicioVigente && (
-                            <button
-                                type="button"
-                                disabled={reactivando}
-                                onClick={handleReactivarEdicion}
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:brightness-105 active:scale-95 transition-all ml-1"
-                            >
-                                <Unlock size={12} strokeWidth={2} />
-                                {reactivando ? '…' : 'Activar edición en Mi vestuario'}
-                            </button>
-                        )}
-                    </div>
                 </div>
 
-                <div className="mt-6 w-full max-w-xl sm:w-96">
+                <FilterToolbar className="mt-4">
                     <SearchInput
                         label="Filtrar artículos"
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Nombre o clave…"
                     />
-                </div>
+                    <FilterToolbarRow
+                        end={
+                            puedeReactivar && edicionCerradaEmp && (anio ?? data.anio) === ejercicioVigente ? (
+                                <button
+                                    type="button"
+                                    disabled={reactivando}
+                                    onClick={handleReactivarEdicion}
+                                    className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-amber-300 px-3 py-2 text-[11px] font-bold text-amber-900 transition-all hover:brightness-105 active:scale-95 disabled:opacity-50 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200 sm:w-auto sm:py-1"
+                                >
+                                    <Unlock size={12} strokeWidth={2} aria-hidden />
+                                    {reactivando ? '…' : 'Activar edición en Mi vestuario'}
+                                </button>
+                            ) : null
+                        }
+                    >
+                        {aniosSelect.length > 1 ? (
+                            <FilterSelectShell id="mi-del-vest-anio" label="Ejercicio" icon={Calendar} className="min-w-0 sm:w-[12rem]">
+                                <select
+                                    id="mi-del-vest-anio"
+                                    value={anio ?? data.anio}
+                                    onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                >
+                                    {aniosSelect.map((a) => (
+                                        <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
+                                    ))}
+                                </select>
+                            </FilterSelectShell>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Ejercicio</span>
+                                <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
+                            </div>
+                        )}
+                        {(anio ?? data.anio) !== ejercicioVigente && (
+                            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
+                        )}
+                    </FilterToolbarRow>
+                </FilterToolbar>
 
                 <div className="mt-4">
                     <VestuarioResumenTotales

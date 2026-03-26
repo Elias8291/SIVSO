@@ -29,6 +29,10 @@ class RoleController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
+        if ($request->filled('guard_name')) {
+            $query->where('guard_name', $request->get('guard_name'));
+        }
+
         $paginated = $query->paginate($perPage);
         $roleIds   = $paginated->pluck('id');
 

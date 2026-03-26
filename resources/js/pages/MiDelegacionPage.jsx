@@ -1,29 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Calendar, ChevronDown, ChevronUp, FileText, KeyRound, ListFilter } from 'lucide-react';
-import { DataTable, SearchInput, Modal } from '../components/ui';
+import { DataTable, SearchInput, Modal, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
-
-/** Contenedor de select con el mismo lenguaje visual que SearchInput */
-function FilterSelectShell({ id, label, icon: Icon, locked, className = 'sm:w-[11.25rem]', children }) {
-    return (
-        <div className={`w-full min-w-0 shrink-0 ${className}`}>
-            <label
-                htmlFor={id}
-                className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400"
-            >
-                {label}
-            </label>
-            <div
-                className={`flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:border-brand-gold/40 focus-within:shadow-[0_0_0_1px_rgba(175,148,96,0.12)] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-brand-gold/35 sm:px-3 sm:py-2 ${locked ? 'opacity-50 pointer-events-none' : ''}`}
-            >
-                <Icon className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500 pointer-events-none" strokeWidth={1.6} aria-hidden />
-                {children}
-            </div>
-        </div>
-    );
-}
 
 export default function MiDelegacionPage() {
     const [delegaciones, setDelegaciones] = useState([]);
@@ -318,7 +298,7 @@ export default function MiDelegacionPage() {
                     </p>
                 </div>
 
-                <div className="max-w-4xl space-y-4">
+                <FilterToolbar>
                     <SearchInput
                         label="Buscar colaborador"
                         placeholder="Nombre o NUE…"
@@ -326,62 +306,62 @@ export default function MiDelegacionPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-4 sm:gap-y-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4 sm:gap-y-3 min-w-0 flex-1">
-                            {delegaciones.length > 1 ? (
-                                <FilterSelectShell id="mi-del-filtro-del" label="Delegación" icon={Building2} locked={false}>
-                                    <select
-                                        id="mi-del-filtro-del"
-                                        value={filtroDelegacion}
-                                        onChange={(e) => setFiltroDelegacion(e.target.value)}
-                                        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
-                                    >
-                                        <option value="todas">Todas</option>
-                                        {delegaciones.map((d) => (
-                                            <option key={d.id} value={String(d.id)}>{d.clave}</option>
-                                        ))}
-                                    </select>
-                                </FilterSelectShell>
-                            ) : null}
-
-                            <FilterSelectShell id="mi-del-filtro-estado" label="Estado vestuario" icon={ListFilter} locked={false}>
+                    <FilterToolbarRow
+                        end={
+                            filtrosActivos ? (
+                                <button
+                                    type="button"
+                                    onClick={limpiarFiltros}
+                                    className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 transition-colors hover:border-brand-gold/30 hover:bg-brand-gold/5 hover:text-brand-gold dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-brand-gold/40"
+                                >
+                                    Limpiar filtros
+                                </button>
+                            ) : null
+                        }
+                    >
+                        {delegaciones.length > 1 ? (
+                            <FilterSelectShell id="mi-del-filtro-del" label="Delegación" icon={Building2} locked={false}>
                                 <select
-                                    id="mi-del-filtro-estado"
-                                    value={filtroEstadoVestuario}
-                                    onChange={(e) => setFiltroEstadoVestuario(e.target.value)}
+                                    id="mi-del-filtro-del"
+                                    value={filtroDelegacion}
+                                    onChange={(e) => setFiltroDelegacion(e.target.value)}
                                     className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
                                 >
-                                    <option value="todos">Todos</option>
-                                    <option value="actualizado">Actualizado</option>
-                                    <option value="pendiente">Pendiente</option>
+                                    <option value="todas">Todas</option>
+                                    {delegaciones.map((d) => (
+                                        <option key={d.id} value={String(d.id)}>{d.clave}</option>
+                                    ))}
                                 </select>
                             </FilterSelectShell>
-
-                            <FilterSelectShell id="mi-del-filtro-acceso" label="Acceso sistema" icon={KeyRound} locked={false}>
-                                <select
-                                    id="mi-del-filtro-acceso"
-                                    value={filtroAcceso}
-                                    onChange={(e) => setFiltroAcceso(e.target.value)}
-                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
-                                >
-                                    <option value="todos">Todos</option>
-                                    <option value="con_cuenta">Con cuenta</option>
-                                    <option value="sin_cuenta">Sin cuenta</option>
-                                </select>
-                            </FilterSelectShell>
-                        </div>
-
-                        {filtrosActivos ? (
-                            <button
-                                type="button"
-                                onClick={limpiarFiltros}
-                                className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 transition-colors hover:border-brand-gold/30 hover:bg-brand-gold/5 hover:text-brand-gold dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-brand-gold/40"
-                            >
-                                Limpiar filtros
-                            </button>
                         ) : null}
-                    </div>
-                </div>
+
+                        <FilterSelectShell id="mi-del-filtro-estado" label="Estado vestuario" icon={ListFilter} locked={false}>
+                            <select
+                                id="mi-del-filtro-estado"
+                                value={filtroEstadoVestuario}
+                                onChange={(e) => setFiltroEstadoVestuario(e.target.value)}
+                                className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                            >
+                                <option value="todos">Todos</option>
+                                <option value="actualizado">Actualizado</option>
+                                <option value="pendiente">Pendiente</option>
+                            </select>
+                        </FilterSelectShell>
+
+                        <FilterSelectShell id="mi-del-filtro-acceso" label="Acceso sistema" icon={KeyRound} locked={false}>
+                            <select
+                                id="mi-del-filtro-acceso"
+                                value={filtroAcceso}
+                                onChange={(e) => setFiltroAcceso(e.target.value)}
+                                className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                            >
+                                <option value="todos">Todos</option>
+                                <option value="con_cuenta">Con cuenta</option>
+                                <option value="sin_cuenta">Sin cuenta</option>
+                            </select>
+                        </FilterSelectShell>
+                    </FilterToolbarRow>
+                </FilterToolbar>
             </div>
 
             {loading ? (
