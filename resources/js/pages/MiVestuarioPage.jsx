@@ -437,7 +437,7 @@ export default function MiVestuarioPage() {
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
                         placeholder="Buscar artículo por nombre o clave..."
-                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
+                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
                     />
                 </div>
 
@@ -452,30 +452,28 @@ export default function MiVestuarioPage() {
 
                 {mostrarBloqueRecibo && (
                     <div
-                        className="mt-5 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-4 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-950/35"
+                        className="mt-5 rounded-lg border border-zinc-200 bg-white px-4 py-3.5 dark:border-zinc-700 dark:bg-zinc-900"
                         role="status"
                     >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                            <div className="flex gap-3 min-w-0">
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/50">
-                                    <CheckCircle className="size-5 text-emerald-700 dark:text-emerald-400" strokeWidth={2} aria-hidden />
-                                </span>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                            <div className="flex min-w-0 items-start gap-2.5">
+                                <CheckCircle className="mt-0.5 size-4 shrink-0 text-brand-gold" strokeWidth={2} aria-hidden />
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100 leading-snug">
-                                        {recienGuardadoRecibo ? '¡Listo! Ya guardaste tu vestuario.' : 'Tu vestuario quedó registrado.'}
+                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                        {recienGuardadoRecibo ? 'Cambios guardados.' : 'Tu vestuario quedó registrado.'}
                                     </p>
-                                    <p className="mt-1 text-[12px] leading-relaxed text-emerald-800/95 dark:text-emerald-200/90">
-                                        Este PDF es tu recibo de selección para el ejercicio {ejercicioVigente}. Consérvalo o compártelo si te lo solicitan.
+                                    <p className="mt-1 text-[12px] leading-snug text-zinc-600 dark:text-zinc-400">
+                                        Recibo de selección · ejercicio {ejercicioVigente}. Consérvalo o compártelo si te lo solicitan.
                                     </p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => abrirPdfReciboAcuse(ejercicioVigente)}
-                                className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-300/70 bg-white px-4 py-3 text-[12px] font-bold uppercase tracking-wide text-emerald-900 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700/60 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/50 sm:w-auto sm:min-w-[12rem] touch-manipulation"
+                                className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:w-auto touch-manipulation"
                             >
-                                <FileDown className="size-4 shrink-0" strokeWidth={2.2} aria-hidden />
-                                Descargar recibo (PDF)
+                                <FileDown className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+                                PDF
                             </button>
                         </div>
                     </div>
@@ -501,7 +499,7 @@ export default function MiVestuarioPage() {
                 )}
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                    <div className="mt-4 rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/40 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-300 shadow-sm">
+                    <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
                         <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex flex-wrap items-center gap-2">
                             Actualiza tu vestuario al ejercicio {ejercicioVigente}
                             {periodoActivo?.fecha_fin && (
@@ -548,7 +546,7 @@ export default function MiVestuarioPage() {
 
             {pendingCountCombined > 0 && puedeEditar && (
                 <div
-                    className="z-40 max-md:mt-10 max-md:rounded-2xl max-md:border max-md:border-zinc-200/80 dark:max-md:border-zinc-700/50 max-md:shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:max-md:shadow-none bg-white/95 dark:bg-zinc-950/95 md:fixed md:bottom-0 md:left-0 md:right-0 md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:backdrop-blur-md md:shadow-[0_-8px_30px_rgba(0,0,0,0.08)] md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                    className="z-40 max-md:mt-10 max-md:rounded-2xl max-md:border max-md:border-zinc-200 dark:max-md:border-zinc-700 max-md:shadow-sm dark:max-md:shadow-none bg-white dark:bg-zinc-950 md:fixed md:bottom-0 md:left-0 md:right-0 md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                 >
                     <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <div className="flex items-start gap-2 min-w-0 flex-1">

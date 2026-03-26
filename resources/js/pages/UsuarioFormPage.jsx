@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { api } from '../lib/api';
+import { PageHeader, Card } from '../components/ui';
 
 function Field({ label, error, children }) {
     return (
@@ -95,7 +96,7 @@ export default function UsuarioFormPage() {
     }
 
     return (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-3xl px-4 pb-12 pt-2">
             <Link
                 to="/dashboard/usuarios"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
@@ -104,24 +105,20 @@ export default function UsuarioFormPage() {
                 Volver a Usuarios
             </Link>
 
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <div className="px-4 py-4 border-b border-zinc-50 dark:border-zinc-800/60">
-                    <h2 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
-                        {isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
-                    </h2>
-                    <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Gestión de cuentas de acceso al sistema
-                    </p>
-                </div>
+            <PageHeader
+                title={isEdit ? 'Editar usuario' : 'Nuevo usuario'}
+                description="RFC como usuario de acceso, roles y estado de la cuenta."
+            />
 
-                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+            <Card className="mt-8 shadow-sm">
+                <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5">
                     {errors.general && (
-                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">
+                        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-2.5 rounded-xl border border-red-100 dark:border-red-900/50">
                             {errors.general}
                         </p>
                     )}
 
-                    <Field label="Nombre Completo" error={errors.name?.[0]}>
+                    <Field label="Nombre completo" error={errors.name?.[0]}>
                         <input
                             type="text"
                             value={form.name}
@@ -144,7 +141,7 @@ export default function UsuarioFormPage() {
                                 className={inputClass}
                             />
                         </Field>
-                        <Field label="Correo Electrónico" error={errors.email?.[0]}>
+                        <Field label="Correo electrónico" error={errors.email?.[0]}>
                             <input
                                 type="email"
                                 value={form.email}
@@ -174,7 +171,7 @@ export default function UsuarioFormPage() {
                                     className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all min-h-[44px] ${
                                         form.roles.includes(role.id)
                                             ? 'border-brand-gold/40 bg-brand-gold/8 text-brand-gold'
-                                            : 'border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700'
+                                            : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
                                     }`}
                                 >
                                     <input
@@ -200,33 +197,36 @@ export default function UsuarioFormPage() {
                         </div>
                     </Field>
 
-                    <label className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-all min-h-[44px]">
-                        <span className="text-[13px] font-semibold text-zinc-600 dark:text-zinc-400">Usuario activo</span>
-                        <div
-                            onClick={(e) => { e.preventDefault(); setForm((p) => ({ ...p, activo: !p.activo })); }}
-                            className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${form.activo ? 'bg-brand-gold' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                    <label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/30 px-4 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all min-h-[52px]">
+                        <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200">Usuario activo</span>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={form.activo}
+                            onClick={() => setForm((p) => ({ ...p, activo: !p.activo }))}
+                            className={`relative w-11 h-6 shrink-0 rounded-full transition-colors ${form.activo ? 'bg-brand-gold' : 'bg-zinc-200 dark:bg-zinc-600'}`}
                         >
-                            <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${form.activo ? 'left-4' : 'left-0.5'}`} />
-                        </div>
+                            <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${form.activo ? 'left-5' : 'left-0.5'}`} />
+                        </button>
                     </label>
 
-                    <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                    <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                         <Link
                             to="/dashboard/usuarios"
-                            className="w-full sm:w-auto min-h-[44px] flex items-center justify-center px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all touch-manipulation"
+                            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-zinc-200 px-5 py-2.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 sm:w-auto touch-manipulation"
                         >
                             Cancelar
                         </Link>
                         <button
                             type="submit"
                             disabled={saving}
-                            className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all touch-manipulation"
+                            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto min-w-[9rem] touch-manipulation"
                         >
-                            {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
+                            {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear usuario'}
                         </button>
                     </div>
                 </form>
-            </div>
+            </Card>
         </div>
     );
 }

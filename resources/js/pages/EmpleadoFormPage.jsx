@@ -4,18 +4,18 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, X, ChevronDown, UserPlus, UserCheck, Briefcase, Key, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Search, X, ChevronDown, UserPlus, Key } from 'lucide-react';
 import { api } from '../lib/api';
-import { Modal } from '../components/ui';
+import { Modal, PageHeader, Card } from '../components/ui';
 
 function Field({ label, error, children }) {
     return (
-        <div className="w-full relative group">
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1 transition-colors group-focus-within:text-brand-gold">
+        <div className="w-full space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                 {label}
             </label>
             {children}
-            {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
+            {error && <p className="text-[11px] text-red-500">{error}</p>}
         </div>
     );
 }
@@ -33,8 +33,8 @@ const EMPTY_CREAR_USUARIO = {
     password_confirmation: '',
 };
 
-const inputClass = "w-full bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm placeholder:text-zinc-300 dark:placeholder:text-zinc-600 focus:ring-0 focus:border-brand-gold dark:focus:border-brand-gold transition-colors py-2.5 px-0";
-const selectClass = "w-full bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-0 focus:border-brand-gold dark:focus:border-brand-gold transition-colors py-2.5 pl-0 pr-8 appearance-none cursor-pointer";
+const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
+const selectClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all appearance-none pr-10 cursor-pointer touch-manipulation";
 
 export default function EmpleadoFormPage() {
     const { id } = useParams();
@@ -177,182 +177,188 @@ export default function EmpleadoFormPage() {
     }
 
     return (
-        <div className="mx-auto max-w-4xl px-4 py-6 sm:py-12">
+        <div className="mx-auto max-w-3xl px-4 pb-12 pt-2">
             <Link
                 to="/dashboard/empleados"
-                className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 mb-12 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold mb-6 transition-colors"
             >
                 <ArrowLeft size={16} strokeWidth={2} />
-                Regresar al catálogo
+                Volver a Empleados
             </Link>
 
-            {/* Cabecera de vista formal */}
-            <div className="mb-12">
-                <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-zinc-900 dark:text-white">
-                    {isEdit ? 'Edición de registro' : 'Alta de colaborador'}
-                </h2>
-                <p className="text-[12px] font-bold uppercase tracking-widest text-zinc-400 mt-3">
-                    Ficha Administrativa General
-                </p>
-                <div className="h-px w-16 bg-brand-gold mt-6" />
-            </div>
+            <PageHeader
+                title={isEdit ? 'Editar colaborador' : 'Nuevo colaborador'}
+                description="Datos del padrón, unidad responsable, delegación y vínculo de usuario."
+            />
 
-            <form onSubmit={handleSubmit} className="space-y-16">
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                 {errors.general && (
-                    <div className="p-4 bg-red-50 text-red-600 text-sm flex items-center gap-3">
-                        <X size={16} strokeWidth={2.5}/> <span>{errors.general}</span>
+                    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+                        <X size={18} strokeWidth={2} className="shrink-0 mt-0.5" aria-hidden />
+                        <span>{errors.general}</span>
                     </div>
                 )}
 
-                {/* SECCIÓN 1: DATOS PERSONALES */}
-                <section>
-                    <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
-                        <span className="text-brand-gold font-light">01.</span> Identidad Personal
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6">
-                        <div className="md:col-span-1">
-                            <Field label="NUE / ID" error={errors.nue?.[0]}>
-                                <input type="text" value={form.nue} onChange={f('nue')} placeholder="00000000" maxLength={15} required className={inputClass} />
-                            </Field>
-                        </div>
-                        <div className="md:col-span-2">
-                            <Field label="Nombre(s)" error={errors.nombre?.[0]}>
-                                <input type="text" value={form.nombre} onChange={f('nombre')} placeholder="Escriba los nombres" maxLength={80} required className={inputClass} />
-                            </Field>
-                        </div>
-                        <div className="md:col-span-1">
-                            <Field label="Apellido Paterno" error={errors.apellido_paterno?.[0]}>
-                                <input type="text" value={form.apellido_paterno} onChange={f('apellido_paterno')} placeholder="Opcional" maxLength={80} className={inputClass} />
-                            </Field>
-                        </div>
-                        <div className="md:col-span-1">
-                            <Field label="Apellido Materno" error={errors.apellido_materno?.[0]}>
-                                <input type="text" value={form.apellido_materno} onChange={f('apellido_materno')} placeholder="Opcional" maxLength={80} className={inputClass} />
-                            </Field>
-                        </div>
-                    </div>
-                </section>
-
-                <div className="h-px w-full bg-zinc-100 dark:bg-zinc-800/80" />
-
-                {/* SECCIÓN 2: ASIGNACIÓN ADMINISTRATIVA */}
-                <section>
-                    <h3 className="text-lg font-medium text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
-                        <span className="text-brand-gold font-light">02.</span> Asignación Organizacional
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <Field label="Unidad Responsable (UR)" error={errors.dependencia_clave?.[0]}>
-                            <div className="relative">
-                                <select value={form.dependencia_clave} onChange={(e) => setForm(p => ({ ...p, dependencia_clave: e.target.value, delegacion_clave: '' }))} required className={selectClass}>
-                                    <option value="">Seleccione UR...</option>
-                                    {dependencias.map(d => <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-300 pointer-events-none" strokeWidth={2} />
+                <Card title="Identidad personal">
+                    <div className="p-5 sm:p-6 space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                            <div className="md:col-span-1">
+                                <Field label="NUE" error={errors.nue?.[0]}>
+                                    <input type="text" value={form.nue} onChange={f('nue')} placeholder="Número único" maxLength={15} required className={inputClass} />
+                                </Field>
                             </div>
-                        </Field>
-
-                        <Field label="Delegación" error={errors.delegacion_clave?.[0]}>
-                            <div className="relative">
-                                <select value={form.delegacion_clave} onChange={f('delegacion_clave')} disabled={!form.dependencia_clave} required className={selectClass}>
-                                    <option value="">Seleccione delegación...</option>
-                                    {delegaciones.map(d => <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>)}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-300 pointer-events-none" strokeWidth={2} />
+                            <div className="md:col-span-2">
+                                <Field label="Nombre(s)" error={errors.nombre?.[0]}>
+                                    <input type="text" value={form.nombre} onChange={f('nombre')} placeholder="Nombre(s)" maxLength={80} required className={inputClass} />
+                                </Field>
                             </div>
-                        </Field>
-                    </div>
-                        
-                    <div className="mt-8 flex items-center justify-between">
-                        <div>
-                            <p className="text-[12px] font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-100">Estado Operativo</p>
-                            <p className="text-[11px] text-zinc-400 mt-1">Activa o inactiva el acceso y procesamiento para este colaborador.</p>
+                            <div className="md:col-span-1">
+                                <Field label="Apellido paterno" error={errors.apellido_paterno?.[0]}>
+                                    <input type="text" value={form.apellido_paterno} onChange={f('apellido_paterno')} placeholder="Opcional" maxLength={80} className={inputClass} />
+                                </Field>
+                            </div>
+                            <div className="md:col-span-1">
+                                <Field label="Apellido materno" error={errors.apellido_materno?.[0]}>
+                                    <input type="text" value={form.apellido_materno} onChange={f('apellido_materno')} placeholder="Opcional" maxLength={80} className={inputClass} />
+                                </Field>
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setForm(p => ({ ...p, activo: !p.activo }))}
-                            className={`relative w-12 h-6 rounded-full transition-all duration-300 ${form.activo ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-800'}`}
-                        >
-                            <span className={`absolute top-1 size-4 rounded-full transition-all duration-300 ${form.activo ? 'left-7 bg-white dark:bg-zinc-900 shadow-sm' : 'left-1 bg-white dark:bg-zinc-600'}`} />
-                        </button>
                     </div>
-                </section>
+                </Card>
 
-                <div className="h-px w-full bg-zinc-100 dark:bg-zinc-800/80" />
+                <Card title="Asignación organizacional">
+                    <div className="p-5 sm:p-6 space-y-5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                            <Field label="Unidad responsable (UR)" error={errors.dependencia_clave?.[0]}>
+                                <div className="relative">
+                                    <select value={form.dependencia_clave} onChange={(e) => setForm(p => ({ ...p, dependencia_clave: e.target.value, delegacion_clave: '' }))} required className={selectClass}>
+                                        <option value="">Seleccione UR…</option>
+                                        {dependencias.map(d => <option key={d.clave} value={d.clave}>{d.clave} — {d.nombre}</option>)}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
+                                </div>
+                            </Field>
 
-                {/* SECCIÓN 3: ACCESO Y USUARIO */}
-                <section>
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-lg font-medium text-zinc-900 dark:text-white flex items-center gap-3">
-                            <span className="text-brand-gold font-light">03.</span> Cuenta de Sistema
-                        </h3>
+                            <Field label="Delegación" error={errors.delegacion_clave?.[0]}>
+                                <div className="relative">
+                                    <select value={form.delegacion_clave} onChange={f('delegacion_clave')} disabled={!form.dependencia_clave} required className={`${selectClass} ${!form.dependencia_clave ? 'opacity-50' : ''}`}>
+                                        <option value="">Seleccione delegación…</option>
+                                        {delegaciones.map(d => <option key={d.clave} value={d.clave}>{d.clave}{d.nombre ? ` — ${d.nombre}` : ''}</option>)}
+                                    </select>
+                                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
+                                </div>
+                            </Field>
+                        </div>
+
+                        <label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/30 px-4 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors min-h-[52px]">
+                            <div>
+                                <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200">Colaborador activo</span>
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">Inactivo oculta el registro en listados operativos.</p>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={form.activo}
+                                onClick={() => setForm(p => ({ ...p, activo: !p.activo }))}
+                                className={`relative w-11 h-6 shrink-0 rounded-full transition-colors ${form.activo ? 'bg-brand-gold' : 'bg-zinc-200 dark:bg-zinc-600'}`}
+                            >
+                                <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${form.activo ? 'left-5' : 'left-0.5'}`} />
+                            </button>
+                        </label>
                     </div>
+                </Card>
 
-                    <div className="space-y-6">
-                        <Field label="Vínculo de credenciales" error={errors.user_id?.[0]}>
+                <Card title="Cuenta de sistema">
+                    <div className="p-5 sm:p-6 space-y-5">
+                        <Field label="Usuario vinculado (opcional)" error={errors.user_id?.[0]}>
                             {userLinked ? (
-                                <div className="flex items-center justify-between py-3 border-b border-zinc-200 dark:border-zinc-800">
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-8 flex flex-col items-center justify-center text-zinc-900 dark:text-white">
-                                            <Key size={14} strokeWidth={2.5} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">{userLinked.name}</p>
-                                            <p className="text-[11px] font-mono text-zinc-400 mt-0.5">RFC: {userLinked.rfc}</p>
+                                <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-gold/10 text-brand-gold">
+                                            <Key size={18} strokeWidth={2} />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{userLinked.name}</p>
+                                            <p className="text-[11px] font-mono text-zinc-500 mt-0.5">RFC {userLinked.rfc}</p>
                                         </div>
                                     </div>
-                                    <button type="button" onClick={() => { setUserLinked(null); setForm(p => ({ ...p, user_id: '' })); resetUserSearch(); }} className="px-3 py-1 text-red-500 hover:text-red-700 text-[10px] font-bold uppercase tracking-widest transition-all">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setUserLinked(null); setForm(p => ({ ...p, user_id: '' })); resetUserSearch(); }}
+                                        className="shrink-0 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400 touch-manipulation"
+                                    >
                                         Desvincular
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <div className="relative">
-                                        <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Busque por nombre o RFC en los registros..." className={inputClass} />
-                                        <Search size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-zinc-300 pointer-events-none" strokeWidth={2} />
+                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
+                                        <input
+                                            value={userSearch}
+                                            onChange={(e) => setUserSearch(e.target.value)}
+                                            placeholder="Buscar por nombre o RFC…"
+                                            className={`${inputClass} pl-10`}
+                                        />
                                     </div>
                                     {userResults.length > 0 && (
-                                        <div className="bg-zinc-50 dark:bg-zinc-800/20 border border-zinc-200/50 dark:border-zinc-800 p-2">
+                                        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
                                             {userResults.map(u => (
-                                                <button key={u.id} type="button" onClick={() => { setUserLinked(u); setForm(p => ({ ...p, user_id: u.id })); resetUserSearch(); }} className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                                                    <p className="text-[12px] font-medium text-zinc-900 dark:text-zinc-200 truncate pr-4">{u.name}</p>
-                                                    <p className="text-[10px] text-zinc-400 font-mono shrink-0">{u.rfc}</p>
+                                                <button
+                                                    key={u.id}
+                                                    type="button"
+                                                    onClick={() => { setUserLinked(u); setForm(p => ({ ...p, user_id: u.id })); resetUserSearch(); }}
+                                                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/80 transition-colors"
+                                                >
+                                                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-200 truncate">{u.name}</span>
+                                                    <span className="text-[11px] font-mono text-zinc-500 shrink-0">{u.rfc}</span>
                                                 </button>
                                             ))}
                                         </div>
                                     )}
-                                    {!userResults.length && userSearch && (
-                                        <p className="text-[11px] text-zinc-400">Sin coincidencias.</p>
+                                    {userSearch && userResults.length === 0 && (
+                                        <p className="text-[12px] text-zinc-500">Sin coincidencias.</p>
                                     )}
                                 </div>
                             )}
                         </Field>
 
                         {isEdit && !userLinked && (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 mt-6">
-                                <p className="text-[11px] text-zinc-500 w-full max-w-sm">
-                                    Puede emitir una credencial automática desde los datos ingresados para que este colaborador acceda a la plataforma.
+                            <div className="flex flex-col gap-3 rounded-xl border border-dashed border-brand-gold/35 bg-brand-gold/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-[12px] text-zinc-600 dark:text-zinc-400 leading-snug">
+                                    Cree una cuenta nueva con RFC y contraseña para que este colaborador acceda al sistema.
                                 </p>
-                                <button type="button" onClick={abrirModalCrearUsuario} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[10px] font-bold uppercase tracking-widest text-zinc-900 border border-zinc-900 hover:bg-zinc-900 hover:text-white dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800 transition-all">
-                                    <UserPlus size={12} strokeWidth={2.5} /> Alta Rápida
+                                <button
+                                    type="button"
+                                    onClick={abrirModalCrearUsuario}
+                                    className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border border-brand-gold/40 bg-brand-gold/10 text-[12px] font-bold text-brand-gold hover:bg-brand-gold/15 transition-colors touch-manipulation shrink-0"
+                                >
+                                    <UserPlus size={16} strokeWidth={2.2} />
+                                    Nuevo usuario
                                 </button>
                             </div>
                         )}
                         {!isEdit && (
-                            <p className="text-[11px] text-zinc-500 mt-2">
-                                Complete el registro principal para habilitar la generación o asignación de credenciales de usuario.
+                            <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                Guarde el colaborador primero; luego podrá vincular o crear usuario desde la edición.
                             </p>
                         )}
                     </div>
-                </section>
+                </Card>
 
-                <div className="pt-12 pb-24 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-6">
-                    <Link to="/dashboard/empleados" className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-                        Cancelar edición
+                <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end sm:items-center">
+                    <Link
+                        to="/dashboard/empleados"
+                        className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-zinc-200 px-5 py-2.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 sm:w-auto touch-manipulation"
+                    >
+                        Cancelar
                     </Link>
-                    <button type="submit" disabled={saving} className="w-full sm:w-auto px-10 py-3.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[12px] font-bold uppercase tracking-widest shadow-xl shadow-zinc-900/20 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all">
-                        {saving ? 'PROCESANDO...' : (isEdit ? 'CONFIRMAR CAMBIOS' : 'REGISTRAR')}
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 dark:bg-white dark:text-zinc-900 sm:w-auto min-w-[10rem] touch-manipulation"
+                    >
+                        {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Registrar colaborador'}
                     </button>
                 </div>
             </form>
@@ -360,7 +366,7 @@ export default function EmpleadoFormPage() {
             <Modal
                 open={modalCrearUsuario}
                 onClose={() => !savingCrearUsuario && setModalCrearUsuario(false)}
-                title="Nueva cuenta de usuario"
+                title="Nuevo usuario"
                 size="2xl"
                 footer={
                     <div className="flex justify-end gap-2 w-full pt-1">
@@ -383,14 +389,14 @@ export default function EmpleadoFormPage() {
                     </div>
                 }
             >
-                <form id="form-crear-usuario-empleado" onSubmit={handleCrearUsuario} className="space-y-4">
+                <form id="form-crear-usuario-empleado" onSubmit={handleCrearUsuario} className="space-y-5">
                     {errorsCrearUsuario.general && (
-                        <p className="text-sm text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">
+                        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-3 py-2 rounded-xl border border-red-100 dark:border-red-900/50">
                             {Array.isArray(errorsCrearUsuario.general) ? errorsCrearUsuario.general[0] : errorsCrearUsuario.general}
                         </p>
                     )}
                     <p className="text-[13px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                        Los datos del empleado se usan como referencia. Indique el <strong>RFC</strong> para el inicio de sesión y una contraseña segura.
+                        El <strong className="text-zinc-800 dark:text-zinc-200">RFC</strong> será el usuario de acceso. Defina una contraseña segura (mínimo 8 caracteres).
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field label="Nombre para la cuenta" error={errorsCrearUsuario.name?.[0]}>

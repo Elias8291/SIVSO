@@ -34,7 +34,7 @@ const Header = ({ onMenuClick }) => {
     }, [showNotificaciones]);
 
     return (
-        <header className="h-14 sm:h-16 bg-[#F7F7F8]/80 dark:bg-[#060607]/80 backdrop-blur-xl border-b border-zinc-200/60 dark:border-zinc-800/60 sticky top-0 z-50 flex items-center gap-2 min-w-0 px-3 sm:px-8 xl:px-14">
+        <header className="h-14 sm:h-16 shrink-0 bg-white dark:bg-[#0A0A0B] border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-50 flex items-center gap-2 min-w-0 px-3 sm:px-8 xl:px-14">
 
             {/* Breadcrumb + menú — min-w-0 + truncate evita que el título tape los iconos en móvil vertical */}
             <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">

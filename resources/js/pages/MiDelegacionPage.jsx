@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, FileDown, FileText } from 'lucide-react';
-import { PageHeader, DataTable } from '../components/ui';
+import { ChevronDown, ChevronUp, FileDown, FileText, Search } from 'lucide-react';
+import { DataTable } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
 import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
@@ -241,7 +241,39 @@ export default function MiDelegacionPage() {
                 </div>
             )}
 
-            <PageHeader title="Mi Delegación" description="Tus delegaciones y empleados vinculados." />
+            {/* Encabezado minimalista, alineado con el diseño del sistema */}
+            <div className="mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                        Mi Delegación
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio PDF:</span>
+                        <select
+                            value={String(pdfEjercicioAnio)}
+                            onChange={(e) => setPdfEjercicioAnio(Number(e.target.value))}
+                            disabled={pdfLoteLoadingId !== null}
+                            className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer disabled:opacity-50"
+                        >
+                            {aniosPdfOpciones.map((y) => (
+                                <option key={y} value={String(y)}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="mt-6 relative w-full sm:w-96">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
+                    <input
+                        type="text"
+                        placeholder="Buscar por nombre o NUE..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        disabled={pdfLoteLoadingId !== null}
+                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation disabled:opacity-50"
+                    />
+                </div>
+            </div>
 
             {loading ? (
                 <div className="flex justify-center py-16">
@@ -259,41 +291,11 @@ export default function MiDelegacionPage() {
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="flex flex-col gap-3 mb-8">
-                        {successFlash && (
-                            <div className="px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/40 text-[12px] text-emerald-800 dark:text-emerald-200">
-                                {successFlash}
-                            </div>
-                        )}
-                        <div className="flex flex-col sm:flex-row flex-wrap sm:flex-nowrap items-stretch gap-3">
-                            <input
-                                type="text"
-                                placeholder="Buscar por NUE o nombre del colaborador…"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                disabled={pdfLoteLoadingId !== null}
-                                className="flex-1 min-w-0 min-h-[44px] sm:min-h-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all disabled:opacity-50 touch-manipulation"
-                            />
-                            <label className="flex flex-col gap-2 sm:flex-row sm:items-center shrink-0 px-3 py-2.5 sm:py-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 bg-zinc-50/80 dark:bg-zinc-800/40 w-full sm:w-auto">
-                                <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-                                    Ejercicio PDF
-                                </span>
-                                <select
-                                    value={String(pdfEjercicioAnio)}
-                                    onChange={(e) => setPdfEjercicioAnio(Number(e.target.value))}
-                                    disabled={pdfLoteLoadingId !== null}
-                                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2.5 py-2 text-[15px] sm:text-[13px] font-semibold text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 cursor-pointer touch-manipulation sm:border-0 sm:bg-transparent sm:px-0 sm:py-0.5 sm:pr-6 sm:min-w-[4.5rem]"
-                                    aria-label="Año del ejercicio para el PDF de acuses de toda la delegación"
-                                >
-                                    {aniosPdfOpciones.map((y) => (
-                                        <option key={y} value={String(y)}>
-                                            {y}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                    {successFlash && (
+                        <div className="px-4 py-3 rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40 text-[12px] text-emerald-800 dark:text-emerald-200 mb-6">
+                            {successFlash}
                         </div>
-                    </div>
+                    )}
 
                     <div className="space-y-8">
                         {delegaciones.map((del) => {
@@ -302,8 +304,8 @@ export default function MiDelegacionPage() {
                             const abierta = expandidas[del.id] !== false;
 
                             return (
-                                <div key={del.id} className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 shadow-sm rounded-xl overflow-hidden transition-all duration-300 min-w-0">
-                                    <div className="w-full px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3 border-b border-zinc-200 dark:border-zinc-800 min-w-0">
+                                <div key={del.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 min-w-0 dark:border-zinc-800 dark:bg-zinc-900">
+                                    <div className="flex w-full min-w-0 flex-col gap-3 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                         <div
                                             role="button"
                                             tabIndex={0}

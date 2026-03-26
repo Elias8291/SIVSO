@@ -172,11 +172,11 @@ export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados
 
     if (variant === 'header') {
         return (
-            <div className="rounded-xl border border-zinc-200/65 bg-gradient-to-r from-brand-gold/[0.05] via-white to-zinc-50/40 px-4 py-3 dark:border-zinc-800/75 dark:from-brand-gold/[0.04] dark:via-zinc-900/90 dark:to-zinc-900 sm:rounded-2xl sm:px-5 sm:py-3.5">
+            <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900 sm:rounded-xl sm:px-5 sm:py-3.5">
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="hidden h-9 w-0.5 shrink-0 rounded-full bg-brand-gold/70 sm:block" aria-hidden />
+                    <div className="hidden h-9 w-0.5 shrink-0 rounded-full bg-brand-gold sm:block" aria-hidden />
                     <div className="min-w-0 flex-1 text-center sm:text-left">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-brand-gold/95 mb-1.5 sm:mb-1">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-brand-gold mb-1.5 sm:mb-1">
                             {rubrica}
                         </p>
                         <p className="flex flex-wrap items-baseline justify-center gap-x-0 gap-y-0.5 sm:justify-start">
@@ -199,7 +199,7 @@ export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados
                     </div>
                 </div>
                 {hayFiltro ? (
-                    <p className="mt-2.5 border-t border-zinc-200/50 pt-2.5 text-[10px] leading-snug text-zinc-500 dark:border-zinc-800/60 dark:text-zinc-400">
+                    <p className="mt-2.5 border-t border-zinc-200 pt-2.5 text-[10px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
                         Filtro activo: se listan {totalFiltrados} de {articulosDistintos}. Las cifras son del vestuario completo.
                     </p>
                 ) : null}
@@ -280,12 +280,12 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
     const esNuevaLinea = !!item._nuevaLinea;
 
     const cardShell = esNuevaLinea
-        ? 'border border-sky-200/80 bg-sky-50/40 dark:border-sky-800/50 dark:bg-sky-950/25 ring-1 ring-sky-200/50 dark:ring-sky-800/30 shadow-sm'
+        ? 'border border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950 shadow-sm'
         : modificadoLocal
-            ? 'border border-emerald-200/70 bg-emerald-50/45 dark:border-emerald-800/35 dark:bg-emerald-950/20 ring-1 ring-emerald-200/50 dark:ring-emerald-800/30 shadow-sm'
+            ? 'border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950 shadow-sm'
             : pendienteRevisar
-                ? 'border border-slate-200/80 bg-slate-50/50 dark:border-slate-700/40 dark:bg-slate-900/35 ring-1 ring-slate-200/40 dark:ring-slate-700/25 shadow-sm'
-                : 'border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:shadow-md';
+                ? 'border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900 shadow-sm'
+                : 'border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm hover:shadow-md';
 
     return (
         <div className={`rounded-2xl flex flex-col transition-all duration-300 ${cardShell}`}>
@@ -299,17 +299,17 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                         {item.heredado_preview && !modificadoLocal && (
-                            <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100/95 dark:bg-slate-800/70 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-700/50">
+                            <span className="text-[9px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">
                                 Pendiente de revisar
                             </span>
                         )}
                         {modificadoLocal && (
-                            <span className="text-[9px] font-semibold text-emerald-800 dark:text-emerald-300/90 bg-emerald-100/90 dark:bg-emerald-900/35 px-2 py-0.5 rounded-md border border-emerald-200/70 dark:border-emerald-800/40">
+                            <span className="text-[9px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                                 Modificado
                             </span>
                         )}
                         {esNuevaLinea && (
-                            <span className="text-[9px] font-semibold text-sky-800 dark:text-sky-200/90 bg-sky-100/90 dark:bg-sky-900/40 px-2 py-0.5 rounded-md border border-sky-200/70 dark:border-sky-800/45">
+                            <span className="text-[9px] font-semibold text-sky-900 dark:text-sky-200 bg-sky-100 dark:bg-sky-900 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-800">
                                 Nuevo (pendiente)
                             </span>
                         )}
@@ -324,13 +324,13 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                     <div className="flex flex-col gap-1 min-w-0">
                         <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Cantidad</span>
                         {editable && typeof onAdjustCantidad === 'function' ? (
-                            <div className="inline-flex items-stretch rounded-xl border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-800/50 overflow-hidden">
+                            <div className="inline-flex items-stretch rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 overflow-hidden">
                                 <button
                                     type="button"
                                     aria-label="Disminuir cantidad"
                                     disabled={!puedeMenos}
                                     onClick={() => onAdjustCantidad(item, -1)}
-                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/80 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
                                 >
                                     <Minus size={16} strokeWidth={2} />
                                 </button>
@@ -338,7 +338,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                                     type="button"
                                     onClick={() => onEditCantidad(item)}
                                     title="Escribir cantidad"
-                                    className="min-w-[2.75rem] px-2 py-2 text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-50 border-x border-zinc-200/90 dark:border-zinc-700 hover:bg-white dark:hover:bg-zinc-900 transition-colors touch-manipulation"
+                                    className="min-w-[2.75rem] px-2 py-2 text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-50 border-x border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors touch-manipulation"
                                 >
                                     {cant}
                                 </button>
@@ -347,7 +347,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                                     aria-label="Aumentar cantidad"
                                     disabled={!puedeMas}
                                     onClick={() => onAdjustCantidad(item, 1)}
-                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/80 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
                                 >
                                     <Plus size={16} strokeWidth={2} />
                                 </button>
@@ -381,7 +381,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
             </div>
 
             {editable && esNuevaLinea && typeof onRemoveNuevaLinea === 'function' ? (
-                <div className="px-2 pb-3 flex gap-1 border-t border-sky-100/80 dark:border-sky-900/40 pt-3">
+                <div className="px-2 pb-3 flex gap-1 border-t border-sky-200 dark:border-sky-800 pt-3">
                     <button type="button" onClick={() => onEditTalla(item)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
                         <Ruler size={13} strokeWidth={2} /> Talla
@@ -397,7 +397,7 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                 </div>
             ) : null}
             {editable && !esNuevaLinea ? (
-                <div className="px-2 pb-3 flex gap-1 border-t border-zinc-50 dark:border-zinc-800/50 pt-3">
+                <div className="px-2 pb-3 flex gap-1 border-t border-zinc-200 dark:border-zinc-800 pt-3">
                     <button type="button" onClick={() => onEditTalla(item)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
                         <Ruler size={13} strokeWidth={2} /> Talla

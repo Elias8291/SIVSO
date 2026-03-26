@@ -73,11 +73,45 @@ body {
 }
 
 body {
-    background-color: #F7F7F8;
+    background-color: #f4f4f5;
+    /* zinc-100, alineado con login (AuthLayout) */
 }
 
 html.dark body {
-    background-color: #060607;
+    background-color: #050505;
+}
+
+/**
+ * Fondo SPA: "Gold Grid Premium"
+ * Cuadrícula arquitectónica dorada muy sutil y elegante,
+ * con iluminación de estudio para dar profundidad.
+ */
+.app-shell-bg {
+    background-color: #f4f4f5;
+    background-image:
+        /* Brillo superior central (luz principal) */
+        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(255, 255, 255, 0.9), transparent),
+        /* Acento dorado muy difuminado (esquina inferior derecha) */
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(175, 148, 96, 0.08), transparent),
+        /* Cuadrícula dorada (muy sutil) */
+        linear-gradient(rgba(175, 148, 96, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(175, 148, 96, 0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    background-position: center, center, -1px -1px, -1px -1px;
+}
+
+html.dark .app-shell-bg {
+    background-color: #050505;
+    background-image:
+        /* Brillo superior central (luz principal) */
+        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(255, 255, 255, 0.04), transparent),
+        /* Acento dorado muy difuminado (esquina inferior derecha) */
+        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(175, 148, 96, 0.05), transparent),
+        /* Cuadrícula dorada (muy sutil) */
+        linear-gradient(rgba(175, 148, 96, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(175, 148, 96, 0.04) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    background-position: center, center, -1px -1px, -1px -1px;
 }
 
 /* Móvil: layout fijo para evitar que el contenido "se baje" al hacer scroll

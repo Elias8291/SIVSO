@@ -49,12 +49,12 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
             )}
 
             <aside
-                className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0A0B] border-r border-zinc-100 dark:border-zinc-800/80 flex flex-col z-50 transition-all duration-300 ease-out
+                className={`fixed inset-y-0 left-0 bg-white dark:bg-[#0A0A0B] border-r border-zinc-200 dark:border-zinc-800 flex flex-col z-50 transition-all duration-300 ease-out
                     ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
                     ${collapsed ? 'lg:w-20' : 'lg:w-72'} w-72`}
             >
-                {/* Marca + botón cerrar móvil + toggle colapsar (desktop) */}
-                <div className={`pt-6 pb-5 flex items-center shrink-0 transition-all duration-300 ${
+                {/* Misma altura y borde inferior que el Header (main) para alinear la raya */}
+                <div className={`h-14 sm:h-16 shrink-0 flex items-center border-b border-zinc-200 dark:border-zinc-800 transition-all duration-300 ${
                     collapsed ? 'lg:px-0 lg:justify-center' : 'px-6 justify-between'
                 }`}>
                     <h1 className={`text-sm font-extrabold tracking-[0.15em] dark:text-white leading-none shrink-0 ${
@@ -79,8 +79,6 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
                         </button>
                     </div>
                 </div>
-
-            <div className={`h-px bg-zinc-100 dark:bg-zinc-800/80 shrink-0 ${collapsed ? 'lg:mx-2' : 'mx-6'}`} />
 
             {/* Contenedor con scroll (nav + footer) para que en móvil se vea el logout */}
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
@@ -126,7 +124,7 @@ const Sidebar = ({ isOpen = false, onClose = () => {}, collapsed = false, onTogg
 
                 {/* Usuario + Logout - siempre accesible al hacer scroll en móvil */}
                 <div className={`shrink-0 pb-5 pt-2 transition-all duration-300 ${collapsed ? 'lg:px-2' : 'px-3'}`}>
-                <div className="h-px bg-zinc-100 dark:bg-zinc-800/80 mb-3" />
+                <div className="border-t border-zinc-200 dark:border-zinc-800 mb-3" />
 
                 {!collapsed && (
                     <p className="px-4 py-2 mb-1 text-[13px] font-semibold text-zinc-600 dark:text-zinc-400 truncate">

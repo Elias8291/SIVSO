@@ -21,7 +21,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/main.jsx'])
 </head>
-<body class="antialiased min-h-screen bg-[#F7F7F8] dark:bg-[#060607]">
+<body class="antialiased min-h-screen app-shell-bg">
     <div id="root"></div>
     @php
         $appState = [

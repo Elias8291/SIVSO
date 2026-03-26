@@ -33,10 +33,10 @@ export default function AuthLayout({ children, subtitle = 'Ingrese su RFC para a
     );
 
     return (
-        <div className="h-screen min-h-[100dvh] flex items-center justify-center bg-zinc-100 dark:bg-[#050505] p-0 lg:p-8 transition-colors duration-300 relative overflow-x-hidden overflow-y-auto overscroll-none">
+        <div className="h-screen min-h-[100dvh] flex items-center justify-center p-0 lg:p-8 transition-colors duration-300 relative overflow-x-hidden overflow-y-auto overscroll-none">
             {/* SIVSO decorativo en el fondo exterior (detrás de la tarjeta) */}
             <span className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-                <span className="text-[20rem] lg:text-[28rem] font-black tracking-[0.15em] text-brand-gold/10 dark:text-brand-gold/15 leading-none italic">SIVSO</span>
+                <span className="text-[7.5rem] sm:text-[16rem] lg:text-[20rem] font-black tracking-[0.2em] text-brand-gold/10 dark:text-brand-gold/15 leading-none italic">SIVSO</span>
             </span>
             <main className="w-full max-w-5xl lg:h-[600px] flex flex-col lg:flex-row overflow-hidden lg:rounded-2xl bg-white dark:bg-[#0f0f0f] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-none lg:border border-zinc-200 dark:border-[#1f1f1f] relative z-10">
                 {/* Panel izquierdo con imagen */}
