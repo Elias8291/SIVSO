@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRightLeft, Building2, ChevronDown, Key, Layers, Shirt, Unlock } from 'lucide-react';
+import { Building2, ChevronDown, FileText, Key, Layers, Shirt, Unlock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, PageAddButton, Card, DataTable,
@@ -8,7 +8,7 @@ import {
     FilterSelectShell, FilterToolbar, FilterToolbarRow,
 } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
-import { api } from '../lib/api';
+import { api, resolveApiUrl } from '../lib/api';
 
 function Sel({ children, ...props }) {
     return (
@@ -162,6 +162,13 @@ export default function EmpleadosPage() {
         catch (err) { alert(err.message); }
     };
 
+    const abrirReciboPdf = (row) => {
+        if (!row?.id) return;
+        const url = resolveApiUrl(`/api/mi-delegacion/empleados/${row.id}/acuse-pdf`);
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) alert('Permita ventanas emergentes para ver/guardar el recibo PDF.');
+    };
+
     const handleReactivarEdicion = async (row) => {
         if (!row?.id) return;
         if (!window.confirm(`¿Permitir que ${row.nombre_completo || 'este colaborador'} vuelva a editar su vestuario en Mi vestuario?`)) return;
@@ -225,27 +232,10 @@ export default function EmpleadosPage() {
             ),
         },
         {
-            key: 'activa',
-            label: 'Estado',
-            render: (v) => <StatusBadge status={v ? 'activo' : 'inactivo'} />,
-        },
-        {
-            key: 'reactivar_vestuario',
-            label: 'Mi vestuario',
-            render: (_, row) => (
-                canReactivarVestuario && row.actualizado ? (
-                    <button
-                        type="button"
-                        onClick={() => handleReactivarEdicion(row)}
-                        disabled={reactivandoId === row.id}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-900 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-950/30"
-                    >
-                        <Unlock size={12} strokeWidth={2} />
-                        {reactivandoId === row.id ? '...' : 'Activar edición'}
-                    </button>
-                ) : (
-                    <span className="text-[11px] text-zinc-400">—</span>
-                )
+            key: 'actualizado',
+            label: 'Estado vestuario',
+            render: (v) => (
+                <StatusBadge status={v ? 'activo' : 'inactivo'} />
             ),
         },
     ];
@@ -354,15 +344,15 @@ export default function EmpleadosPage() {
                             emptyMessage={search ? `Sin coincidencias para "${search}".` : 'No hay empleados registrados.'}
                             extraActions={[
                                 ...(canVerProductosEmpleado ? [{
-                                    label: 'Ver productos',
+                                    label: 'Ver vestuario',
                                     icon: <Shirt size={14} strokeWidth={2.5} />,
                                     onClick: (row) => navigate(`/dashboard/empleados/${row.id}/vestuario`),
                                     variant: 'secondary',
                                 }] : []),
-                                ...(canEdit ? [{
-                                    label: 'Reasignar',
-                                    icon: <ArrowRightLeft size={14} />,
-                                    onClick: (row) => setChangeDelegacion(row),
+                                ...(canVerProductosEmpleado ? [{
+                                    label: 'Recibo PDF',
+                                    icon: <FileText size={14} strokeWidth={2.3} />,
+                                    onClick: (row) => abrirReciboPdf(row),
                                     variant: 'primary',
                                 }] : []),
                             ]}
