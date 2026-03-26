@@ -119,6 +119,7 @@ export default function EmpleadosPage() {
     const [delegaciones, setDelegaciones] = useState([]);
     const [filterDep, setFilterDep] = useState('');
     const [filterDel, setFilterDel] = useState('');
+    const [filterSinNue, setFilterSinNue] = useState(false);
 
     useEffect(() => {
         api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => { });
@@ -134,8 +135,9 @@ export default function EmpleadosPage() {
         const p = {};
         if (filterDep) p.dependencia_clave = filterDep;
         if (filterDel) p.delegacion_clave = filterDel;
+        if (filterSinNue) p.sin_nue = '1';
         return p;
-    }, [filterDep, filterDel]);
+    }, [filterDep, filterDel, filterSinNue]);
 
     const extraParams = buildExtra();
     const extraKey = JSON.stringify(extraParams);
@@ -213,11 +215,12 @@ export default function EmpleadosPage() {
         },
     ];
 
-    const filtrosActivos = Boolean(filterDep || filterDel || search.trim());
+    const filtrosActivos = Boolean(filterDep || filterDel || filterSinNue || search.trim());
 
     const limpiarFiltros = () => {
         setFilterDep('');
         setFilterDel('');
+        setFilterSinNue(false);
         setSearch('');
     };
 
@@ -283,6 +286,15 @@ export default function EmpleadosPage() {
                             ))}
                         </select>
                     </FilterSelectShell>
+                    <label className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-[12px] font-semibold text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
+                        <input
+                            type="checkbox"
+                            checked={filterSinNue}
+                            onChange={(e) => setFilterSinNue(e.target.checked)}
+                            className="size-4 accent-brand-gold"
+                        />
+                        Sin NUE
+                    </label>
                 </FilterToolbarRow>
             </FilterToolbar>
 

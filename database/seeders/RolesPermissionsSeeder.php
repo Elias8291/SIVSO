@@ -72,6 +72,23 @@ class RolesPermissionsSeeder extends Seeder
             'ver_delegaciones',
         ]);
 
+        // Delegación: acceso operativo por delegación (similar a delegado, sin edición de catálogo/usuarios).
+        $delegacion = Role::firstOrCreate(['name' => 'delegacion']);
+        $delegacion->syncPermissions([
+            'ver_dashboard',
+            'ver_notificaciones',
+            'ver_empleados',
+            'ver_productos_empleado',
+            'ver_selecciones',
+            'crear_seleccion',
+            'editar_seleccion',
+            'ver_reportes',
+            'ver_mi_delegacion',
+            'ver_dependencias',
+            'ver_delegaciones',
+            'ver_partidas',
+        ]);
+
         // Colaborador: solo inicio personal, vestuario, cuenta y avisos (sin catálogo ni módulos de gestión)
         $empleado = Role::firstOrCreate(['name' => 'empleado']);
         $empleado->syncPermissions([

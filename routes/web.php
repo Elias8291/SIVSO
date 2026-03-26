@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AcuseVestuarioPdfController;
 use App\Http\Controllers\Api\DelegacionController;
 use App\Http\Controllers\Api\DelegadoController;
 use App\Http\Controllers\Api\DependenciaController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmpleadoController;
 use App\Http\Controllers\Api\MiDelegacionController;
 use App\Http\Controllers\Api\NotificacionController;
@@ -41,6 +42,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function () {
+    Route::middleware('permission:ver_dashboard')->get('dashboard/resumen', [DashboardController::class, 'resumen']);
+
     // Perfil del usuario autenticado (sin permiso Spatie adicional)
     Route::get('perfil', [ProfileController::class, 'show']);
     Route::put('perfil', [ProfileController::class, 'update']);

@@ -57,6 +57,7 @@ class EmpleadoController extends Controller
         $search = trim((string) $request->get('search', ''));
         $depClave = $request->get('dependencia_clave');
         $delClave = $request->get('delegacion_clave');
+        $sinNue = filter_var($request->get('sin_nue', false), FILTER_VALIDATE_BOOLEAN);
 
         $user = $request->user();
         $puedeVerModuloEmpleados = $user->can('ver_empleados');
@@ -125,6 +126,12 @@ class EmpleadoController extends Controller
 
         if ($delClave) {
             $query->whereHas('delegacion', fn ($q) => $q->where('clave', $delClave));
+        }
+
+        if ($sinNue) {
+            $query->where(function ($q) {
+                $q->whereNull('nue')->orWhereRaw('TRIM(nue) = ""');
+            });
         }
 
         $query->when($search !== '', fn ($q) => $q->whereBusquedaEmpleado($search))

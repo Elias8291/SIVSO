@@ -25,7 +25,7 @@ function esVistaColaboradorVestuario(roles) {
 
 /** Delegado operativo (no admin): panel con alcance de delegaciones */
 function esVistaDelegadoOperativo(roles, can) {
-    if (!Array.isArray(roles) || !roles.includes('delegado')) return false;
+    if (!Array.isArray(roles) || !(roles.includes('delegado') || roles.includes('delegacion'))) return false;
     if (roles.includes('admin')) return false;
     return can('ver_mi_delegacion');
 }
@@ -457,6 +457,24 @@ export default function DashboardPage() {
         return <DashboardDelegado />;
     }
 
+    const [adminData, setAdminData] = useState(null);
+    const [adminLoading, setAdminLoading] = useState(true);
+
+    const loadAdmin = useCallback(() => {
+        setAdminLoading(true);
+        api.get('/api/dashboard/resumen')
+            .then((r) => setAdminData(r))
+            .catch(() => setAdminData(null))
+            .finally(() => setAdminLoading(false));
+    }, []);
+
+    useEffect(() => {
+        loadAdmin();
+    }, [loadAdmin]);
+
+    const counts = adminData?.counts ?? {};
+    const anioVigente = adminData?.anio_vigente ?? new Date().getFullYear();
+
     return (
         <div>
             <PageHeader
@@ -465,14 +483,28 @@ export default function DashboardPage() {
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {KPI_ITEMS.map((item) => (
-                    <StatCard
-                        key={item.label}
-                        label={item.label}
-                        value={item.value}
-                        icon={item.icon}
-                    />
-                ))}
+                <StatCard label="Empleados" value={adminLoading ? '…' : String(counts.empleados ?? 0)} icon={<Users size={15} strokeWidth={1.8} />} />
+                <StatCard label="Delegaciones" value={adminLoading ? '…' : String(counts.delegaciones ?? 0)} icon={<Layers size={15} strokeWidth={1.8} />} />
+                <StatCard label="Productos" value={adminLoading ? '…' : String(counts.productos ?? 0)} icon={<Shirt size={15} strokeWidth={1.8} />} />
+                <StatCard label={`Selecciones ${anioVigente}`} value={adminLoading ? '…' : String(counts.selecciones_ejercicio ?? 0)} icon={<CheckCircle size={15} strokeWidth={1.8} />} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Link to={ROUTES.EMPLEADOS} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-brand-gold/40 dark:border-zinc-800 dark:bg-zinc-900/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold">Acceso rápido</p>
+                    <p className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">Empleados</p>
+                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Buscar, filtrar y revisar vestuario.</p>
+                </Link>
+                <Link to={ROUTES.DELEGACIONES} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-brand-gold/40 dark:border-zinc-800 dark:bg-zinc-900/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold">Acceso rápido</p>
+                    <p className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">Delegaciones</p>
+                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Delegados, URs, y PDFs por delegación.</p>
+                </Link>
+                <Link to={ROUTES.PRODUCTOS} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-brand-gold/40 dark:border-zinc-800 dark:bg-zinc-900/50">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-gold">Acceso rápido</p>
+                    <p className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">Catálogo</p>
+                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Productos, precios y tallas por ejercicio.</p>
+                </Link>
             </div>
         </div>
     );
