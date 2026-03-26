@@ -15,7 +15,11 @@ export const ROUTES = {
     DEPENDENCIAS_NUEVA:  '/dashboard/dependencias/nueva',
     DEPENDENCIAS_EDITAR: '/dashboard/dependencias/:id/editar',
     DELEGACIONES:  '/dashboard/delegaciones',
+    DELEGACIONES_NUEVA:  '/dashboard/delegaciones/nueva',
+    DELEGACIONES_EDITAR: '/dashboard/delegaciones/:id/editar',
     DELEGADOS:     '/dashboard/delegados',
+    DELEGADOS_NUEVO: '/dashboard/delegados/nuevo',
+    DELEGADOS_EDITAR: '/dashboard/delegados/:id/editar',
     EMPLEADOS:     '/dashboard/empleados',
     EMPLEADOS_NUEVO:     '/dashboard/empleados/nuevo',
     EMPLEADOS_EDITAR:    '/dashboard/empleados/:id/editar',
@@ -99,6 +103,10 @@ export function getRouteLabel(path) {
     if (path.startsWith('/dashboard/notificaciones')) return 'Notificaciones';
     if (path.match(/^\/dashboard\/mi-delegacion\/vestuario\/\d+/)) return 'Vestuario del colaborador';
     if (path.match(/^\/dashboard\/empleados\/\d+\/vestuario/)) return 'Vestuario del colaborador';
+    if (path.startsWith('/dashboard/delegaciones/nueva')) return 'Nueva Delegación';
+    if (path.match(/^\/dashboard\/delegaciones\/\d+\/editar/)) return 'Editar Delegación';
+    if (path.startsWith('/dashboard/delegados/nuevo')) return 'Nuevo delegado';
+    if (path.match(/^\/dashboard\/delegados\/\d+\/editar/)) return 'Editar delegado';
     if (path.match(/^\/dashboard\/delegaciones\/\d+/)) return 'Delegación · empleados';
     return ROUTE_LABELS[path] ?? 'Dashboard';
 }

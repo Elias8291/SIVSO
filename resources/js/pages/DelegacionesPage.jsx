@@ -3,64 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, Eye, FileDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Modal,
+    PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog,
     FilterSelectShell, FilterToolbar, FilterToolbarRow,
 } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
 import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
-
-const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
-
-function FormModal({ item, onClose, onSaved }) {
-    const isEdit = !!item?.id;
-    const [form, setForm] = useState({ clave: '', nombre: '' });
-    const [errors, setErrors] = useState({});
-    const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        if (item) setForm({ clave: item.clave ?? '', nombre: item.nombre ?? '' });
-        else setForm({ clave: '', nombre: '' });
-        setErrors({});
-    }, [item]);
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSaving(true);
-        setErrors({});
-        try {
-            if (isEdit) await api.put(`/api/delegaciones/${item.id}`, form);
-            else await api.post('/api/delegaciones', form);
-            onSaved();
-        } catch (err) {
-            setErrors(err.errors ?? { general: err.message });
-        } finally { setSaving(false); }
-    };
-
-    return (
-        <Modal open={!!item || item === 'new'} onClose={onClose} title={isEdit ? 'Editar Delegación' : 'Nueva Delegación'} size="sm">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                {errors.general && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg">{errors.general}</p>}
-                <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Clave</label>
-                    <input type="text" value={form.clave} onChange={(e) => setForm({ ...form, clave: e.target.value.toUpperCase() })}
-                        placeholder="Ej. 3B-101" maxLength={20} required className={inputClass} />
-                    {errors.clave && <p className="text-[11px] text-red-500">{errors.clave[0]}</p>}
-                </div>
-                <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Nombre (opcional)</label>
-                    <input type="text" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                        placeholder="Nombre descriptivo" className={inputClass} />
-                </div>
-                <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-                    <button type="button" onClick={onClose} className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all">Cancelar</button>
-                    <button type="submit" disabled={saving} className="w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:opacity-90 disabled:opacity-50 active:scale-[0.98] transition-all">
-                        {saving ? 'Guardando…' : isEdit ? 'Guardar' : 'Crear'}
-                    </button>
-                </div>
-            </form>
-        </Modal>
-    );
-}
 
 export default function DelegacionesPage() {
     const navigate = useNavigate();
@@ -72,7 +19,6 @@ export default function DelegacionesPage() {
     const [search, setSearch] = useState('');
     const [confirm, setConfirm] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [editing, setEditing] = useState(null);
     const [pdfAnio, setPdfAnio] = useState(() => new Date().getFullYear());
     const [pdfErr, setPdfErr] = useState(null);
 
@@ -152,6 +98,11 @@ export default function DelegacionesPage() {
             label: 'Empleados',
             render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300">{v}</span>,
         },
+        {
+            key: 'delegados_count',
+            label: 'Delegados',
+            render: (v) => <span className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">{v ?? 0}</span>,
+        },
     ];
 
     return (
@@ -165,7 +116,7 @@ export default function DelegacionesPage() {
                 }
                 actions={
                     canEdit ? (
-                        <PageAddButton onClick={() => setEditing('new')} label="Nueva delegación" />
+                        <PageAddButton onClick={() => navigate('/dashboard/delegaciones/nueva')} label="Nueva delegación" />
                     ) : null
                 }
             />
@@ -235,17 +186,11 @@ export default function DelegacionesPage() {
                             }]
                             : []),
                     ]}
-                    onEdit={canEdit ? ((row) => setEditing(row)) : undefined}
+                    onEdit={canEdit ? ((row) => navigate(`/dashboard/delegaciones/${row.id}/editar`)) : undefined}
                     onDelete={canEdit ? ((row) => setConfirm(row)) : undefined}
                     emptyMessage="Sin delegaciones registradas."
                 />
             </Card>
-
-            <FormModal
-                item={editing}
-                onClose={() => setEditing(null)}
-                onSaved={() => { setEditing(null); load(); }}
-            />
 
             <ConfirmDialog
                 open={!!confirm}

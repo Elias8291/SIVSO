@@ -37,8 +37,8 @@ export default function OrganizacionPage() {
 
     const openCreateDep = () => navigate('/dashboard/organizacion/dependencias/nueva');
     const openEditDep = (item) => navigate(`/dashboard/organizacion/dependencias/${item.id}/editar`);
-    const openCreateDel = () => selDep && navigate('/dashboard/organizacion/delegados/nuevo', { state: { ur: selDep.clave, dep: selDep } });
-    const openEditDel = (item) => navigate(`/dashboard/organizacion/delegados/${item.id}/editar`, { state: { item } });
+    const openCreateDel = () => selDep && navigate('/dashboard/delegados/nuevo', { state: { ur: selDep.clave, dep: selDep } });
+    const openEditDel = (item) => navigate(`/dashboard/delegados/${item.id}/editar`, { state: { item } });
 
     const deleteDep = async () => {
         setSaving(true);

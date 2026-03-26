@@ -15,6 +15,14 @@ use Illuminate\Support\Str;
 
 class DelegadoController extends Controller
 {
+    private function normalizarNombreDelegado(string $nombre): string
+    {
+        $n = trim($nombre);
+        $n = preg_replace('/\s+/u', ' ', $n) ?? $n;
+        $n = mb_strtoupper($n, 'UTF-8');
+        return Str::ascii($n);
+    }
+
     /**
      * @param  array{delegacion_id?: int}  $contextoCreacion  Solo para alta: delegación única asignada.
      */
@@ -58,13 +66,8 @@ class DelegadoController extends Controller
             ->join('delegaciones AS dl', 'dl.id', '=', 'dd.delegacion_id');
 
         if ($ur) {
-            $depId = DB::table('dependencias')->where('clave', $ur)->value('id');
-            if ($depId) {
-                $query->join('dependencia_delegacion AS dep_del', function ($j) use ($depId) {
-                    $j->on('dep_del.delegacion_id', '=', 'dl.id')
-                        ->where('dep_del.dependencia_id', $depId);
-                });
-            }
+            $urClave = strtoupper(trim((string) $ur));
+            $query->where('dd.ur', $urClave);
         }
 
         $query->when($search !== '', function ($q) use ($search) {
@@ -159,9 +162,17 @@ class DelegadoController extends Controller
             ->groupBy('delegacion_id')
             ->pluck('cnt', 'delegacion_id');
 
-        $byId = [];
+        $byKey = [];
         foreach ($delegados as $d) {
-            if (! isset($byId[$d->id])) {
+            $nombreBase = trim((string) ($d->nombre ?? ''));
+            $nombreKey = $nombreBase !== '' ? $this->normalizarNombreDelegado($nombreBase) : ('ID#'.(int) $d->id);
+            // Si existe identificador estable (user/empleado), úsalo para evitar colapsar
+            // dos personas distintas con el mismo nombre.
+            $userKey = $d->user_id ? ('U#'.(int) $d->user_id) : 'U#0';
+            $empKey = $tieneEmpleadoId && $d->empleado_id ? ('E#'.(int) $d->empleado_id) : 'E#0';
+            $key = $nombreKey.'|'.$userKey.'|'.$empKey;
+
+            if (! isset($byKey[$key])) {
                 $empleadoId = $tieneEmpleadoId ? $d->empleado_id : null;
                 $empleadoPayload = null;
                 if ($tieneEmpleadoId && $empleadoId) {
@@ -177,8 +188,8 @@ class DelegadoController extends Controller
                     ];
                 }
 
-                $byId[$d->id] = [
-                    'id' => $d->id,
+                $byKey[$key] = [
+                    'id' => (int) $d->id, // id canónico (primera ocurrencia)
                     'nombre' => $d->nombre,
                     'user_id' => $d->user_id,
                     'empleado_id' => $empleadoId,
@@ -195,17 +206,17 @@ class DelegadoController extends Controller
             }
 
             $cnt = (int) ($trabCounts[$d->delegacion_id] ?? 0);
-            $byId[$d->id]['delegaciones_count']++;
-            $byId[$d->id]['delegaciones'][] = [
+            $byKey[$key]['delegaciones_count']++;
+            $byKey[$key]['delegaciones'][] = [
                 'id' => $d->delegacion_id,
                 'clave' => $d->delegacion_clave,
                 'trabajadores_count' => $cnt,
             ];
-            $byId[$d->id]['trabajadores_total'] += $cnt;
+            $byKey[$key]['trabajadores_total'] += $cnt;
         }
 
         if ($search !== '') {
-            $byId = array_filter($byId, function ($v) use ($search) {
+            $byKey = array_filter($byKey, function ($v) use ($search) {
                 $partes = [
                     (string) ($v['nombre'] ?? ''),
                     (string) (($v['user'] ?? [])['rfc'] ?? ''),
@@ -226,7 +237,69 @@ class DelegadoController extends Controller
             });
         }
 
-        return response()->json(['data' => array_values($byId)]);
+        // De-dupe por delegación (mismo delegado puede repetir clave por unión/legacy).
+        foreach ($byKey as &$row) {
+            $seen = [];
+            $uniq = [];
+            foreach (($row['delegaciones'] ?? []) as $del) {
+                $k = (string) ($del['clave'] ?? '');
+                if ($k === '' || isset($seen[$k])) continue;
+                $seen[$k] = true;
+                $uniq[] = $del;
+            }
+            $row['delegaciones'] = $uniq;
+            $row['delegaciones_count'] = count($uniq);
+        }
+        unset($row);
+
+        return response()->json(['data' => array_values($byKey)]);
+    }
+
+    /** Detalle para edición en el panel (formulario dedicado). */
+    public function show(int $id): JsonResponse
+    {
+        $delegado = Delegado::query()
+            ->with([
+                'user:id,name,rfc,email',
+                'empleado:id,nue,nombre,apellido_paterno,apellido_materno',
+                'delegaciones:id,clave,nombre',
+            ])
+            ->find($id);
+
+        if (! $delegado) {
+            return response()->json(['message' => 'Delegado no encontrado.'], 404);
+        }
+
+        $emp = $delegado->empleado;
+        $empleadoPayload = null;
+        if ($emp) {
+            $empleadoPayload = [
+                'id' => $emp->id,
+                'nue' => $emp->nue,
+                'nombre_completo' => $emp->nombre_completo,
+            ];
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $delegado->id,
+                'nombre' => $delegado->nombre,
+                'user_id' => $delegado->user_id,
+                'empleado_id' => $delegado->empleado_id,
+                'empleado' => $empleadoPayload,
+                'user' => $delegado->user ? [
+                    'id' => $delegado->user->id,
+                    'name' => $delegado->user->name,
+                    'rfc' => $delegado->user->rfc,
+                    'email' => $delegado->user->email,
+                ] : null,
+                'delegaciones' => $delegado->delegaciones->map(fn ($d) => [
+                    'id' => $d->id,
+                    'clave' => $d->clave,
+                    'nombre' => $d->nombre,
+                ])->values()->all(),
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -286,7 +359,19 @@ class DelegadoController extends Controller
             'empleado_id' => $data['empleado_id'] ?? null,
         ]);
 
-        $delegado->delegaciones()->attach($delegacionId);
+        // Persistir el UR del vínculo (concentrado.delegado.ur) para que los filtros por UR sean correctos.
+        $urClave = $data['ur'] ?? null;
+        $urClave = $urClave !== null ? strtoupper(trim((string) $urClave)) : null;
+
+        // Fallback: si el frontend no envía `ur`, intentamos inferirlo desde el empleado vinculado.
+        if ($urClave === null && ! empty($data['empleado_id'])) {
+            $urClave = DB::table('empleados AS e')
+                ->join('dependencias AS dep', 'dep.id', '=', 'e.dependencia_id')
+                ->where('e.id', (int) $data['empleado_id'])
+                ->value('dep.clave');
+            $urClave = $urClave !== null ? strtoupper(trim((string) $urClave)) : null;
+        }
+        $delegado->delegaciones()->attach($delegacionId, ['ur' => $urClave]);
 
         return response()->json(['message' => 'Delegado creado correctamente.', 'id' => $delegado->id], 201);
     }

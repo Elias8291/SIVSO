@@ -674,7 +674,11 @@ class VestuarioController extends Controller
         }
     }
 
-    /** Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio. */
+    /**
+     * Total gastado en vestuario (precio catálogo × cantidad) para una UR y un ejercicio.
+     *
+     * @see \App\Support\VestuarioReglasUbicacion Cómo afectan alta y cambios de UR/delegación al presupuesto.
+     */
     private function totalGastoDependenciaAnio(?int $dependenciaId, int $anio): array
     {
         if (! $dependenciaId) {

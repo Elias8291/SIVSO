@@ -34,7 +34,7 @@ import {
     NotificacionesPage,
     PeriodosPage,
 } from './pages';
-import { DependenciaFormPage, DelegadoFormPage } from './pages/organizacion';
+import { DependenciaFormPage, DelegacionFormPage, DelegadoFormPage } from './pages/organizacion';
 
 export default function App({ initialState }) {
     const authValue = initialState
@@ -198,6 +198,22 @@ export default function App({ initialState }) {
                             />
 
                             <Route
+                                path="delegaciones/nueva"
+                                element={
+                                    <RequirePermission permission="editar_delegaciones">
+                                        <DelegacionFormPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="delegaciones/:id/editar"
+                                element={
+                                    <RequirePermission permission="editar_delegaciones">
+                                        <DelegacionFormPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
                                 path="delegaciones/:delegacionId"
                                 element={
                                     <RequirePermission permission="ver_delegaciones">
@@ -210,6 +226,22 @@ export default function App({ initialState }) {
                                 element={
                                     <RequirePermission permission="ver_delegaciones">
                                         <DelegacionesPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="delegados/nuevo"
+                                element={
+                                    <RequirePermission permission="editar_delegados">
+                                        <DelegadoFormPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="delegados/:id/editar"
+                                element={
+                                    <RequirePermission permission="editar_delegados">
+                                        <DelegadoFormPage />
                                     </RequirePermission>
                                 }
                             />

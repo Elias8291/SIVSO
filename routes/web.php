@@ -152,6 +152,7 @@ Route::middleware(['auth', 'password.changed'])->prefix('api')->group(function (
     // Delegados
     Route::middleware('permission:ver_delegados')->group(function () {
         Route::get('delegados/resumen', [DelegadoController::class, 'resumen']);
+        Route::get('delegados/{id}', [DelegadoController::class, 'show'])->whereNumber('id');
         Route::get('delegados', [DelegadoController::class, 'index']);
     });
     Route::middleware('permission:editar_delegados')->group(function () {

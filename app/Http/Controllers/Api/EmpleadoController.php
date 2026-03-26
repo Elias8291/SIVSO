@@ -8,6 +8,7 @@ use App\Models\Empleado;
 use App\Models\Periodo;
 use App\Models\User;
 use App\Services\EmpleadoUsuarioVinculacionService;
+use App\Support\VestuarioReglasUbicacion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -189,7 +190,11 @@ class EmpleadoController extends Controller
             'user_id' => $data['user_id'] ?? null,
         ]);
 
-        return response()->json(['message' => 'Trabajador creado correctamente.', 'id' => $empleado->id], 201);
+        return response()->json([
+            'message' => 'Trabajador creado correctamente.',
+            'id' => $empleado->id,
+            'vestuario_ubicacion_aviso' => VestuarioReglasUbicacion::mensajeFormulario(true, null, null, null, null),
+        ], 201);
     }
 
     public function show(int $empleado): JsonResponse
@@ -312,6 +317,10 @@ class EmpleadoController extends Controller
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
+        $e->load(['dependencia:id,clave', 'delegacion:id,clave']);
+        $claveUrAntes = $e->dependencia?->clave;
+        $claveDelAntes = $e->delegacion?->clave;
+
         $depId = DB::table('dependencias')->where('clave', $data['dependencia_clave'])->value('id');
         $delId = DB::table('delegaciones')->where('clave', $data['delegacion_clave'])->value('id');
 
@@ -329,7 +338,18 @@ class EmpleadoController extends Controller
             'user_id' => $data['user_id'] ?? null,
         ]);
 
-        return response()->json(['message' => 'Trabajador actualizado correctamente.']);
+        $avisoUbicacion = VestuarioReglasUbicacion::mensajeFormulario(
+            false,
+            $claveUrAntes,
+            $data['dependencia_clave'],
+            $claveDelAntes,
+            $data['delegacion_clave'],
+        );
+
+        return response()->json([
+            'message' => 'Trabajador actualizado correctamente.',
+            'vestuario_ubicacion_aviso' => $avisoUbicacion,
+        ]);
     }
 
     public function destroy(int $empleado): JsonResponse

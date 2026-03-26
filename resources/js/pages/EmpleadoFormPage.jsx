@@ -56,10 +56,31 @@ export default function EmpleadoFormPage() {
     const [crearUsuarioForm, setCrearUsuarioForm] = useState(EMPTY_CREAR_USUARIO);
     const [errorsCrearUsuario, setErrorsCrearUsuario] = useState({});
     const [savingCrearUsuario, setSavingCrearUsuario] = useState(false);
+    /** Valores al cargar edición: para avisos de vestuario / presupuesto UR. */
+    const [ubicacionInicial, setUbicacionInicial] = useState({ ur: '', delegacion: '' });
 
     const nombreCompleto = useMemo(() =>
         [form.nombre, form.apellido_paterno, form.apellido_materno].filter(Boolean).join(' ').trim(),
     [form.nombre, form.apellido_paterno, form.apellido_materno]);
+
+    /** Alineado con `App\Support\VestuarioReglasUbicacion` (vestuario / presupuesto por UR). */
+    const avisoVestuarioUbicacion = useMemo(() => {
+        const urForm = (form.dependencia_clave ?? '').trim();
+        const delForm = (form.delegacion_clave ?? '').trim();
+        if (!isEdit) {
+            return 'Los nuevos ingresos reciben su asignación de recurso para vestuario en la UR elegida; al seleccionar productos en el periodo autorizado, ese importe se suma al gasto consolidado de esa unidad responsable.';
+        }
+        const urIni = (ubicacionInicial.ur ?? '').trim();
+        const delIni = (ubicacionInicial.delegacion ?? '').trim();
+        if (urForm === '' && delForm === '') return null;
+        if (urIni !== '' && urForm !== '' && urIni !== urForm) {
+            return 'Si pasa a otra unidad responsable (distinta UR), el vestuario corresponde al contexto de la nueva UR: debe contar con la asignación y la selección de productos en la nueva delegación. El gasto dejará de reflejarse en la UR anterior y pasará a la nueva según sus selecciones, aumentando el total gastado en esa UR en la medida de su importe.';
+        }
+        if (urIni !== '' && urForm !== '' && urIni === urForm && delIni !== '' && delForm !== '' && delIni !== delForm) {
+            return 'Si solo cambia la delegación dentro de la misma UR, el colaborador conserva el mismo marco de presupuesto de vestuario respecto a su asignación ya registrada: no se genera un recurso adicional en la UR por el traslado. Deberá revisar o ajustar su vestuario según la nueva delegación; el gasto de la UR sigue contabilizándose en conjunto para quienes pertenecen a esa unidad.';
+        }
+        return null;
+    }, [isEdit, form.dependencia_clave, form.delegacion_clave, ubicacionInicial.ur, ubicacionInicial.delegacion]);
 
     useEffect(() => {
         api.get('/api/dependencias?search=').then(r => setDependencias(r.data ?? [])).catch(() => { });
@@ -87,13 +108,16 @@ export default function EmpleadoFormPage() {
             .then((res) => {
                 const e = res.data ?? res;
                 if (e) {
+                    const ur = e.dependencia_clave ?? '';
+                    const del = e.delegacion_clave ?? '';
+                    setUbicacionInicial({ ur, delegacion: del });
                     setForm({
                         nue: e.nue ?? '',
                         nombre: e.nombre ?? '',
                         apellido_paterno: e.apellido_paterno ?? '',
                         apellido_materno: e.apellido_materno ?? '',
-                        dependencia_clave: e.dependencia_clave ?? '',
-                        delegacion_clave: e.delegacion_clave ?? '',
+                        dependencia_clave: ur,
+                        delegacion_clave: del,
                         activo: true,
                         user_id: e.user_id ?? '',
                     });
@@ -249,6 +273,18 @@ export default function EmpleadoFormPage() {
                                 </div>
                             </Field>
                         </div>
+
+                        {avisoVestuarioUbicacion && (
+                            <div
+                                className="rounded-xl border border-zinc-200/90 bg-zinc-50/90 px-4 py-3 text-[12px] leading-relaxed text-zinc-700 dark:border-zinc-600/80 dark:bg-zinc-800/40 dark:text-zinc-300"
+                                role="note"
+                            >
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                                    Vestuario y presupuesto (UR)
+                                </p>
+                                <p className="mt-1.5">{avisoVestuarioUbicacion}</p>
+                            </div>
+                        )}
 
                         <label className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-zinc-50/50 dark:bg-zinc-800/30 px-4 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors min-h-[52px]">
                             <div>

@@ -4,20 +4,53 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Delegacion;
+use App\Models\Dependencia;
 use App\Models\Empleado;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class DelegacionController extends Controller
 {
+    private function normalizarNombreDelegado(string $nombre): string
+    {
+        // Unicidad para nombres con o sin acentos (ej. "VELÁZQUEZ" vs "VELAZQUEZ").
+        $n = trim($nombre);
+        $n = preg_replace('/\s+/u', ' ', $n) ?? $n;
+        $n = mb_strtoupper($n, 'UTF-8');
+
+        // Str::ascii quita diacríticos (tildes) y deja un comparador estable.
+        return Str::ascii($n);
+    }
+
+    /**
+     * @param  array<int, string>  $claves
+     */
+    private function syncDependenciasPorClaves(Delegacion $delegacion, array $claves): void
+    {
+        $norm = array_values(array_unique(array_map(
+            fn ($c) => strtoupper(trim((string) $c)),
+            $claves
+        )));
+        $norm = array_values(array_filter($norm, fn ($c) => $c !== ''));
+
+        $ids = Dependencia::query()
+            ->whereIn('clave', $norm)
+            ->orderBy('clave')
+            ->pluck('id')
+            ->all();
+
+        $delegacion->dependencias()->sync($ids);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $delegadoId = $request->get('delegado_id');
         $search = trim((string) $request->get('search', ''));
 
-        $query = Delegacion::query()->withCount(['empleados', 'dependencias']);
+        $query = Delegacion::query()->withCount(['empleados', 'dependencias', 'delegados']);
 
         if ($delegadoId) {
             $delegacionIds = DB::table('delegado_delegacion')
@@ -80,10 +113,10 @@ class DelegacionController extends Controller
                 if ($nom === '') {
                     continue;
                 }
+
+                $key = $this->normalizarNombreDelegado($nom);
                 $nombresPorDelegacion[$id] ??= [];
-                if (! in_array($nom, $nombresPorDelegacion[$id], true)) {
-                    $nombresPorDelegacion[$id][] = $nom;
-                }
+                $nombresPorDelegacion[$id][$key] = $nom; // guardamos el nombre visible por último
             }
         }
 
@@ -93,7 +126,12 @@ class DelegacionController extends Controller
             'nombre' => $d->nombre,
             'dependencias_count' => $d->dependencias_count,
             'empleados_count' => $d->empleados_count,
-            'delegados_nombres' => $nombresPorDelegacion[$d->id] ?? [],
+            // Contamos "delegados" como nombres únicos (igual que `delegados_nombres`)
+            // para evitar sobrecontar el mismo delegado si existe repetición por importación.
+            'delegados_count' => isset($nombresPorDelegacion[$d->id])
+                ? count($nombresPorDelegacion[$d->id])
+                : 0,
+            'delegados_nombres' => array_values($nombresPorDelegacion[$d->id] ?? []),
         ]);
 
         return response()->json(['data' => $data]);
@@ -112,12 +150,16 @@ class DelegacionController extends Controller
             ->orderBy('del.nombre')
             ->pluck('del.nombre');
 
-        $delegadosNombres = $nombres
-            ->map(fn ($n) => trim((string) $n))
-            ->filter(fn ($n) => $n !== '')
-            ->unique()
-            ->values()
-            ->all();
+        $delegadosNombres = [];
+        foreach ($nombres as $n) {
+            $nom = trim((string) $n);
+            if ($nom === '') {
+                continue;
+            }
+            $key = $this->normalizarNombreDelegado($nom);
+            $delegadosNombres[$key] = $nom;
+        }
+        $delegadosNombres = array_values($delegadosNombres);
 
         $dependenciasRows = DB::table('dependencia_delegacion AS ddel')
             ->join('dependencias AS dep', 'dep.id', '=', 'ddel.dependencia_id')
@@ -147,12 +189,19 @@ class DelegacionController extends Controller
         $data = $request->validate([
             'clave' => 'required|string|max:20|unique:delegaciones,clave',
             'nombre' => 'nullable|string|max:255',
+            'dependencia_claves' => ['required', 'array', 'min:1'],
+            'dependencia_claves.*' => ['required', 'string', 'exists:dependencias,clave'],
         ]);
 
-        $del = Delegacion::create([
-            'clave' => strtoupper(trim($data['clave'])),
-            'nombre' => $data['nombre'] ?? null,
-        ]);
+        $del = DB::transaction(function () use ($data) {
+            $delegacion = Delegacion::create([
+                'clave' => strtoupper(trim($data['clave'])),
+                'nombre' => $data['nombre'] ?? null,
+            ]);
+            $this->syncDependenciasPorClaves($delegacion, $data['dependencia_claves']);
+
+            return $delegacion;
+        });
 
         return response()->json(['message' => 'Delegación creada correctamente.', 'id' => $del->id], 201);
     }
@@ -164,12 +213,17 @@ class DelegacionController extends Controller
         $data = $request->validate([
             'clave' => ['required', 'string', 'max:20', Rule::unique('delegaciones', 'clave')->ignore($del->id)],
             'nombre' => 'nullable|string|max:255',
+            'dependencia_claves' => ['required', 'array', 'min:1'],
+            'dependencia_claves.*' => ['required', 'string', 'exists:dependencias,clave'],
         ]);
 
-        $del->update([
-            'clave' => strtoupper(trim($data['clave'])),
-            'nombre' => $data['nombre'] ?? null,
-        ]);
+        DB::transaction(function () use ($del, $data) {
+            $del->update([
+                'clave' => strtoupper(trim($data['clave'])),
+                'nombre' => $data['nombre'] ?? null,
+            ]);
+            $this->syncDependenciasPorClaves($del, $data['dependencia_claves']);
+        });
 
         return response()->json(['message' => 'Delegación actualizada correctamente.']);
     }
