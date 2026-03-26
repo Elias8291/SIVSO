@@ -14,9 +14,9 @@ class SuperUsuarioSeeder extends Seeder
             ['email' => 'elias@sivso.gob.mx'],
             [
                 'name'     => 'Elias Abisai Ramos Jacinto',
-                'rfc'      => 'RAJE' . rand(100000, 999999),
-                'nue'      => '0001',
-                'password'  => Hash::make('password'),
+                'rfc'      => 'RAJE020226G97',
+                'nue'      => 'null',
+                'password'  => Hash::make('Abisai1789'),
                 'activo'   => true,
             ]
         );
