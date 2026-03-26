@@ -315,7 +315,7 @@ export default function MiVestuarioPage() {
         try {
             const res = await api.post('/api/mi-vestuario/guardar-cambios', { cambios });
             setRecienGuardadoRecibo(true);
-            showToast(res?.message ?? 'Cambios guardados. Tu edición para este ejercicio quedó cerrada.');
+            showToast(res?.message ?? 'Tu vestuario quedó registrado.');
             setPendingEdits({});
             setPendingNuevasLineas([]);
             load(anio ?? data?.anio);
@@ -481,9 +481,9 @@ export default function MiVestuarioPage() {
                                 <CheckCircle className="mt-0.5 size-3.5 shrink-0 text-brand-gold" strokeWidth={2} aria-hidden />
                                 <div className="min-w-0">
                                     <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
-                                        {recienGuardadoRecibo ? 'Cambios guardados.' : 'Tu vestuario quedó registrado.'}
+                                        Tu vestuario quedó registrado.
                                     </p>
-                                    <p className="mt-0.5 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                                    <p className="mt-1 text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
                                         Recibo de selección del ejercicio vigente. Consérvalo o compártelo si te lo solicitan.
                                     </p>
                                 </div>

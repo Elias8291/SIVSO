@@ -147,12 +147,17 @@ function DashboardEmpleado() {
                     )}
                     {enPeriodoYaEnviado && (
                         <div className="space-y-2.5">
-                            <p className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                            <div className="flex items-start gap-2 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
                                 <CheckCircle size={14} className="mt-0.5 shrink-0 text-brand-gold" strokeWidth={2} />
-                                <span>
-                                    Ya actualizaste y guardaste tu vestuario para el ejercicio {ejercicio}. Tu selección quedó registrada.
-                                </span>
-                            </p>
+                                <div className="space-y-1">
+                                    <p className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                        Tu vestuario quedó registrado.
+                                    </p>
+                                    <p>
+                                        Recibo de selección del ejercicio vigente. Consérvalo o compártelo si te lo solicitan.
+                                    </p>
+                                </div>
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => {
