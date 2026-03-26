@@ -465,6 +465,27 @@ export default function MiVestuarioPage() {
                     />
                 </div>
 
+                {puedeEditar && !viendoHistorico && (
+                    <div
+                        className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50/90 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900/60"
+                        role="note"
+                    >
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Cómo actualizar tu vestuario
+                        </p>
+                        <ol className="mt-1.5 list-decimal space-y-1 pl-4 text-[11px] leading-snug text-zinc-700 dark:text-zinc-300">
+                            <li>
+                                En cada tarjeta puedes cambiar <strong className="font-semibold text-zinc-900 dark:text-zinc-100">talla</strong>,{' '}
+                                <strong className="font-semibold text-zinc-900 dark:text-zinc-100">artículo</strong> o{' '}
+                                <strong className="font-semibold text-zinc-900 dark:text-zinc-100">cantidad</strong>.
+                            </li>
+                            <li>
+                                Al terminar, usa <strong className="font-semibold text-zinc-900 dark:text-zinc-100">Guardar cambios</strong> en la barra inferior.
+                            </li>
+                        </ol>
+                    </div>
+                )}
+
                 {mostrarBloqueRecibo && (
                     <div
                         className="mt-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"

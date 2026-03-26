@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 const SIZES = {
@@ -10,12 +10,12 @@ const SIZES = {
 };
 
 /**
- * Modal reutilizable. Móvil: full width, poco margen, botones táctiles.
- * @param {boolean} [mobileFloatingClose] — En pantallas menores que `sm`, oculta la barra de título y deja una X fija arriba a la derecha.
+ * Modal reutilizable.
+ * - Móvil (&lt; sm): hoja inferior (bottom sheet), ancho completo, altura con `dvh` y safe areas.
+ * - sm+: diálogo centrado clásico.
+ * @param {boolean} [mobileFloatingClose] — En móvil, título compacto y X flotante para ganar espacio al listar/editar.
  */
 export default function Modal({ open, onClose, title, size = 'md', children, footer, mobileFloatingClose = false }) {
-    const overlayRef = useRef(null);
-
     useEffect(() => {
         if (!open) return;
         const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -31,59 +31,88 @@ export default function Modal({ open, onClose, title, size = 'md', children, foo
 
     return (
         <div
-            ref={overlayRef}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-            onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+            className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4 md:p-6"
+            role="presentation"
         >
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <button
+                type="button"
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                aria-label="Cerrar"
+                onClick={onClose}
+            />
 
-            <div className={`relative bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-2xl w-full ${SIZES[size]} flex flex-col max-h-[85vh] sm:max-h-[90vh]`}>
+            <div
+                className={`
+                    relative z-10 flex min-h-0 min-w-0 w-full flex-col overflow-hidden
+                    border border-zinc-100 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900
+                    rounded-t-2xl rounded-b-none
+                    max-h-[min(92dvh,100%)] sm:max-h-[min(90vh,100%)] sm:rounded-2xl
+                    ${SIZES[size]}
+                `}
+                role="dialog"
+                aria-modal="true"
+                aria-label={mobileFloatingClose ? title : undefined}
+                aria-labelledby={mobileFloatingClose ? undefined : 'modal-title'}
+                onClick={(e) => e.stopPropagation()}
+            >
                 {mobileFloatingClose ? (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="sm:hidden absolute top-3 right-3 z-20 size-11 rounded-xl flex items-center justify-center text-zinc-700 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all touch-manipulation"
-                        aria-label="Cerrar"
-                    >
-                        <X size={22} strokeWidth={2.5} />
-                    </button>
+                    <>
+                        <p
+                            aria-hidden
+                            className="pointer-events-none absolute left-4 right-[4.25rem] top-[max(0.85rem,env(safe-area-inset-top))] z-10 line-clamp-2 text-left text-[11px] font-bold uppercase leading-tight tracking-wider text-zinc-600 dark:text-zinc-300 sm:hidden"
+                        >
+                            {title}
+                        </p>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 flex size-11 items-center justify-center rounded-xl border border-zinc-200/80 bg-zinc-100 text-zinc-700 shadow-sm transition-all hover:bg-zinc-200 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 sm:hidden touch-manipulation"
+                            aria-label="Cerrar"
+                        >
+                            <X size={22} strokeWidth={2.5} />
+                        </button>
+                    </>
                 ) : null}
 
                 <div
                     className={
                         mobileFloatingClose
-                            ? 'hidden sm:flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0'
-                            : 'flex items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4 border-b border-zinc-50 dark:border-zinc-800/60 shrink-0'
+                            ? 'hidden shrink-0 items-center justify-between gap-3 border-b border-zinc-50 px-4 py-3.5 dark:border-zinc-800/60 sm:flex sm:px-6 sm:py-4'
+                            : 'flex shrink-0 items-center justify-between gap-3 border-b border-zinc-50 px-4 py-3.5 dark:border-zinc-800/60 sm:px-6 sm:py-4'
                     }
                 >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="size-1.5 bg-brand-gold rounded-full shrink-0" />
-                        <h3 className="text-base sm:text-lg font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 truncate min-w-0">
+                    <div className="flex min-w-0 flex-1 items-center gap-2 pr-10 sm:pr-0">
+                        <span className="size-1.5 shrink-0 rounded-full bg-brand-gold" aria-hidden />
+                        <h3 id="modal-title" className="min-w-0 truncate text-base font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 sm:text-lg">
                             {title}
                         </h3>
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="size-10 sm:size-9 shrink-0 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 sm:bg-transparent sm:dark:bg-transparent hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all touch-manipulation"
+                        className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600 transition-all hover:bg-zinc-200 hover:text-zinc-900 active:scale-95 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white sm:size-9 sm:bg-transparent sm:dark:bg-transparent touch-manipulation"
                         aria-label="Cerrar"
                     >
-                        <X size={20} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
+                        <X size={20} className="sm:h-[18px] sm:w-[18px]" strokeWidth={2.5} />
                     </button>
                 </div>
 
                 <div
                     className={
                         mobileFloatingClose
-                            ? 'flex-1 overflow-y-auto px-4 pt-14 pb-4 sm:pt-5 sm:px-6 sm:py-5 min-h-0'
-                            : 'flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 min-h-0'
+                            ? (footer
+                                ? 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-4 pt-14 sm:px-6 sm:py-5 sm:pt-5'
+                                : 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-14 sm:px-6 sm:py-5 sm:pt-5')
+                            : (footer
+                                ? 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-6 sm:py-5'
+                                : 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 sm:pt-5 sm:pb-[max(1.25rem,env(safe-area-inset-bottom))]')
                     }
                 >
                     {children}
                 </div>
 
                 {footer && (
-                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-t border-zinc-50 dark:border-zinc-800/60 shrink-0 ">
+                    <div className="shrink-0 border-t border-zinc-50 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 dark:border-zinc-800/60 sm:px-6 sm:py-4 sm:pb-4">
                         {footer}
                     </div>
                 )}

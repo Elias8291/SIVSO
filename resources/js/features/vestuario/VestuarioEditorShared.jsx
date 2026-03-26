@@ -172,30 +172,30 @@ export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados
 
     if (variant === 'header') {
         return (
-            <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 sm:px-3.5 sm:py-2.5">
-                <div className="flex min-w-0 items-center gap-2.5">
-                    <div className="hidden h-7 w-0.5 shrink-0 rounded-full bg-brand-gold sm:block" aria-hidden />
+            <div className="min-w-0 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900 sm:px-3.5 sm:py-2.5">
+                <div className="flex min-w-0 items-start gap-2.5 sm:items-center">
+                    <div className="mt-0.5 hidden h-7 w-0.5 shrink-0 rounded-full bg-brand-gold sm:block" aria-hidden />
                     <div className="min-w-0 flex-1 text-center sm:text-left">
-                        <p className="mb-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-brand-gold sm:mb-0">
+                        <p className="mb-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-brand-gold sm:mb-0.5">
                             {rubrica}
                         </p>
-                        <p className="flex flex-wrap items-baseline justify-center gap-x-0 gap-y-0.5 sm:justify-start">
-                            <span className="tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
-                                {articulosDistintos}
+                        <div className="flex flex-col items-center gap-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-start sm:gap-x-1">
+                            <span className="inline-flex items-baseline gap-1 tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
+                                <span>{articulosDistintos}</span>
+                                <span className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
+                                    {articulosDistintos === 1 ? 'artículo' : 'artículos'}
+                                </span>
                             </span>
-                            <span className="ml-1 text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
-                                {articulosDistintos === 1 ? 'artículo' : 'artículos'}
-                            </span>
-                            <span className="mx-1.5 text-sm font-light leading-none text-zinc-300 dark:text-zinc-600" aria-hidden>
+                            <span className="hidden text-sm font-light text-zinc-300 dark:text-zinc-600 sm:inline" aria-hidden>
                                 ·
                             </span>
-                            <span className="tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
-                                {totalPiezas}
+                            <span className="inline-flex items-baseline gap-1 tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
+                                <span>{totalPiezas}</span>
+                                <span className="text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
+                                    {totalPiezas === 1 ? 'pieza' : 'piezas'}
+                                </span>
                             </span>
-                            <span className="ml-1 text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
-                                {totalPiezas === 1 ? 'pieza' : 'piezas'}
-                            </span>
-                        </p>
+                        </div>
                     </div>
                 </div>
                 {hayFiltro ? (
@@ -236,7 +236,7 @@ export function ModalCantidad({ item, cantidadOriginal, onClose, onApply }) {
     const base = cantidadOriginal != null ? Number(cantidadOriginal) : null;
     const redujoVsServidor = base != null && !Number.isNaN(base) && cantidad < base;
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar cantidad" size="sm"
+        <Modal open={!!item} onClose={onClose} title="Cambiar cantidad" size="sm" mobileFloatingClose
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
@@ -288,43 +288,43 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                 : 'border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm hover:shadow-md';
 
     return (
-        <div className={`flex flex-col rounded-xl transition-all duration-300 ${cardShell}`}>
-            <div className="flex flex-1 flex-col px-4 py-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
+        <div className={`flex min-w-0 max-w-full flex-col overflow-hidden rounded-xl transition-all duration-300 ${cardShell}`}>
+            <div className="flex min-w-0 flex-1 flex-col px-3 py-3 sm:px-4">
+                <div className="mb-2 flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
                     <div className="flex min-w-0 items-center gap-1.5">
                         <span className={`size-1.5 shrink-0 rounded-full ${st.dot}`} />
-                        <span className="truncate text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                        <span className="min-w-0 break-words text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                             {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                         </span>
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1 sm:justify-end">
                         {item.heredado_preview && !modificadoLocal && (
-                            <span className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0 text-[8px] font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            <span className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[8px] font-semibold leading-tight text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                 Pendiente de revisar
                             </span>
                         )}
                         {modificadoLocal && (
-                            <span className="rounded border border-emerald-200 bg-emerald-100 px-1.5 py-0 text-[8px] font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                            <span className="rounded border border-emerald-200 bg-emerald-100 px-1.5 py-0.5 text-[8px] font-semibold leading-tight text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
                                 Modificado
                             </span>
                         )}
                         {esNuevaLinea && (
-                            <span className="rounded border border-sky-200 bg-sky-100 px-1.5 py-0 text-[8px] font-semibold text-sky-900 dark:border-sky-800 dark:bg-sky-900 dark:text-sky-200">
+                            <span className="rounded border border-sky-200 bg-sky-100 px-1.5 py-0.5 text-[8px] font-semibold leading-tight text-sky-900 dark:border-sky-800 dark:bg-sky-900 dark:text-sky-200">
                                 Nuevo (pendiente)
                             </span>
                         )}
                     </div>
                 </div>
 
-                <p className="mb-3 break-words text-[13px] font-medium leading-snug text-zinc-800 hyphens-auto dark:text-zinc-200">
+                <p className="mb-3 min-w-0 break-words text-[13px] font-medium leading-snug text-zinc-800 hyphens-auto dark:text-zinc-200">
                     {item.descripcion}
                 </p>
 
-                <div className="mt-auto flex flex-wrap items-end gap-4">
-                    <div className="flex min-w-0 flex-col gap-0.5">
+                <div className="mt-auto flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-5 sm:gap-y-2">
+                    <div className="flex min-w-0 w-full flex-col gap-0.5 sm:w-auto sm:max-w-[55%]">
                         <span className="text-[8px] font-semibold uppercase tracking-wider text-zinc-400">Cantidad</span>
                         {editable && typeof onAdjustCantidad === 'function' ? (
-                            <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
+                            <div className="inline-flex max-w-full items-stretch self-start overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
                                 <button
                                     type="button"
                                     aria-label="Disminuir cantidad"
@@ -361,12 +361,12 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                             <span className="text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-100">{cant}</span>
                         )}
                         {mostrarAvisoMenos ? (
-                            <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400 max-w-[16rem]">
-                                Libera importe respecto a su asignación: puede recuperar piezas con <strong className="text-zinc-600 dark:text-zinc-300">+</strong> o, en <strong className="text-zinc-600 dark:text-zinc-300">otra partida</strong>, usar <strong className="text-zinc-600 dark:text-zinc-300">Artículo</strong> para elegir algo mejor dentro del mismo tope total.
+                            <p className="w-full max-w-full text-[10px] leading-snug text-zinc-500 dark:text-zinc-400">
+                                Bajó la cantidad: libera importe. Puede subirla otra vez con <strong className="text-zinc-600 dark:text-zinc-300">+</strong> o elegir otro producto en otra partida con <strong className="text-zinc-600 dark:text-zinc-300">Artículo</strong> (mismo tope total).
                             </p>
                         ) : null}
                     </div>
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex min-w-0 flex-col gap-0.5 sm:shrink-0">
                         <span className="text-[8px] font-semibold uppercase tracking-wider text-zinc-400">Talla</span>
                         {editable ? (
                             <button type="button" onClick={() => onEditTalla(item)}
@@ -381,34 +381,49 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
             </div>
 
             {editable && esNuevaLinea && typeof onRemoveNuevaLinea === 'function' ? (
-                <div className="flex gap-1 border-t border-sky-200 px-1.5 pb-2 pt-2 dark:border-sky-800">
+                <div className="grid min-w-0 grid-cols-3 gap-px border-t border-sky-200 bg-sky-200/50 dark:border-sky-800 dark:bg-sky-900/40">
                     <button type="button" onClick={() => onEditTalla(item)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
-                        <Ruler size={12} strokeWidth={2} /> Talla
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-brand-gold active:bg-zinc-100 dark:bg-sky-950 dark:hover:bg-sky-900 touch-manipulation sm:flex-row sm:gap-1 sm:py-2">
+                        <Ruler size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate px-0.5 text-center text-[9px] font-bold leading-tight sm:text-[10px]">Talla</span>
                     </button>
                     <button type="button" onClick={() => onEditCantidad(item)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
-                        <Hash size={12} strokeWidth={2} /> Cantidad
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-brand-gold active:bg-zinc-100 dark:bg-sky-950 dark:hover:bg-sky-900 touch-manipulation sm:flex-row sm:gap-1 sm:py-2">
+                        <Hash size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate px-0.5 text-center text-[9px] font-bold leading-tight sm:text-[10px]">Cantidad</span>
                     </button>
                     <button type="button" onClick={() => onRemoveNuevaLinea(item.id)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 touch-manipulation">
-                        <Trash2 size={12} strokeWidth={2} /> Quitar
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-red-600 transition-colors hover:bg-red-50 active:bg-red-100 dark:bg-sky-950 dark:hover:bg-red-950/30 touch-manipulation sm:flex-row sm:gap-1 sm:py-2">
+                        <Trash2 size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate px-0.5 text-center text-[9px] font-bold leading-tight sm:text-[10px]">Quitar</span>
                     </button>
                 </div>
             ) : null}
             {editable && !esNuevaLinea ? (
-                <div className="flex gap-1 border-t border-zinc-200 px-1.5 pb-2 pt-2 dark:border-zinc-800">
+                <div className="grid min-w-0 grid-cols-3 gap-px border-t border-zinc-200 bg-zinc-200/60 dark:border-zinc-700 dark:bg-zinc-800/80">
                     <button type="button" onClick={() => onEditTalla(item)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
-                        <Ruler size={12} strokeWidth={2} /> Talla
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-brand-gold active:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 touch-manipulation sm:flex-row sm:gap-1.5 sm:py-2"
+                        title="Cambiar talla"
+                    >
+                        <Ruler size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate px-0.5 text-center text-[9px] font-bold leading-tight sm:text-[10px]">Talla</span>
                     </button>
                     <button type="button" onClick={() => onCambiarProducto(item)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
-                        <RefreshCw size={12} strokeWidth={2} /> Artículo
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-brand-gold active:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 touch-manipulation sm:flex-row sm:gap-1.5 sm:py-2"
+                        title="Cambiar artículo"
+                    >
+                        <RefreshCw size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate text-center text-[9px] font-bold leading-tight sm:text-[10px]">
+                            <span className="sm:hidden">Artíc.</span>
+                            <span className="hidden sm:inline">Artículo</span>
+                        </span>
                     </button>
                     <button type="button" onClick={() => onEditCantidad(item)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
-                        <Hash size={12} strokeWidth={2} /> Cantidad
+                        className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-white py-2.5 text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-brand-gold active:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800 touch-manipulation sm:flex-row sm:gap-1.5 sm:py-2"
+                        title="Cambiar cantidad"
+                    >
+                        <Hash size={14} strokeWidth={2} className="shrink-0" aria-hidden />
+                        <span className="max-w-full truncate px-0.5 text-center text-[9px] font-bold leading-tight sm:text-[10px]">Cantidad</span>
                     </button>
                 </div>
             ) : null}
@@ -421,7 +436,7 @@ export function ModalTalla({ item, onClose, onApply }) {
     useEffect(() => { if (item) setTalla(item.talla ?? ''); }, [item]);
 
     return (
-        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="md"
+        <Modal open={!!item} onClose={onClose} title="Cambiar talla" size="md" mobileFloatingClose
             footer={
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                     <button type="button" onClick={onClose}
@@ -618,7 +633,7 @@ export function ModalAgregarLineaVestuario({
                         </button>
                     </div>
                 ) : null}
-                <div className="max-h-48 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40">
+                <div className="max-h-[min(42dvh,14rem)] overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40 sm:max-h-48">
                     {loadingP ? (
                         <div className="py-8 flex justify-center">
                             <span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
@@ -789,7 +804,7 @@ export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendin
                         placeholder="Artículo de reemplazo…"
                         inputClassName="text-base"
                     />
-                    <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40">
+                    <div className="max-h-[min(45dvh,16rem)] overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40 sm:max-h-56">
                         {loadingP ? (
                             <div className="py-8 flex items-center justify-center">
                                 <span className="size-5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
