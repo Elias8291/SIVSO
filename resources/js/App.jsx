@@ -33,6 +33,7 @@ import {
     PartidasLimitePage,
     NotificacionesPage,
     PeriodosPage,
+    PeriodoFormPage,
 } from './pages';
 import { DependenciaFormPage, DelegacionFormPage, DelegadoFormPage } from './pages/organizacion';
 
@@ -285,6 +286,22 @@ export default function App({ initialState }) {
                                 element={
                                     <RequirePermission permission="gestionar_periodos">
                                         <PeriodosPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="periodos/nuevo"
+                                element={
+                                    <RequirePermission permission="gestionar_periodos">
+                                        <PeriodoFormPage />
+                                    </RequirePermission>
+                                }
+                            />
+                            <Route
+                                path="periodos/:id/editar"
+                                element={
+                                    <RequirePermission permission="gestionar_periodos">
+                                        <PeriodoFormPage />
                                     </RequirePermission>
                                 }
                             />

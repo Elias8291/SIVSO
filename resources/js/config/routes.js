@@ -38,6 +38,8 @@ export const ROUTES = {
     PERMISOS_EDITAR:     '/dashboard/permisos/:id/editar',
     NOTIFICACIONES: '/dashboard/notificaciones',
     PERIODOS: '/dashboard/periodos',
+    PERIODOS_NUEVO: '/dashboard/periodos/nuevo',
+    PERIODOS_EDITAR: '/dashboard/periodos/:id/editar',
 };
 
 /**
@@ -99,6 +101,8 @@ export function getRouteLabel(path) {
     if (path.match(/^\/dashboard\/roles\/\d+\/editar/)) return 'Editar Rol';
     if (path.startsWith('/dashboard/permisos/nuevo')) return 'Nuevo Permiso';
     if (path.match(/^\/dashboard\/permisos\/\d+\/editar/)) return 'Editar Permiso';
+    if (path.startsWith('/dashboard/periodos/nuevo')) return 'Nuevo Periodo';
+    if (path.match(/^\/dashboard\/periodos\/\d+\/editar/)) return 'Editar Periodo';
     if (path.startsWith('/dashboard/partidas/limites/editar')) return 'Editar Límites';
     if (path.startsWith('/dashboard/notificaciones')) return 'Notificaciones';
     if (path.match(/^\/dashboard\/mi-delegacion\/vestuario\/\d+/)) return 'Vestuario del colaborador';

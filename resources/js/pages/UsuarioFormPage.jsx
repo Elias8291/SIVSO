@@ -36,7 +36,9 @@ export default function UsuarioFormPage() {
     const [roles, setRoles] = useState([]);
 
     useEffect(() => {
-        api.get('/api/roles?all=1').then((r) => setRoles(r.data ?? [])).catch(() => {});
+        api.get('/api/roles?all=1')
+            .then((r) => setRoles(Array.isArray(r.data) ? r.data : []))
+            .catch(() => setRoles([]));
     }, []);
 
     useEffect(() => {
@@ -51,7 +53,7 @@ export default function UsuarioFormPage() {
                         email: u.email ?? '',
                         password: '',
                         activo: u.activo ?? true,
-                        roles: (u.roles ?? []).map((r) => typeof r === 'object' ? r.id : r),
+                        roles: (u.roles ?? []).map((r) => Number(typeof r === 'object' ? r.id : r)).filter((v) => Number.isFinite(v)),
                     });
                 } else {
                     navigate('/dashboard/usuarios', { replace: true });
@@ -79,13 +81,16 @@ export default function UsuarioFormPage() {
         }
     };
 
-    const toggleRole = (roleId) =>
+    const toggleRole = (roleIdRaw) => {
+        const roleId = Number(roleIdRaw);
+        if (!Number.isFinite(roleId)) return;
         setForm((prev) => ({
             ...prev,
             roles: prev.roles.includes(roleId)
                 ? prev.roles.filter((r) => r !== roleId)
                 : [...prev.roles, roleId],
         }));
+    };
 
     if (loading) {
         return (

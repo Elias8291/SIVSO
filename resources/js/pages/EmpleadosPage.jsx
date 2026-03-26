@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRightLeft, Building2, ChevronDown, Key, Layers, Shirt } from 'lucide-react';
+import { ArrowRightLeft, Building2, ChevronDown, Key, Layers, Shirt, Unlock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
     PageHeader, SearchInput, PageAddButton, Card, DataTable,
@@ -114,6 +114,7 @@ export default function EmpleadosPage() {
     const { can } = useAuth();
     const canEdit = can('editar_empleados');
     const canVerProductosEmpleado = can('ver_productos_empleado');
+    const canReactivarVestuario = can('editar_seleccion') || can('ver_mi_delegacion');
     const [changeDelegacion, setChangeDelegacion] = useState(null);
     const [dependencias, setDependencias] = useState([]);
     const [delegaciones, setDelegaciones] = useState([]);
@@ -147,6 +148,7 @@ export default function EmpleadosPage() {
 
     const [saving, setSaving] = useState(false);
     const [confirm, setConfirm] = useState(null);
+    const [reactivandoId, setReactivandoId] = useState(null);
 
     const handleDelete = async () => {
         setSaving(true);
@@ -158,6 +160,20 @@ export default function EmpleadosPage() {
     const handleToggle = async (row) => {
         try { await api.patch(`/api/empleados/${row.id}/toggle`); reload(); }
         catch (err) { alert(err.message); }
+    };
+
+    const handleReactivarEdicion = async (row) => {
+        if (!row?.id) return;
+        if (!window.confirm(`¿Permitir que ${row.nombre_completo || 'este colaborador'} vuelva a editar su vestuario en Mi vestuario?`)) return;
+        setReactivandoId(row.id);
+        try {
+            await api.post(`/api/empleados/${row.id}/vestuario/reactivar-edicion`);
+            reload();
+        } catch (err) {
+            alert(err?.message || 'No se pudo reactivar la edición.');
+        } finally {
+            setReactivandoId(null);
+        }
     };
 
     /* ── Columnas ────────────────────────────────────────────────────────── */
@@ -212,6 +228,25 @@ export default function EmpleadosPage() {
             key: 'activa',
             label: 'Estado',
             render: (v) => <StatusBadge status={v ? 'activo' : 'inactivo'} />,
+        },
+        {
+            key: 'reactivar_vestuario',
+            label: 'Mi vestuario',
+            render: (_, row) => (
+                canReactivarVestuario && row.actualizado ? (
+                    <button
+                        type="button"
+                        onClick={() => handleReactivarEdicion(row)}
+                        disabled={reactivandoId === row.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-900 transition-colors hover:bg-amber-50 disabled:opacity-50 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-950/30"
+                    >
+                        <Unlock size={12} strokeWidth={2} />
+                        {reactivandoId === row.id ? '...' : 'Activar edición'}
+                    </button>
+                ) : (
+                    <span className="text-[11px] text-zinc-400">—</span>
+                )
+            ),
         },
     ];
 

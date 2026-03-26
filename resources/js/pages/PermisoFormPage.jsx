@@ -24,10 +24,10 @@ const EMPTY_FORM = { name: '', guard_name: 'web' };
 const SUGGESTED_MODULES = [
     'dashboard', 'notificaciones', 'organizacion', 'catalogo', 'empleados',
     'selecciones', 'reportes', 'usuarios', 'roles', 'permisos', 'periodos',
-    'dependencias', 'delegaciones', 'delegados', 'partidas', 'mi_delegacion',
+    'dependencias', 'delegaciones', 'delegados', 'partidas', 'mi_delegacion', 'mi_vestuario',
     'inventario', 'solicitudes', 'asignaciones',
 ];
-const SUGGESTED_ACTIONS = ['ver', 'crear', 'editar', 'eliminar', 'exportar', 'gestionar'];
+const SUGGESTED_ACTIONS = ['ver', 'crear', 'editar', 'actualizar', 'eliminar', 'exportar', 'gestionar'];
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
 

@@ -23,3 +23,4 @@ export { default as PartidasPage }     from './PartidasPage';
 export { default as PartidasLimitePage } from './PartidasLimitePage';
 export { default as NotificacionesPage } from './NotificacionesPage';
 export { default as PeriodosPage } from './PeriodosPage';
+export { default as PeriodoFormPage } from './PeriodoFormPage';

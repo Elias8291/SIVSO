@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Calendar, ChevronDown, ChevronUp, FileText, KeyRound, ListFilter } from 'lucide-react';
+import { Building2, Calendar, ChevronDown, ChevronUp, FileText, KeyRound, ListFilter, Unlock } from 'lucide-react';
 import { DataTable, SearchInput, Modal, FilterSelectShell, FilterToolbar, FilterToolbarRow } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
@@ -29,6 +29,7 @@ export default function MiDelegacionPage() {
     const [filtroEstadoVestuario, setFiltroEstadoVestuario] = useState('todos');
     /** todos | con_cuenta | sin_cuenta */
     const [filtroAcceso, setFiltroAcceso] = useState('todos');
+    const [reactivandoId, setReactivandoId] = useState(null);
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
 
@@ -222,6 +223,29 @@ export default function MiDelegacionPage() {
         });
     };
 
+    const handleReactivarEdicion = async (empleado, delegacionId) => {
+        if (!empleado?.id) return;
+        if (!window.confirm(
+            `¿Permitir que ${empleado.nombre_completo || 'este colaborador'} vuelva a editar su vestuario en Mi vestuario?`
+        )) return;
+        setReactivandoId(empleado.id);
+        try {
+            const res = await api.post(`/api/empleados/${empleado.id}/vestuario/reactivar-edicion`);
+            setSuccessFlash(res?.message || 'Edición reactivada correctamente.');
+            setEmpleadosPorDelegacion((prev) => {
+                const rows = prev[delegacionId] ?? [];
+                return {
+                    ...prev,
+                    [delegacionId]: rows.map((r) => (r.id === empleado.id ? { ...r, actualizado: false } : r)),
+                };
+            });
+        } catch (err) {
+            alert(err?.message || 'No se pudo reactivar la edición.');
+        } finally {
+            setReactivandoId(null);
+        }
+    };
+
     const buildColumns = (delegacionId) => [
         {
             key: 'nombre_completo',
@@ -263,6 +287,18 @@ export default function MiDelegacionPage() {
                             className="w-full md:w-auto inline-flex justify-center px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                         >
                             Crear acceso
+                        </button>
+                    )}
+                    {row.actualizado && (
+                        <button
+                            type="button"
+                            disabled={reactivandoId === row.id}
+                            onClick={() => handleReactivarEdicion(row, delegacionId)}
+                            className="w-full md:w-auto inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-[10px] font-bold uppercase tracking-wider border border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50 transition-all"
+                            title="Permitir edición nuevamente en Mi vestuario"
+                        >
+                            <Unlock className="size-3.5 shrink-0" aria-hidden />
+                            {reactivandoId === row.id ? '...' : 'Activar edición'}
                         </button>
                     )}
                     <button

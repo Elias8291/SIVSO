@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calendar, ListFilter, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, ListFilter } from 'lucide-react';
 import { api } from '../lib/api';
 import { PageHeader, PageAddButton, SearchInput, FilterSelectShell, FilterToolbar, FilterToolbarRow, Modal } from '../components/ui';
 
@@ -15,20 +16,14 @@ const fmtFecha = (f) => {
     return isNaN(d) ? '—' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const emptyForm = { anio: new Date().getFullYear(), nombre: '', fecha_inicio: '', fecha_fin: '', estado: 'pendiente', descripcion: '' };
-
 export default function PeriodosPage() {
+    const navigate = useNavigate();
     const [periodos, setPeriodos] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [modal, setModal] = useState(null);
-    const [form, setForm] = useState(emptyForm);
-    const [saving, setSaving] = useState(false);
-    const [errors, setErrors] = useState({});
     const [search, setSearch] = useState('');
     const [estadoFiltro, setEstadoFiltro] = useState('');
     const [abrirModal, setAbrirModal] = useState(null);
     const [notificarAlAbrir, setNotificarAlAbrir] = useState(true);
-    const [notificarAlCrear, setNotificarAlCrear] = useState(true);
     const [feedback, setFeedback] = useState(null);
 
     const load = useCallback(async () => {
@@ -51,43 +46,6 @@ export default function PeriodosPage() {
             return blob.includes(q);
         });
     }, [periodos, search, estadoFiltro]);
-
-    const openNew = () => {
-        setForm(emptyForm);
-        setErrors({});
-        setModal('nuevo');
-    };
-
-    const openEdit = (p) => {
-        setForm({
-            anio: p.anio,
-            nombre: p.nombre,
-            fecha_inicio: p.fecha_inicio?.slice(0, 10) ?? '',
-            fecha_fin: p.fecha_fin?.slice(0, 10) ?? '',
-            estado: p.estado,
-            descripcion: p.descripcion ?? '',
-        });
-        setErrors({});
-        setModal(p.id);
-    };
-
-    const save = async () => {
-        setSaving(true);
-        setErrors({});
-        setFeedback(null);
-        try {
-            if (modal === 'nuevo') {
-                const r = await api.post('/api/periodos', { ...form, notificar: notificarAlCrear });
-                if (r?.message) setFeedback(r.message);
-            } else {
-                await api.put(`/api/periodos/${modal}`, form);
-            }
-            setModal(null);
-            load();
-        } catch (err) {
-            if (err.errors) setErrors(err.errors);
-        } finally { setSaving(false); }
-    };
 
     const toggleEstado = async (p, nuevoEstado) => {
         setFeedback(null);
@@ -125,14 +83,12 @@ export default function PeriodosPage() {
         } catch { /* silently fail */ }
     };
 
-    const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
-
     return (
         <div>
             <PageHeader
                 title="Periodos"
                 description="Configura los periodos de actualización del sistema."
-                actions={<PageAddButton onClick={openNew} label="Nuevo periodo" />}
+                actions={<PageAddButton onClick={() => navigate('/dashboard/periodos/nuevo')} label="Nuevo periodo" />}
             />
 
             {feedback && (
@@ -221,7 +177,7 @@ export default function PeriodosPage() {
                                         )}
                                         <button
                                             type="button"
-                                            onClick={() => openEdit(p)}
+                                            onClick={() => navigate(`/dashboard/periodos/${p.id}/editar`)}
                                             className="px-2.5 py-1.5 text-xs font-medium rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                                         >
                                             Editar
@@ -281,89 +237,6 @@ export default function PeriodosPage() {
                     </span>
                 </label>
             </Modal>
-
-            {modal !== null && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setModal(null)} />
-                    <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl w-full max-w-md shadow-xl">
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
-                            <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
-                                {modal === 'nuevo' ? 'Nuevo Periodo' : 'Editar Periodo'}
-                            </h2>
-                            <button type="button" onClick={() => setModal(null)} className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <Field label="Año" error={errors.anio}>
-                                    <input type="number" value={form.anio} onChange={e => set('anio', e.target.value)} className={inputCls} />
-                                </Field>
-                                <Field label="Estado" error={errors.estado}>
-                                    <select value={form.estado} onChange={e => set('estado', e.target.value)} className={inputCls}>
-                                        <option value="pendiente">Pendiente</option>
-                                        <option value="abierto">Abierto</option>
-                                        <option value="cerrado">Cerrado</option>
-                                    </select>
-                                </Field>
-                            </div>
-                            <Field label="Nombre" error={errors.nombre}>
-                                <input type="text" value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="Ej: Selección Vestuario 2025" className={inputCls} />
-                            </Field>
-                            <div className="grid grid-cols-2 gap-3">
-                                <Field label="Fecha inicio" error={errors.fecha_inicio}>
-                                    <input type="date" value={form.fecha_inicio} onChange={e => set('fecha_inicio', e.target.value)} className={inputCls} />
-                                </Field>
-                                <Field label="Fecha fin" error={errors.fecha_fin}>
-                                    <input type="date" value={form.fecha_fin} onChange={e => set('fecha_fin', e.target.value)} className={inputCls} />
-                                </Field>
-                            </div>
-                            <Field label="Descripción (opcional)" error={errors.descripcion}>
-                                <textarea value={form.descripcion} onChange={e => set('descripcion', e.target.value)} rows={2} placeholder="Notas sobre este periodo..." className={inputCls + ' resize-none'} />
-                            </Field>
-                            {modal === 'nuevo' && form.estado === 'abierto' && (
-                                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-zinc-200/80 bg-zinc-50/80 px-3 py-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-                                    <input
-                                        type="checkbox"
-                                        className="mt-0.5 size-4 rounded border-zinc-300 text-brand-gold focus:ring-brand-gold/30"
-                                        checked={notificarAlCrear}
-                                        onChange={(e) => setNotificarAlCrear(e.target.checked)}
-                                    />
-                                    <span className="text-[12px] leading-snug text-zinc-600 dark:text-zinc-400">
-                                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">Enviar avisos en el panel</span>
-                                        {' '}al crear: se notificará a <strong className="font-semibold text-zinc-800 dark:text-zinc-200">todos los empleados</strong> con cuenta vinculada.
-                                    </span>
-                                </label>
-                            )}
-                        </div>
-                        <div className="flex justify-end gap-2 px-5 py-4 border-t border-zinc-100 dark:border-zinc-800">
-                            <button type="button" onClick={() => setModal(null)} className="px-4 py-2 text-sm font-medium text-zinc-500 hover:text-zinc-700 transition-colors">
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={save}
-                                disabled={saving}
-                                className="px-4 py-2 text-sm font-semibold rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
-                            >
-                                {saving ? 'Guardando...' : 'Guardar'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-const inputCls = 'w-full px-3 py-2 text-sm bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors text-zinc-800 dark:text-zinc-200 placeholder-zinc-400';
-
-function Field({ label, error, children }) {
-    return (
-        <div>
-            <label className="block text-xs font-medium text-zinc-500 mb-1">{label}</label>
-            {children}
-            {error && <p className="text-xs text-red-500 mt-0.5">{Array.isArray(error) ? error[0] : error}</p>}
         </div>
     );
 }
