@@ -51,28 +51,27 @@ export default function CambiarContrasenaPage() {
             title="Nueva Contraseña"
             subtitle="Actualice sus credenciales para continuar"
         >
-            <header className="mb-10 text-center lg:text-left">
-                <div className="space-y-1">
-                    <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-black dark:text-white">
-                        Nueva Contraseña
-                    </h2>
-                    <p className="text-[10px] lg:text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-                        Actualice sus credenciales para continuar
-                    </p>
-                </div>
+            <header className="mb-8 text-center lg:text-left">
+                <div className="mx-auto h-0.5 w-9 rounded-full bg-brand-gold lg:mx-0" aria-hidden />
+                <h2 className="mt-4 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                    Nueva contraseña
+                </h2>
+                <p className="mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                    Actualice sus credenciales para continuar
+                </p>
             </header>
 
             {errors.length > 0 && (
-                <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors[0]}</p>
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3.5 dark:border-red-900/60 dark:bg-red-950/30">
+                    <p className="text-[13px] leading-snug text-red-700 dark:text-red-300">{errors[0]}</p>
                 </div>
             )}
 
-            <form id="cambiar-contrasena-form" onSubmit={handleSubmit} className="space-y-6">
+            <form id="cambiar-contrasena-form" onSubmit={handleSubmit} className="space-y-5">
                 <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.content} />
                 <div className="space-y-1.5">
-                    <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
-                        Nueva Contraseña <span className="text-brand-gold">*</span>
+                    <label className="ml-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                        Nueva contraseña <span className="text-brand-gold">*</span>
                     </label>
                     <PasswordInput
                         name="password"
@@ -84,8 +83,8 @@ export default function CambiarContrasenaPage() {
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
-                        Confirmar Contraseña <span className="text-brand-gold">*</span>
+                    <label className="ml-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                        Confirmar contraseña <span className="text-brand-gold">*</span>
                     </label>
                     <PasswordInput
                         name="password_confirmation"
@@ -97,21 +96,21 @@ export default function CambiarContrasenaPage() {
                 </div>
                 <button
                     type="submit"
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-black text-[11px] font-bold py-4 rounded-lg hover:opacity-90 transition-all uppercase tracking-[0.2em] shadow-lg mt-2"
+                    className="mt-1 w-full rounded-xl bg-zinc-900 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-sm transition-opacity hover:opacity-90 dark:bg-white dark:text-zinc-900"
                 >
-                    Guardar y Acceder
+                    Guardar y acceder
                 </button>
                 <Link
                     to="/login"
-                    className="block w-full text-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-[10px] font-medium uppercase tracking-widest transition-colors py-2"
+                    className="block w-full py-2 text-center text-[11px] font-medium text-zinc-500 transition-colors hover:text-brand-gold dark:text-zinc-400"
                 >
                     Regresar al inicio
                 </Link>
             </form>
 
-            <footer className="mt-12 pt-6 border-t border-zinc-50 dark:border-zinc-900 text-center">
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-semibold uppercase tracking-[0.1em]">
-                    Sistema Integral de Vestuario Sindicato de Oaxaca
+            <footer className="mt-10 border-t border-zinc-200 pt-6 text-center dark:border-zinc-800">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                    Sistema integral de vestuario — Sindicato de Oaxaca
                 </p>
             </footer>
         </AuthLayout>

@@ -1,19 +1,47 @@
+import { useId } from 'react';
 import { Search } from 'lucide-react';
 
-export default function SearchInput({ placeholder = 'Buscar...', className = '', ...props }) {
+/** Buscador unificado (mismo patrón que Mi vestuario): borde + foco en el contenedor, icono, campo transparente. */
+export default function SearchInput({
+    placeholder = 'Buscar...',
+    className = '',
+    label,
+    id: idProp,
+    disabled,
+    inputClassName = '',
+    ...props
+}) {
+    const uid = useId();
+    const inputId = idProp ?? `search-${uid.replace(/:/g, '')}`;
+
     return (
-        <div className={`relative w-full ${className}`}>
-            <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none"
-                size={15}
-                strokeWidth={1.8}
-            />
-            <input
-                type="text"
-                placeholder={placeholder}
-                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 rounded-2xl text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 focus:border-brand-gold/40 transition-all"
-                {...props}
-            />
+        <div className={`w-full ${className}`}>
+            {label != null && label !== '' && (
+                <label
+                    htmlFor={inputId}
+                    className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400"
+                >
+                    {label}
+                </label>
+            )}
+            <div
+                className={`flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:border-brand-gold/40 focus-within:shadow-[0_0_0_1px_rgba(175,148,96,0.12)] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-brand-gold/35 sm:px-3 sm:py-2 ${disabled ? 'opacity-50' : ''}`}
+            >
+                <Search
+                    className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500 pointer-events-none"
+                    strokeWidth={1.6}
+                    aria-hidden
+                />
+                <input
+                    id={inputId}
+                    type="search"
+                    autoComplete="off"
+                    placeholder={placeholder}
+                    disabled={disabled}
+                    className={`min-w-0 flex-1 border-0 bg-transparent text-[13px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-600 touch-manipulation disabled:cursor-not-allowed ${inputClassName}`}
+                    {...props}
+                />
+            </div>
         </div>
     );
 }

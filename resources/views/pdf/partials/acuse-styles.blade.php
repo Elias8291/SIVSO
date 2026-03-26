@@ -3,47 +3,60 @@
         font-family: DejaVu Sans, sans-serif;
         font-size: 9px;
         color: #111;
-        line-height: 1.12;
+        line-height: 1.06;
     }
     .center { text-align: center; }
     .title-main {
         font-size: 11px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 2px 0 1px;
-        line-height: 1.1;
+        margin: 0 0 1px;
+        line-height: 1.05;
     }
     .title-sub {
         font-size: 9px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 1px 0;
-        line-height: 1.12;
+        margin: 0;
+        line-height: 1.06;
     }
     .warn {
         font-size: 7.5px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 0 auto 6px;
+        margin: 0;
+        padding: 0 0 2px;
         text-align: center;
-        line-height: 1.12;
+        line-height: 1.05;
+    }
+    .cabecera-acuse {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 4px;
+    }
+    .cabecera-acuse td {
+        vertical-align: top;
+        padding: 0;
+    }
+    .cabecera-acuse .celda-aviso {
+        padding-bottom: 3px;
     }
     .folio {
         font-size: 9px;
         font-weight: bold;
-        margin-bottom: 8px;
-        line-height: 1.1;
+        margin: 0 0 6px;
+        line-height: 1.05;
     }
     .datos {
         width: 100%;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         border-collapse: collapse;
     }
     .datos td {
-        padding: 2px 0;
+        padding: 1px 0;
         vertical-align: top;
         font-size: 9px;
-        line-height: 1.12;
+        line-height: 1.06;
     }
     .datos .k {
         font-weight: bold;
@@ -57,17 +70,17 @@
     }
     table.items th {
         border: 1px solid #222;
-        padding: 3px 3px;
+        padding: 2px 3px;
         background: #e8e8e8;
         text-transform: uppercase;
         font-weight: bold;
-        line-height: 1.1;
+        line-height: 1.05;
     }
     table.items td {
         border: 1px solid #333;
-        padding: 2px 3px;
+        padding: 1px 3px;
         vertical-align: top;
-        line-height: 1.1;
+        line-height: 1.05;
     }
     table.items td.desc {
         word-wrap: break-word;
@@ -80,17 +93,17 @@
     .total-row td {
         font-weight: bold;
         border: 1px solid #222;
-        padding: 3px 3px;
-        line-height: 1.1;
+        padding: 2px 3px;
+        line-height: 1.05;
     }
     .pie-anio {
-        margin-top: 6px;
+        margin-top: 4px;
         font-size: 8px;
         color: #444;
-        line-height: 1.1;
+        line-height: 1.05;
     }
     .firmas-wrap {
-        margin-top: 18px;
+        margin-top: 14px;
         width: 100%;
     }
     .firmas-table {
@@ -108,20 +121,20 @@
     }
     .firma-linea {
         border-bottom: 1px solid #000;
-        min-height: 28px;
-        margin-bottom: 4px;
+        min-height: 26px;
+        margin-bottom: 3px;
     }
     .firma-nombre {
         font-size: 9px;
         font-weight: bold;
         text-transform: uppercase;
-        margin: 0 0 2px;
-        line-height: 1.1;
+        margin: 0 0 1px;
+        line-height: 1.05;
     }
     .firma-rol {
         font-size: 8px;
         font-weight: bold;
         text-transform: uppercase;
-        line-height: 1.1;
+        line-height: 1.05;
     }
 </style>

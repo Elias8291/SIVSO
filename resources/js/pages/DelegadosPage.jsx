@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, X, UserPlus } from 'lucide-react';
+import { X, UserPlus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader, SearchInput, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
+import { PageHeader, SearchInput, PageAddButton, Card, DataTable, ConfirmDialog, Modal } from '../components/ui';
 import { api } from '../lib/api';
 
 const inputClass = "w-full px-3 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 text-base sm:text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 focus:border-brand-gold/40 transition-all touch-manipulation";
@@ -229,15 +229,12 @@ function FormModal({ item, onClose, onSaved }) {
                             </div>
                         ) : (
                             <div className="space-y-1.5">
-                                <div className="relative">
-                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                                    <input
-                                        value={userSearch}
-                                        onChange={(e) => setUserSearch(e.target.value)}
-                                        placeholder="Buscar por nombre o RFC…"
-                                        className={`${inputClass} pl-10`}
-                                    />
-                                </div>
+                                <SearchInput
+                                    value={userSearch}
+                                    onChange={(e) => setUserSearch(e.target.value)}
+                                    placeholder="Nombre o RFC…"
+                                    inputClassName="text-base sm:text-sm"
+                                />
                                 {userResults.length > 0 && (
                                     <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-50 dark:divide-zinc-800/60 overflow-hidden max-h-36 overflow-y-auto">
                                         {userResults.map(u => (
@@ -478,19 +475,19 @@ export default function DelegadosPage() {
                 description="Delegados y las delegaciones que representan."
                 actions={
                     canEdit ? (
-                        <>
-                            <button onClick={() => setEditing('new')}
-                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                                <Plus size={13} strokeWidth={2.5} /> Nuevo Delegado
-                            </button>
-                            <button onClick={() => setEditing('new')}
-                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={2.5} />
-                            </button>
-                        </>
+                        <PageAddButton onClick={() => setEditing('new')} label="Nuevo delegado" />
                     ) : null
                 }
-                search={<SearchInput placeholder="Buscar por nombre o clave..." value={search} onChange={(e) => setSearch(e.target.value)} />}
+                search={(
+                    <div className="w-full max-w-xl">
+                        <SearchInput
+                            label="Buscar delegado"
+                            placeholder="Nombre o clave…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                )}
             />
 
             <Card title={`Delegados (${data.length})`}>

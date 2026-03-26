@@ -7,7 +7,8 @@ import { Eye, EyeOff } from 'lucide-react';
 export default function PasswordInput({ value, onChange, placeholder = '••••••••', className = '', required, minLength, name, autoComplete }) {
     const [visible, setVisible] = useState(false);
 
-    const baseClass = 'w-full px-4 py-3 pr-12 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white text-sm shadow-sm';
+    const baseClass =
+        'w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pr-12 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:ring-2 focus:ring-brand-gold/25 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-600';
 
     return (
         <div className="relative">

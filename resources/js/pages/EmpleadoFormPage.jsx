@@ -4,9 +4,9 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Search, X, ChevronDown, UserPlus, Key } from 'lucide-react';
+import { ArrowLeft, X, ChevronDown, UserPlus, Key } from 'lucide-react';
 import { api } from '../lib/api';
-import { Modal, PageHeader, Card } from '../components/ui';
+import { Modal, PageHeader, Card, SearchInput } from '../components/ui';
 
 function Field({ label, error, children }) {
     return (
@@ -292,15 +292,12 @@ export default function EmpleadoFormPage() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    <div className="relative">
-                                        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2} />
-                                        <input
-                                            value={userSearch}
-                                            onChange={(e) => setUserSearch(e.target.value)}
-                                            placeholder="Buscar por nombre o RFC…"
-                                            className={`${inputClass} pl-10`}
-                                        />
-                                    </div>
+                                    <SearchInput
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                        placeholder="Nombre o RFC…"
+                                        inputClassName="text-base sm:text-sm"
+                                    />
                                     {userResults.length > 0 && (
                                         <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
                                             {userResults.map(u => (

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ToggleLeft, ToggleRight, LayoutGrid, List } from 'lucide-react';
+import { ToggleLeft, ToggleRight, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { PageHeader, SearchInput, Card, DataTable, StatusBadge, ConfirmDialog, Pagination } from '../components/ui';
+import { PageHeader, SearchInput, PageAddButton, Card, DataTable, StatusBadge, ConfirmDialog, Pagination } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
@@ -78,7 +78,10 @@ export default function ProductosPage() {
     const aniosOpciones = useMemo(() => {
         const fromApi = meta?.anios_precios;
         const cur = new Date().getFullYear();
-        if (fromApi?.length) return [...new Set([cur, ...fromApi])].sort((a, b) => b - a);
+        if (fromApi?.length) {
+            const nums = fromApi.map((x) => Number(x)).filter((n) => !Number.isNaN(n));
+            return [...new Set([cur, ...nums])].sort((a, b) => b - a);
+        }
         return [cur, cur - 1, cur - 2];
     }, [meta?.anios_precios]);
 
@@ -150,25 +153,19 @@ export default function ProductosPage() {
                 description={`Catálogo de artículos — precios y claves del ejercicio ${anioFiltro}.`}
                 actions={
                     canEdit ? (
-                        <>
-                            <button onClick={() => navigate('/dashboard/productos/nuevo')}
-                                className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap">
-                                <Plus size={13} strokeWidth={2.5} /> Nuevo Producto
-                            </button>
-                            <button onClick={() => navigate('/dashboard/productos/nuevo')}
-                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={2.5} />
-                            </button>
-                        </>
+                        <PageAddButton onClick={() => navigate('/dashboard/productos/nuevo')} label="Nuevo producto" />
                     ) : null
                 }
                 search={
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <SearchInput
-                            placeholder="Buscar por descripción, clave, código o marca..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                    <div className="flex flex-wrap items-end gap-3 w-full">
+                        <div className="flex-1 min-w-0 max-w-xl">
+                            <SearchInput
+                                label="Buscar producto"
+                                placeholder="Descripción, clave, código o marca…"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <label className="sr-only">Año</label>
                             <select

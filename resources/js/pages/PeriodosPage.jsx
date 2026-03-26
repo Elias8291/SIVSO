@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Calendar, X } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { api } from '../lib/api';
+import { PageAddButton } from '../components/ui';
 
 const ESTADO_LABEL = {
     abierto:   { text: 'Abierto',   dot: 'bg-zinc-800 dark:bg-zinc-200', bg: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300' },
@@ -95,12 +96,7 @@ export default function PeriodosPage() {
                     <h1 className="text-xl font-bold text-zinc-800 dark:text-zinc-100">Periodos</h1>
                     <p className="text-sm text-zinc-400 mt-0.5">Configura los periodos de actualización del sistema.</p>
                 </div>
-                <button
-                    onClick={openNew}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-semibold hover:opacity-90 active:scale-95 transition-all"
-                >
-                    <Plus size={15} strokeWidth={2} /> Nuevo
-                </button>
+                <PageAddButton onClick={openNew} label="Nuevo periodo" />
             </div>
 
             {/* Lista */}

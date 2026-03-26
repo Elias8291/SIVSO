@@ -197,7 +197,7 @@ class AcuseVestuarioPdfController extends Controller
         $data = $this->acuseService->datasetFor($emp, $anioQuery, false);
 
         return Pdf::loadView('pdf.acuse-vestuario', $data)
-            ->setPaper('a4', 'portrait')
+            ->setPaper('letter', 'portrait')
             ->setOption('isRemoteEnabled', false)
             ->output();
     }
@@ -286,10 +286,36 @@ class AcuseVestuarioPdfController extends Controller
             return response()->json(['message' => 'No hay acuses que pueda exportar para esta delegación.'], 422);
         }
 
-        $acusets = $this->acuseService->datasetsParaPdfLote($filtrados, $anioQuery);
+        // Solo colaboradores con vestuario en ese ejercicio: menos páginas = DomPDF mucho más rápido.
+        if ($anioQuery !== null) {
+            $idsPermitidos = $filtrados->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $idsConSelecciones = DB::table('selecciones')
+                ->where('anio', $anioQuery)
+                ->whereIn('empleado_id', $idsPermitidos)
+                ->distinct()
+                ->pluck('empleado_id');
+            $filtrados = $filtrados
+                ->filter(fn (Empleado $emp) => $idsConSelecciones->contains((int) $emp->id))
+                ->values();
+        }
 
-        $binary = Pdf::loadView('pdf.acuse-vestuario-lote', ['acusets' => $acusets])
-            ->setPaper('a4', 'portrait')
+        if ($filtrados->isEmpty()) {
+            return response()->json([
+                'message' => 'Ningún colaborador incluible tiene vestuario registrado para el ejercicio '.$anioQuery.'.',
+            ], 422);
+        }
+
+        ini_set('memory_limit', '512M');
+        set_time_limit(600);
+
+        $acusets = $this->acuseService->datasetsParaPdfLote($filtrados, $anioQuery);
+        $logoLote = $this->acuseService->logoAcuseDataUri();
+
+        $binary = Pdf::loadView('pdf.acuse-vestuario-lote', [
+            'acusets' => $acusets,
+            'logo_data_uri' => $logoLote,
+        ])
+            ->setPaper('letter', 'portrait')
             ->setOption('isRemoteEnabled', false)
             ->output();
 
@@ -304,7 +330,7 @@ class AcuseVestuarioPdfController extends Controller
 
         return response($binary, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
         ]);
     }
 }

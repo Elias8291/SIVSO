@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingUp, DollarSign, AlertTriangle, CheckCircle, Edit2, RefreshCw } from 'lucide-react';
-import { PageHeader } from '../components/ui';
+import { PageHeader, SearchInput } from '../components/ui';
 
 const fmt = (n) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 2 }).format(n ?? 0);
@@ -266,7 +266,10 @@ export default function PartidasPage() {
 
     const aniosDisponibles = data?.anios_disponibles ?? [];
     const anosOpts = aniosDisponibles.length > 0
-        ? [...new Set([...aniosDisponibles, anioActual])].sort()
+        ? [...new Set([
+            Number(anioActual),
+            ...aniosDisponibles.map((x) => Number(x)).filter((n) => !Number.isNaN(n)),
+        ])].sort((a, b) => a - b)
         : [anioActual - 1, anioActual, anioActual + 1];
 
     const getGridColsClass = () => {
@@ -371,14 +374,15 @@ export default function PartidasPage() {
             </div>
 
             {/* Filtro */}
-            <div className="mb-4 flex items-center gap-3">
-                <input
-                    type="text"
-                    placeholder="Buscar dependencia o clave UR…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full sm:max-w-xs text-[14px] border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2.5 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 focus:outline-none focus:border-brand-gold transition-all"
-                />
+            <div className="mb-4 flex flex-wrap items-end gap-3">
+                <div className="w-full min-w-0 sm:max-w-md">
+                    <SearchInput
+                        label="Filtrar dependencias"
+                        placeholder="Dependencia o clave UR…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
                 <span className="text-[13px] text-zinc-400 shrink-0">
                     {rows.length} dependencia{rows.length !== 1 ? 's' : ''}
                 </span>

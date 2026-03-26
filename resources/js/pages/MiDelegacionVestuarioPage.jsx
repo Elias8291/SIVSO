@@ -3,9 +3,9 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Shirt, Search, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
+import { Shirt, AlertCircle, ArrowLeft, Unlock, Plus } from 'lucide-react';
 import { api } from '../lib/api';
-import { Modal } from '../components/ui';
+import { Modal, SearchInput } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
 import {
     mergedRow,
@@ -202,9 +202,10 @@ export default function MiDelegacionVestuarioPage() {
     }, [data?.partidas_catalogo, baseline]);
 
     const aniosSelect = useMemo(() => {
-        const disp = data?.anios_disponibles ?? [];
-        const vig = data?.ejercicio_vigente ?? new Date().getFullYear();
-        return [...new Set([vig, ...disp])].sort((a, b) => b - a);
+        const disp = (data?.anios_disponibles ?? []).map((x) => Number(x)).filter((n) => !Number.isNaN(n));
+        const vig = Number(data?.ejercicio_vigente ?? new Date().getFullYear());
+        const merged = Number.isNaN(vig) ? disp : [vig, ...disp];
+        return [...new Set(merged)].sort((a, b) => b - a);
     }, [data?.anios_disponibles, data?.ejercicio_vigente]);
 
     const ejercicioVigente = data?.ejercicio_vigente ?? new Date().getFullYear();
@@ -334,10 +335,14 @@ export default function MiDelegacionVestuarioPage() {
 
     const handleReactivarEdicion = async () => {
         if (!idNum) return;
+        if (!window.confirm(
+            '¿Permitir que el colaborador vuelva a editar su vestuario en «Mi vestuario» para el ejercicio vigente? '
+            + 'Podrá cambiar tallas, artículos y cantidades hasta que vuelva a guardar o usted cierre desde aquí.'
+        )) return;
         setReactivando(true);
         try {
             await api.post(`/api/empleados/${idNum}/vestuario/reactivar-edicion`, { anio: ejercicioVigente });
-            showToast('Actualización reactivada para el colaborador.');
+            showToast('Listo: el colaborador puede editar de nuevo en Mi vestuario.');
             load(anio ?? ejercicioVigente);
         } catch (err) {
             alert(err.message || 'No se pudo reactivar');
@@ -444,13 +449,12 @@ export default function MiDelegacionVestuarioPage() {
                     </div>
                 </div>
 
-                <div className="mt-6 relative w-full sm:w-96">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                    <input
+                <div className="mt-6 w-full max-w-xl sm:w-96">
+                    <SearchInput
+                        label="Filtrar artículos"
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Buscar artículo por nombre o clave..."
-                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200/80 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
+                        placeholder="Nombre o clave…"
                     />
                 </div>
 
@@ -493,8 +497,8 @@ export default function MiDelegacionVestuarioPage() {
                                 <>
                                     {edicionCerradaEmp ? (
                                         <>
-                                            En <strong>Mi vestuario</strong> el colaborador no puede editar el ejercicio {ejercicioVigente} hasta que pulse <strong>Activar edición en Mi vestuario</strong> arriba.
-                                            Usted puede seguir corrigiendo aquí y usar <strong>Guardar cambios</strong> (no se aplican hasta guardar).
+                                            El colaborador ya confirmó su vestuario: en <strong>Mi vestuario</strong> no puede modificar el ejercicio {ejercicioVigente} hasta que usted pulse <strong>Activar edición en Mi vestuario</strong> arriba.
+                                            {' '}Mientras tanto puede seguir corrigiendo aquí y usar <strong>Guardar cambios</strong> (no se aplican hasta guardar).
                                         </>
                                     ) : null}
                                     Use «Cambiar talla / artículo / cantidad» para marcar cambios; pulse <strong>Guardar cambios</strong> al final para enviar todo junto (no se guarda al pulsar «Aceptar» en cada ventana).

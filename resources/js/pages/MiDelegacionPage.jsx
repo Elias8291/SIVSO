@@ -1,10 +1,29 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronUp, FileDown, FileText, Search } from 'lucide-react';
-import { DataTable } from '../components/ui';
+import { Building2, Calendar, ChevronDown, ChevronUp, FileText, KeyRound, ListFilter } from 'lucide-react';
+import { DataTable, SearchInput, Modal } from '../components/ui';
 import { api, resolveApiUrl } from '../lib/api';
-import { aniosParaPdfSeleccion, aniosPdfConValorSeleccionado } from '../lib/aniosPdf';
 import CrearUsuarioEmpleadoModal from '../features/mi-delegacion/CrearUsuarioEmpleadoModal';
+
+/** Contenedor de select con el mismo lenguaje visual que SearchInput */
+function FilterSelectShell({ id, label, icon: Icon, locked, className = 'sm:w-[11.25rem]', children }) {
+    return (
+        <div className={`w-full min-w-0 shrink-0 ${className}`}>
+            <label
+                htmlFor={id}
+                className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400"
+            >
+                {label}
+            </label>
+            <div
+                className={`flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:border-brand-gold/40 focus-within:shadow-[0_0_0_1px_rgba(175,148,96,0.12)] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-brand-gold/35 sm:px-3 sm:py-2 ${locked ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+                <Icon className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500 pointer-events-none" strokeWidth={1.6} aria-hidden />
+                {children}
+            </div>
+        </div>
+    );
+}
 
 export default function MiDelegacionPage() {
     const [delegaciones, setDelegaciones] = useState([]);
@@ -15,68 +34,65 @@ export default function MiDelegacionPage() {
     const [search, setSearch] = useState('');
     const [crearUsuarioCtx, setCrearUsuarioCtx] = useState(null);
     const [expandidas, setExpandidas] = useState({});
-    const [pdfLoteLoadingId, setPdfLoteLoadingId] = useState(null);
-    const [pdfEjercicioAnio, setPdfEjercicioAnio] = useState(() => new Date().getFullYear());
+    /** Año sugerido (periodo activo o año calendario) para abrir el modal de PDF */
+    const [anioPreferidoPdf, setAnioPreferidoPdf] = useState(() => new Date().getFullYear());
+    /** Modal: elegir ejercicio antes de abrir el PDF */
+    const [pdfModal, setPdfModal] = useState(null);
+    /** Año elegido en el modal (opciones = años con selecciones en BD) */
+    const [anioEnModal, setAnioEnModal] = useState(() => new Date().getFullYear());
+    const [aniosModalPdf, setAniosModalPdf] = useState([]);
+    const [aniosModalPdfLoading, setAniosModalPdfLoading] = useState(false);
+    const [aniosModalPdfError, setAniosModalPdfError] = useState(null);
+    /** 'todas' | id numérico como string */
+    const [filtroDelegacion, setFiltroDelegacion] = useState('todas');
+    /** todos | actualizado | pendiente */
+    const [filtroEstadoVestuario, setFiltroEstadoVestuario] = useState('todos');
+    /** todos | con_cuenta | sin_cuenta */
+    const [filtroAcceso, setFiltroAcceso] = useState('todos');
 
     const toggleExpand = (id) => setExpandidas((p) => ({ ...p, [id]: !p[id] }));
 
-    const calAnio = new Date().getFullYear();
-    const aniosPdfOpciones = useMemo(
-        () => aniosPdfConValorSeleccionado(aniosParaPdfSeleccion(), pdfEjercicioAnio),
-        [pdfEjercicioAnio, calAnio]
-    );
+    const delegacionesVisibles = useMemo(() => {
+        if (delegaciones.length <= 1 || filtroDelegacion === 'todas') return delegaciones;
+        const id = Number(filtroDelegacion);
+        return delegaciones.filter((d) => d.id === id);
+    }, [delegaciones, filtroDelegacion]);
 
-    const openAcusePdf = (empleadoId) => {
-        const url = resolveApiUrl(`/api/mi-delegacion/empleados/${empleadoId}/acuse-pdf`);
+    const filtrosActivos =
+        filtroDelegacion !== 'todas'
+        || filtroEstadoVestuario !== 'todos'
+        || filtroAcceso !== 'todos'
+        || search.trim() !== '';
+
+    const limpiarFiltros = () => {
+        setFiltroDelegacion('todas');
+        setFiltroEstadoVestuario('todos');
+        setFiltroAcceso('todos');
+        setSearch('');
+    };
+
+    const openAcusePdfConAnio = (empleadoId, anio) => {
+        const n = Number(anio);
+        const qs = Number.isFinite(n) && n >= 2000 && n <= 2100 ? `?anio=${n}` : '';
+        const url = resolveApiUrl(`/api/mi-delegacion/empleados/${empleadoId}/acuse-pdf${qs}`);
         window.open(url, '_blank', 'noopener,noreferrer');
     };
 
-    const downloadAcusesPdfLote = async (delegacionId, clave) => {
-        setPdfLoteLoadingId(delegacionId);
+    /** Abre el PDF de todos en una pestaña: visor nativo (scroll, zoom, guardar). */
+    const openAcusesPdfLote = (delegacionId, anioEjercicio) => {
         setMessage(null);
-        try {
-            const token =
-                typeof document !== 'undefined'
-                    ? document.querySelector('meta[name="csrf-token"]')?.content
-                    : '';
-            const anio = Number(pdfEjercicioAnio);
-            const q = new URLSearchParams();
-            if (Number.isFinite(anio) && anio >= 2000 && anio <= 2100) {
-                q.set('anio', String(anio));
-            }
-            const qs = q.toString();
-            const url = resolveApiUrl(
-                `/api/mi-delegacion/delegaciones/${delegacionId}/acuses-pdf${qs ? `?${qs}` : ''}`
-            );
-            const res = await fetch(url, {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/pdf',
-                    'X-CSRF-TOKEN': token ?? '',
-                },
-            });
-            if (!res.ok) {
-                let msg = `Error ${res.status}`;
-                try {
-                    const j = await res.json();
-                    if (j.message) msg = j.message;
-                } catch {
-                    /* cuerpo no JSON */
-                }
-                setMessage(msg);
-                return;
-            }
-            const blob = await res.blob();
-            const safeClave = (clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `Acuses_vestuario_${safeClave}_Ej${Number.isFinite(anio) && anio >= 2000 && anio <= 2100 ? anio : new Date().getFullYear()}.pdf`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-        } catch (e) {
-            setMessage(e.message || 'Error al descargar el PDF.');
-        } finally {
-            setPdfLoteLoadingId(null);
+        const anio = Number(anioEjercicio);
+        const q = new URLSearchParams();
+        if (Number.isFinite(anio) && anio >= 2000 && anio <= 2100) {
+            q.set('anio', String(anio));
+        }
+        const qs = q.toString();
+        const url = resolveApiUrl(
+            `/api/mi-delegacion/delegaciones/${delegacionId}/acuses-pdf${qs ? `?${qs}` : ''}`
+        );
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+            setMessage('Permita ventanas emergentes para ver el PDF en pantalla completa y guardarlo desde el visor.');
         }
     };
 
@@ -85,13 +101,70 @@ export default function MiDelegacionPage() {
             .then((r) => {
                 const anio = r.data?.anio;
                 if (typeof anio === 'number' && anio >= 2000 && anio <= 2100) {
-                    setPdfEjercicioAnio(anio);
+                    setAnioPreferidoPdf(anio);
                 }
             })
             .catch(() => {
-                /* sin permiso o sin periodo: se mantiene el año actual */
+                /* sin permiso o sin periodo: se mantiene el año en estado inicial */
             });
     }, []);
+
+    const abrirModalPdfLote = (delegacionId, clave) => {
+        setPdfModal({ type: 'lote', delegacionId, clave });
+    };
+
+    const abrirModalPdfIndividual = (empleadoId) => {
+        setPdfModal({ type: 'individual', empleadoId });
+    };
+
+    const confirmarModalPdf = () => {
+        if (!pdfModal) return;
+        if (aniosModalPdfLoading || aniosModalPdf.length === 0) return;
+        const anio = Number(anioEnModal);
+        if (!aniosModalPdf.includes(anio)) return;
+        const m = pdfModal;
+        setPdfModal(null);
+        if (m.type === 'lote') {
+            openAcusesPdfLote(m.delegacionId, anio);
+        } else {
+            openAcusePdfConAnio(m.empleadoId, anio);
+        }
+    };
+
+    useEffect(() => {
+        if (!pdfModal) {
+            setAniosModalPdf([]);
+            setAniosModalPdfError(null);
+            return;
+        }
+        let cancelled = false;
+        setAniosModalPdfLoading(true);
+        setAniosModalPdfError(null);
+        const url =
+            pdfModal.type === 'lote'
+                ? `/api/mi-delegacion/delegaciones/${pdfModal.delegacionId}/anios-acuse-pdf`
+                : `/api/mi-delegacion/empleados/${pdfModal.empleadoId}/anios-acuse-pdf`;
+        api.get(url)
+            .then((json) => {
+                if (cancelled) return;
+                const raw = json?.anios ?? [];
+                const anios = [...new Set(raw.map((y) => Number(y)).filter((n) => n >= 2000 && n <= 2100))].sort((a, b) => b - a);
+                setAniosModalPdf(anios);
+                if (anios.length > 0) {
+                    const prefer = anioPreferidoPdf;
+                    setAnioEnModal(anios.includes(prefer) ? prefer : anios[0]);
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) setAniosModalPdfError(err.message || 'No se pudieron cargar los ejercicios.');
+            })
+            .finally(() => {
+                if (!cancelled) setAniosModalPdfLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [pdfModal, anioPreferidoPdf]);
 
     useEffect(() => {
         api.get('/api/mi-delegacion')
@@ -124,15 +197,36 @@ export default function MiDelegacionPage() {
         });
     }, [delegaciones]);
 
-    const filterTrab = (trabajadores) => {
-        if (!search.trim()) return trabajadores ?? [];
-        const q = search.toLowerCase();
-        return (trabajadores ?? []).filter(
-            (t) =>
-                (t.nombre_completo || '').toLowerCase().includes(q) ||
-                (t.nue || '').toLowerCase().includes(q) ||
-                (t.delegacion || '').toLowerCase().includes(q)
-        );
+    useEffect(() => {
+        if (filtroDelegacion === 'todas') return;
+        const id = Number(filtroDelegacion);
+        if (!delegaciones.some((d) => d.id === id)) {
+            setFiltroDelegacion('todas');
+        }
+    }, [delegaciones, filtroDelegacion]);
+
+    const aplicarFiltrosColaboradores = (trabajadores) => {
+        let rows = trabajadores ?? [];
+        const q = search.trim().toLowerCase();
+        if (q) {
+            rows = rows.filter(
+                (t) =>
+                    (t.nombre_completo || '').toLowerCase().includes(q) ||
+                    (t.nue || '').toLowerCase().includes(q) ||
+                    (t.delegacion || '').toLowerCase().includes(q)
+            );
+        }
+        if (filtroEstadoVestuario === 'actualizado') {
+            rows = rows.filter((t) => t.actualizado);
+        } else if (filtroEstadoVestuario === 'pendiente') {
+            rows = rows.filter((t) => !t.actualizado);
+        }
+        if (filtroAcceso === 'con_cuenta') {
+            rows = rows.filter((t) => Boolean(t.user_id));
+        } else if (filtroAcceso === 'sin_cuenta') {
+            rows = rows.filter((t) => !t.user_id);
+        }
+        return rows;
     };
 
     const aplicarUsuarioCreado = (delegacionId, empleadoId, user) => {
@@ -193,7 +287,7 @@ export default function MiDelegacionPage() {
                     )}
                     <button
                         type="button"
-                        onClick={() => openAcusePdf(row.id)}
+                        onClick={() => abrirModalPdfIndividual(row.id)}
                         className="w-full md:w-auto inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                         title="Acuse de recibo (PDF)"
                     >
@@ -211,67 +305,82 @@ export default function MiDelegacionPage() {
         }
     ];
 
-    const delegacionGenerandoPdf = pdfLoteLoadingId != null
-        ? delegaciones.find((d) => d.id === pdfLoteLoadingId)
-        : null;
-
     return (
         <div className="relative">
-            {pdfLoteLoadingId === null ? null : (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/55 backdrop-blur-[3px]"
-                    role="alertdialog"
-                    aria-busy="true"
-                    aria-live="polite"
-                    aria-label="Generando documento PDF"
-                >
-                    <div className="w-full max-w-md rounded-2xl border border-zinc-200/90 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl shadow-black/20 px-4 py-8 sm:px-8 sm:py-10 text-center">
-                        <div className="size-14 shrink-0 mx-auto mb-5 border-[3px] border-zinc-200 dark:border-zinc-600 border-t-brand-gold rounded-full animate-spin" />
-                        <p className="text-[14px] font-bold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1">
-                            Generando PDF de acuses
-                        </p>
-                        <p className="text-[11px] font-mono font-semibold text-brand-gold mb-3">
-                            {delegacionGenerandoPdf?.clave ? `Delegación ${delegacionGenerandoPdf.clave}` : '—'}
-                        </p>
-                        <p className="text-[12px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                            Un solo archivo con todos los colaboradores. Si la lista es grande, puede tardar un minuto.
-                            No cierre esta pestaña.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {/* Encabezado minimalista, alineado con el diseño del sistema */}
-            <div className="mb-6">
+            {/* Filtros: mismo criterio que SearchInput (contenedor, foco, tipografía) */}
+            <div className="mb-8 space-y-5">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
                         Mi Delegación
                     </h2>
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio PDF:</span>
-                        <select
-                            value={String(pdfEjercicioAnio)}
-                            onChange={(e) => setPdfEjercicioAnio(Number(e.target.value))}
-                            disabled={pdfLoteLoadingId !== null}
-                            className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer disabled:opacity-50"
-                        >
-                            {aniosPdfOpciones.map((y) => (
-                                <option key={y} value={String(y)}>{y}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400 max-w-2xl">
+                        Busque y filtre colaboradores. Al abrir un PDF (individual o de todos), podrá elegir el ejercicio; el de todos se abre en una pestaña para verlo completo y guardarlo desde el visor.
+                    </p>
                 </div>
 
-                <div className="mt-6 relative w-full sm:w-96">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre o NUE..."
+                <div className="max-w-4xl space-y-4">
+                    <SearchInput
+                        label="Buscar colaborador"
+                        placeholder="Nombre o NUE…"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        disabled={pdfLoteLoadingId !== null}
-                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation disabled:opacity-50"
                     />
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-4 sm:gap-y-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-4 sm:gap-y-3 min-w-0 flex-1">
+                            {delegaciones.length > 1 ? (
+                                <FilterSelectShell id="mi-del-filtro-del" label="Delegación" icon={Building2} locked={false}>
+                                    <select
+                                        id="mi-del-filtro-del"
+                                        value={filtroDelegacion}
+                                        onChange={(e) => setFiltroDelegacion(e.target.value)}
+                                        className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                    >
+                                        <option value="todas">Todas</option>
+                                        {delegaciones.map((d) => (
+                                            <option key={d.id} value={String(d.id)}>{d.clave}</option>
+                                        ))}
+                                    </select>
+                                </FilterSelectShell>
+                            ) : null}
+
+                            <FilterSelectShell id="mi-del-filtro-estado" label="Estado vestuario" icon={ListFilter} locked={false}>
+                                <select
+                                    id="mi-del-filtro-estado"
+                                    value={filtroEstadoVestuario}
+                                    onChange={(e) => setFiltroEstadoVestuario(e.target.value)}
+                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                >
+                                    <option value="todos">Todos</option>
+                                    <option value="actualizado">Actualizado</option>
+                                    <option value="pendiente">Pendiente</option>
+                                </select>
+                            </FilterSelectShell>
+
+                            <FilterSelectShell id="mi-del-filtro-acceso" label="Acceso sistema" icon={KeyRound} locked={false}>
+                                <select
+                                    id="mi-del-filtro-acceso"
+                                    value={filtroAcceso}
+                                    onChange={(e) => setFiltroAcceso(e.target.value)}
+                                    className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-semibold text-zinc-800 outline-none dark:text-zinc-100"
+                                >
+                                    <option value="todos">Todos</option>
+                                    <option value="con_cuenta">Con cuenta</option>
+                                    <option value="sin_cuenta">Sin cuenta</option>
+                                </select>
+                            </FilterSelectShell>
+                        </div>
+
+                        {filtrosActivos ? (
+                            <button
+                                type="button"
+                                onClick={limpiarFiltros}
+                                className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-zinc-600 transition-colors hover:border-brand-gold/30 hover:bg-brand-gold/5 hover:text-brand-gold dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-brand-gold/40"
+                            >
+                                Limpiar filtros
+                            </button>
+                        ) : null}
+                    </div>
                 </div>
             </div>
 
@@ -298,10 +407,14 @@ export default function MiDelegacionPage() {
                     )}
 
                     <div className="space-y-8">
-                        {delegaciones.map((del) => {
-                            const empleados = filterTrab(empleadosPorDelegacion[del.id]);
+                        {delegacionesVisibles.map((del) => {
+                            const empleados = aplicarFiltrosColaboradores(empleadosPorDelegacion[del.id]);
                             const loadingEmpleados = empleadosPorDelegacion[del.id] === undefined;
                             const abierta = expandidas[del.id] !== false;
+                            const vacioPorFiltros =
+                                !loadingEmpleados
+                                && (empleadosPorDelegacion[del.id]?.length ?? 0) > 0
+                                && empleados.length === 0;
 
                             return (
                                 <div key={del.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 min-w-0 dark:border-zinc-800 dark:bg-zinc-900">
@@ -353,17 +466,13 @@ export default function MiDelegacionPage() {
                                         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto sm:justify-end shrink-0 min-w-0">
                                             <button
                                                 type="button"
-                                                disabled={pdfLoteLoadingId !== null || loadingEmpleados}
-                                                onClick={() => downloadAcusesPdfLote(del.id, del.clave)}
+                                                disabled={loadingEmpleados}
+                                                onClick={() => abrirModalPdfLote(del.id, del.clave)}
                                                 className="inline-flex flex-1 sm:flex-initial min-w-0 justify-center items-center gap-1.5 px-2.5 py-2 sm:py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold uppercase tracking-wider border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 disabled:pointer-events-none transition-all"
-                                                title="Un solo PDF con el acuse de todos los colaboradores"
+                                                title="Abre un PDF con todos los acuses en una pestaña (ver, imprimir o guardar)"
                                             >
-                                                {pdfLoteLoadingId === del.id ? (
-                                                    <span className="size-3.5 border-2 border-zinc-300 border-t-zinc-600 rounded-full animate-spin shrink-0" aria-hidden />
-                                                ) : (
-                                                    <FileDown className="size-3.5 shrink-0 opacity-80" aria-hidden />
-                                                )}
-                                                {pdfLoteLoadingId === del.id ? 'Generando…' : 'PDF todos'}
+                                                <FileText className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                                                PDF todos
                                             </button>
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-50 dark:bg-zinc-800/60 rounded-md border border-zinc-200/60 dark:border-zinc-700/50">
                                                 {(typeof del.trabajadores_count === 'number' && del.trabajadores_count > 0
@@ -390,7 +499,13 @@ export default function MiDelegacionPage() {
                                                 columns={buildColumns(del.id)}
                                                 data={empleados}
                                                 loading={loadingEmpleados}
-                                                emptyMessage={search.trim() ? 'No se encontraron coincidencias.' : 'No hay colaboradores asignados.'}
+                                                emptyMessage={
+                                                    vacioPorFiltros
+                                                        ? 'Ningún colaborador coincide con los filtros actuales.'
+                                                        : search.trim()
+                                                            ? 'No se encontraron coincidencias.'
+                                                            : 'No hay colaboradores asignados.'
+                                                }
                                             />
                                         </div>
                                     )}
@@ -400,6 +515,75 @@ export default function MiDelegacionPage() {
                     </div>
                 </div>
             )}
+
+            <Modal
+                open={pdfModal != null}
+                onClose={() => setPdfModal(null)}
+                title={pdfModal?.type === 'lote' ? 'PDF de toda la delegación' : 'Acuse individual (PDF)'}
+                size="sm"
+                footer={(
+                    <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setPdfModal(null)}
+                            className="min-h-[44px] rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmarModalPdf}
+                            disabled={
+                                aniosModalPdfLoading
+                                || aniosModalPdf.length === 0
+                                || aniosModalPdfError != null
+                            }
+                            className="min-h-[44px] rounded-xl bg-zinc-900 px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-zinc-900"
+                        >
+                            {pdfModal?.type === 'lote' ? 'Ver PDF' : 'Abrir PDF'}
+                        </button>
+                    </div>
+                )}
+            >
+                <p className="mb-4 text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {pdfModal?.type === 'lote'
+                        ? 'Solo se listan ejercicios en los que hay vestuario registrado para al menos un colaborador de la delegación.'
+                        : 'Solo se listan ejercicios en los que este colaborador tiene selección de vestuario.'}
+                </p>
+                {aniosModalPdfLoading ? (
+                    <div className="flex items-center justify-center gap-3 py-8">
+                        <span className="size-8 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" />
+                        <span className="text-[13px] text-zinc-500">Cargando ejercicios…</span>
+                    </div>
+                ) : aniosModalPdfError ? (
+                    <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+                        {aniosModalPdfError}
+                    </p>
+                ) : aniosModalPdf.length === 0 ? (
+                    <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-[13px] text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-400">
+                        No hay vestuario registrado en ningún ejercicio; no se puede generar el PDF.
+                    </p>
+                ) : (
+                    <FilterSelectShell
+                        id="modal-pdf-anio"
+                        label="Ejercicio del documento"
+                        icon={Calendar}
+                        locked={false}
+                        className="w-full sm:w-full"
+                    >
+                        <select
+                            id="modal-pdf-anio"
+                            value={String(anioEnModal)}
+                            onChange={(e) => setAnioEnModal(Number(e.target.value))}
+                            className="min-w-0 flex-1 cursor-pointer border-0 bg-transparent text-[13px] font-bold text-brand-gold outline-none dark:text-brand-gold"
+                        >
+                            {aniosModalPdf.map((y) => (
+                                <option key={y} value={String(y)}>{y}</option>
+                            ))}
+                        </select>
+                    </FilterSelectShell>
+                )}
+            </Modal>
 
             <CrearUsuarioEmpleadoModal
                 empleado={crearUsuarioCtx?.empleado ?? null}

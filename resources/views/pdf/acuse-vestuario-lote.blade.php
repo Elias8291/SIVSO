@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     @include('pdf.partials.acuse-styles')
     <style>
-        @page { margin: 26px 28px; }
+        @page { margin: 22px 24px; }
         .acuse-hoja {
             page-break-after: always;
             page-break-inside: avoid;
@@ -17,7 +17,9 @@
 <body>
     @foreach ($acusets as $acuse)
         <div class="acuse-hoja">
-            @include('pdf.partials.acuse-body', $acuse)
+            @include('pdf.partials.acuse-body', array_merge($acuse, [
+                'logo_data_uri' => $logo_data_uri ?? ($acuse['logo_data_uri'] ?? null),
+            ]))
         </div>
     @endforeach
 </body>

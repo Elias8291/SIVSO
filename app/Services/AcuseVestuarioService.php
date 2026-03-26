@@ -185,7 +185,6 @@ class AcuseVestuarioService
         $ids = $empleados->pluck('id')->map(fn ($id) => (int) $id)->all();
         $lineasPorId = $this->lineasAcuseParaVariosEmpleados($ids, $anioQuery);
 
-        $logo = $this->logoAcuseDataUri();
         $first = $empleados->first();
         $delegacionClaveNorm = trim((string) ($first->delegacion?->clave ?? ''));
         $nombreDelegadoAcuse = $delegacionClaveNorm !== ''
@@ -199,9 +198,10 @@ class AcuseVestuarioService
                 $emp,
                 $resolved['lineas'],
                 $resolved['anio_datos'],
-                $logo,
+                null,
                 $nombreDelegadoAcuse,
-                96
+                96,
+                false
             );
         }
 
@@ -217,7 +217,8 @@ class AcuseVestuarioService
         int $anioDatos,
         ?string $logoDataUri = null,
         ?string $nombreDelegadoPrecomputado = null,
-        int $qrPixelSize = 132
+        int $qrPixelSize = 132,
+        bool $includeLogoDataUri = true
     ): array {
         $emp->loadMissing(['dependencia:id,clave,nombre', 'delegacion:id,clave']);
         $licitacion = env('ACUSE_LICITACION', 'LPN-SA-SA-0036-08/2025');
@@ -248,7 +249,9 @@ class AcuseVestuarioService
 
         $consultaUrl = $this->signedPublicConsultaUrl($emp->id, $anioDatos, $tokenIntegridad);
 
-        $logo = $logoDataUri ?? $this->logoAcuseDataUri();
+        $logo = $includeLogoDataUri
+            ? ($logoDataUri ?? $this->logoAcuseDataUri())
+            : null;
 
         return [
             'anio_encabezado' => $anioDatos,

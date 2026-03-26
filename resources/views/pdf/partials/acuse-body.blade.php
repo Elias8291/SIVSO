@@ -1,13 +1,16 @@
-<div class="warn">{{ $aviso_rectangulo }}</div>
-
-<table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:6px;border-collapse:collapse;">
+<table class="cabecera-acuse" cellspacing="0" cellpadding="0">
     <tr>
-        <td width="26%" valign="top" style="padding-right:8px;">
+        <td colspan="3" class="celda-aviso">
+            <div class="warn">{{ $aviso_rectangulo }}</div>
+        </td>
+    </tr>
+    <tr>
+        <td width="26%" style="padding-right:8px;">
             @if (! empty($logo_data_uri))
-                <img src="{{ $logo_data_uri }}" alt="" style="display:block;max-width:100%;height:auto;max-height:100px;"/>
+                <img src="{{ $logo_data_uri }}" alt="" style="display:block;max-width:100%;height:auto;max-height:92px;"/>
             @endif
         </td>
-        <td width="48%" valign="middle" align="center">
+        <td width="48%" align="center" style="padding-left:4px;padding-right:4px;">
             <div class="center title-main">Secretaría de Previsión Social</div>
             <div class="center title-sub">
                 Acuse de recibo de vestuario, calzado y accesorios de vestuario {{ $anio_encabezado }}
@@ -15,9 +18,9 @@
             <div class="center title-sub">Licitación: {{ $licitacion }}</div>
             <div class="center title-sub">{{ $codigo_ur }}</div>
         </td>
-        <td width="26%" valign="top" align="right" style="padding-left:8px;">
+        <td width="26%" align="right" style="padding-left:8px;">
             @if (! empty($qr_data_uri))
-                <img src="{{ $qr_data_uri }}" alt="Código QR" style="display:block;width:96px;height:96px;margin-left:auto;"/>
+                <img src="{{ $qr_data_uri }}" alt="Código QR" style="display:block;width:92px;height:92px;margin-left:auto;"/>
             @endif
         </td>
     </tr>
@@ -42,10 +45,10 @@
 <table class="items">
     <thead>
         <tr>
-            <th style="width:6%">No.</th>
-            <th style="width:64%">Descripción</th>
-            <th style="width:12%">Talla</th>
-            <th style="width:10%">Cant.</th>
+            <th style="width:5%">No.</th>
+            <th style="width:79%">Descripción</th>
+            <th style="width:8%">Talla</th>
+            <th style="width:8%">Cant.</th>
         </tr>
     </thead>
     <tbody>

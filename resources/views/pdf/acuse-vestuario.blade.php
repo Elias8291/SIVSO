@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     @include('pdf.partials.acuse-styles')
     <style>
-        @page { margin: 26px 28px; }
+        @page { margin: 22px 24px; }
     </style>
 </head>
 <body>

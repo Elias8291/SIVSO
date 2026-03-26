@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ArrowRightLeft, ChevronDown, X, Key, Search, Shirt } from 'lucide-react';
+import { ArrowRightLeft, ChevronDown, X, Key, Shirt } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
-    PageHeader, SearchInput, Card, DataTable,
+    PageHeader, SearchInput, PageAddButton, Card, DataTable,
     StatusBadge, ConfirmDialog, Pagination, Modal,
 } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
@@ -235,24 +235,17 @@ export default function EmpleadosPage() {
                 description="Registro de empleados vinculados al sistema de vestuario."
                 actions={
                     canEdit ? (
-                        <>
-                            <button onClick={() => navigate('/dashboard/empleados/nuevo')}
-                                className="hidden sm:flex items-center justify-center gap-2 px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-zinc-900/10 hover:scale-105 active:scale-[0.98] transition-all whitespace-nowrap">
-                                <Plus size={14} strokeWidth={2.5} /> NUEVO EMPLEADO
-                            </button>
-                            <button onClick={() => navigate('/dashboard/empleados/nuevo')}
-                                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300">
-                                <Plus size={18} strokeWidth={2.5} />
-                            </button>
-                        </>
+                        <PageAddButton
+                            onClick={() => navigate('/dashboard/empleados/nuevo')}
+                            label="Nuevo empleado"
+                        />
                     ) : null
                 }
                 search={
-                    <div className="relative">
-                        <Search size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={2.5} />
-                        <input
-                            className="w-full sm:w-80 bg-transparent border-0 border-b border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 text-[14px] placeholder:text-zinc-300 dark:placeholder:text-zinc-600 focus:ring-0 focus:border-brand-gold dark:focus:border-brand-gold transition-colors py-2 pl-7 pr-0"
-                            placeholder="Buscar por NUE o nombre..."
+                    <div className="w-full max-w-xl">
+                        <SearchInput
+                            label="Buscar empleado"
+                            placeholder="NUE o nombre…"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />

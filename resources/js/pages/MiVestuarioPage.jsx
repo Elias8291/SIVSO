@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Shirt, Search, AlertCircle, Plus, FileDown, CheckCircle } from 'lucide-react';
+import { Shirt, AlertCircle, Plus, FileDown, CheckCircle } from 'lucide-react';
 import { api, resolveApiUrl } from '../lib/api';
-import { Modal } from '../components/ui';
+import { Modal, SearchInput } from '../components/ui';
 import { useDebounce } from '../lib/useDebounce';
 
 import {
@@ -201,9 +201,10 @@ export default function MiVestuarioPage() {
     }, [data?.partidas_catalogo, baseline]);
 
     const aniosSelect = useMemo(() => {
-        const disp = data?.anios_disponibles ?? [];
-        const vig = data?.ejercicio_vigente ?? new Date().getFullYear();
-        return [...new Set([vig, ...disp])].sort((a, b) => b - a);
+        const disp = (data?.anios_disponibles ?? []).map((x) => Number(x)).filter((n) => !Number.isNaN(n));
+        const vig = Number(data?.ejercicio_vigente ?? new Date().getFullYear());
+        const merged = Number.isNaN(vig) ? disp : [vig, ...disp];
+        return [...new Set(merged)].sort((a, b) => b - a);
     }, [data?.anios_disponibles, data?.ejercicio_vigente]);
 
     const ejercicioVigente = data?.ejercicio_vigente ?? new Date().getFullYear();
@@ -401,47 +402,67 @@ export default function MiVestuarioPage() {
 
     return (
         <div className={pendingCountCombined > 0 && puedeEditar ? 'pb-6 md:pb-24' : ''}>
-            <div className="mb-6">
+            <div className="mb-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white leading-tight">
+                    <h2 className="text-lg font-bold leading-tight tracking-tight text-zinc-900 dark:text-white sm:text-xl">
                         Mi Vestuario
                     </h2>
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                        <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Ejercicio:</span>
-                        {aniosSelect.length > 1 ? (
-                            <select
-                                value={anio ?? data.anio}
-                                onChange={(e) => handleAnioChange(Number(e.target.value))}
-                                className="text-[13px] font-bold text-brand-gold bg-brand-gold/5 border border-brand-gold/20 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-brand-gold/30 cursor-pointer"
-                            >
-                                {aniosSelect.map((a) => (
-                                    <option key={a} value={a}>{a}{a === ejercicioVigente ? ' (vigente)' : ''}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <span className="text-[13px] font-bold text-brand-gold">{anio ?? data.anio}</span>
-                        )}
-                        {(anio ?? data.anio) !== ejercicioVigente && (
-                            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">histórico</span>
-                        )}
-                        <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
-                        <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 shrink-0">NUE {data.empleado.nue}</span>
-                        <span className="text-zinc-300 dark:text-zinc-600 px-0.5">•</span>
-                        <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-400 truncate max-w-[120px] sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
+                    <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 sm:text-[12px]">Ejercicio</span>
+                            {aniosSelect.length > 1 ? (
+                                <>
+                                    <select
+                                        value={anio ?? data.anio}
+                                        onChange={(e) => handleAnioChange(Number(e.target.value))}
+                                        aria-label="Año del vestuario"
+                                        className="max-w-[5.5rem] cursor-pointer rounded-md border border-brand-gold/20 bg-brand-gold/5 py-0.5 pl-1.5 pr-6 text-[11px] font-bold text-brand-gold focus:outline-none focus:ring-1 focus:ring-brand-gold/30 sm:max-w-none sm:text-[12px]"
+                                    >
+                                        {aniosSelect.map((a) => (
+                                            <option key={a} value={a}>{a}</option>
+                                        ))}
+                                    </select>
+                                    {(anio ?? data.anio) === ejercicioVigente && (
+                                        <span className="rounded border border-brand-gold/25 bg-brand-gold/5 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-brand-gold">
+                                            Vigente
+                                        </span>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-[12px] font-bold text-brand-gold">{anio ?? data.anio}</span>
+                                    {(anio ?? data.anio) === ejercicioVigente && (
+                                        <span className="rounded border border-brand-gold/25 bg-brand-gold/5 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wide text-brand-gold">
+                                            Vigente
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                            {(anio ?? data.anio) !== ejercicioVigente && (
+                                <span className="rounded bg-zinc-100 px-1.5 py-0 text-[9px] font-semibold text-zinc-500 dark:bg-zinc-800">histórico</span>
+                            )}
+                        </div>
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 sm:text-[12px]">
+                            <span className="shrink-0">NUE {data.empleado.nue}</span>
+                            <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>
+                                ·
+                            </span>
+                            <span className="min-w-0 max-w-full truncate sm:max-w-[200px]">{data.empleado.delegacion_clave}</span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-6 relative w-full sm:w-96">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                    <input
+                <div className="mt-3 w-full max-w-xl sm:mt-4">
+                    <SearchInput
+                        id="mi-vestuario-busqueda"
+                        label="Filtrar artículos"
                         value={filterSearch}
                         onChange={(e) => setFilterSearch(e.target.value)}
-                        placeholder="Buscar artículo por nombre o clave..."
-                        className="w-full pl-11 pr-4 py-2.5 text-sm rounded-full border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 shadow-sm transition-all touch-manipulation"
+                        placeholder="Nombre o clave…"
                     />
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-3">
                     <VestuarioResumenTotales
                         variant="header"
                         asignacionesMerged={asignacionesParaTotales}
@@ -452,25 +473,25 @@ export default function MiVestuarioPage() {
 
                 {mostrarBloqueRecibo && (
                     <div
-                        className="mt-5 rounded-lg border border-zinc-200 bg-white px-4 py-3.5 dark:border-zinc-700 dark:bg-zinc-900"
+                        className="mt-3 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900"
                         role="status"
                     >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                            <div className="flex min-w-0 items-start gap-2.5">
-                                <CheckCircle className="mt-0.5 size-4 shrink-0 text-brand-gold" strokeWidth={2} aria-hidden />
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                            <div className="flex min-w-0 items-start gap-2">
+                                <CheckCircle className="mt-0.5 size-3.5 shrink-0 text-brand-gold" strokeWidth={2} aria-hidden />
                                 <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                    <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
                                         {recienGuardadoRecibo ? 'Cambios guardados.' : 'Tu vestuario quedó registrado.'}
                                     </p>
-                                    <p className="mt-1 text-[12px] leading-snug text-zinc-600 dark:text-zinc-400">
-                                        Recibo de selección · ejercicio {ejercicioVigente}. Consérvalo o compártelo si te lo solicitan.
+                                    <p className="mt-0.5 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                                        Recibo de selección del ejercicio vigente. Consérvalo o compártelo si te lo solicitan.
                                     </p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => abrirPdfReciboAcuse(ejercicioVigente)}
-                                className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:w-auto touch-manipulation"
+                                className="inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 sm:w-auto touch-manipulation"
                             >
                                 <FileDown className="size-4 shrink-0" strokeWidth={2} aria-hidden />
                                 PDF
@@ -480,18 +501,18 @@ export default function MiVestuarioPage() {
                 )}
 
                 {puedeEditar && (anio ?? data.anio) === ejercicioVigente && (
-                    <div className="mt-4">
+                    <div className="mt-3">
                         <button
                             type="button"
                             onClick={() => setModalAgregarOpen(true)}
                             disabled={!puedeAgregarOtraLinea}
-                            className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl border border-brand-gold/35 bg-brand-gold/10 text-[12px] font-bold text-brand-gold hover:bg-brand-gold/20 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-brand-gold/35 bg-brand-gold/10 px-3 py-2 text-[11px] font-bold text-brand-gold transition-colors hover:bg-brand-gold/20 disabled:pointer-events-none disabled:opacity-40"
                         >
-                            <Plus size={16} strokeWidth={2.5} />
+                            <Plus size={15} strokeWidth={2.5} />
                             Agregar otro artículo (otra partida)
                         </button>
                         {!puedeAgregarOtraLinea && importeBaselineTotal > 0 ? (
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2 max-w-xl leading-snug">
+                            <p className="mt-1.5 max-w-xl text-[10px] leading-snug text-zinc-500 dark:text-zinc-400">
                                 Para agregar una línea nueva, libere importe bajando cantidades u optando por artículos más baratos en sus tarjetas actuales.
                             </p>
                         ) : null}
@@ -499,8 +520,8 @@ export default function MiVestuarioPage() {
                 )}
 
                 {data.vista_hereda_anio_anterior && data.anio_referencia_vista != null && (
-                    <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-4 text-[13px] leading-relaxed text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                        <p className="font-bold text-zinc-900 dark:text-white mb-1.5 flex flex-wrap items-center gap-2">
+                    <div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-[12px] leading-snug text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                        <p className="mb-1 flex flex-wrap items-center gap-1.5 font-bold text-zinc-900 dark:text-white">
                             Actualiza tu vestuario al ejercicio {ejercicioVigente}
                             {periodoActivo?.fecha_fin && (
                                 <span className="text-[11px] bg-brand-gold/15 dark:bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">
@@ -518,14 +539,14 @@ export default function MiVestuarioPage() {
             </div>
 
             {listadoGrid.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4">
-                    <Shirt size={32} className="text-zinc-200 dark:text-zinc-700" strokeWidth={1.2} />
+                <div className="flex flex-col items-center justify-center gap-3 py-14">
+                    <Shirt size={28} className="text-zinc-200 dark:text-zinc-700" strokeWidth={1.2} />
                     <p className="text-[11px] text-zinc-400">
                         {filterSearch ? 'Sin resultados para ese filtro.' : `Sin asignaciones para el ejercicio ${data.anio}.`}
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full min-w-0">
+                <div className="grid min-w-0 w-full grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {listadoGrid.map((item) => (
                         <PrendaCard
                             key={item.id}
@@ -548,14 +569,14 @@ export default function MiVestuarioPage() {
                 <div
                     className="z-40 max-md:mt-10 max-md:rounded-2xl max-md:border max-md:border-zinc-200 dark:max-md:border-zinc-700 max-md:shadow-sm dark:max-md:shadow-none bg-white dark:bg-zinc-950 md:fixed md:bottom-0 md:left-0 md:right-0 md:border-t md:border-zinc-200 md:dark:border-zinc-800 md:shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                 >
-                    <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <div className="flex items-start gap-2 min-w-0 flex-1">
-                            <AlertCircle className="size-5 text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />
+                    <div className="mx-auto flex max-w-6xl flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:gap-3">
+                        <div className="flex min-w-0 flex-1 items-start gap-1.5">
+                            <AlertCircle className="mt-0.5 size-4 shrink-0 text-amber-500" strokeWidth={2} />
                             <div className="min-w-0">
-                                <p className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">
+                                <p className="text-[12px] font-bold text-zinc-800 dark:text-zinc-100">
                                     {pendingCountCombined === 1 ? '1 cambio pendiente' : `${pendingCountCombined} cambios pendientes`}
                                 </p>
-                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                                <p className="text-[10px] leading-snug text-zinc-500 dark:text-zinc-400">
                                     Revisa las tarjetas marcadas. Al guardar se cierra tu edición para el ejercicio vigente (el delegado puede reactivarla si hubo un error).
                                 </p>
                             </div>

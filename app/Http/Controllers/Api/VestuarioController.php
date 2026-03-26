@@ -125,7 +125,8 @@ class VestuarioController extends Controller
             return true;
         }
 
-        return $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
+        // Misma regla que guardar en lote: delegado de la delegación o permiso global de selección.
+        return $this->usuarioPuedeGuardarLoteVestuarioEmpleado($request, $empleadoId);
     }
 
     /** Permite guardar en lote el vestuario de un colaborador (Mi delegación o permiso editar_seleccion). */

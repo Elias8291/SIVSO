@@ -62,36 +62,35 @@ export default function LoginPage() {
         <AuthLayout title="Inicio de Sesión" subtitle="Ingrese su RFC para acceder">
             {/* Overlay de carga en pantalla */}
             {loading && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/80 dark:bg-zinc-950/90 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-4">
-                        <span className="size-12 border-4 border-brand-gold/30 border-t-brand-gold rounded-full animate-spin" />
-                        <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">
-                            Iniciando sesión...
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/90 backdrop-blur-[2px] dark:bg-zinc-950/85">
+                    <div className="flex flex-col items-center gap-3">
+                        <span className="size-10 border-2 border-zinc-200 border-t-brand-gold dark:border-zinc-700 dark:border-t-brand-gold rounded-full animate-spin" />
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">
+                            Iniciando sesión…
                         </p>
                     </div>
                 </div>
             )}
-            <header className="mb-10 text-center lg:text-left">
-                <div className="space-y-1">
-                    <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-black dark:text-white">
-                        Inicio de Sesión
-                    </h2>
-                    <p className="text-[10px] lg:text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
-                        Ingrese su RFC para acceder
-                    </p>
-                </div>
+            <header className="mb-8 text-center lg:text-left">
+                <div className="mx-auto h-0.5 w-9 rounded-full bg-brand-gold lg:mx-0" aria-hidden />
+                <h2 className="mt-4 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                    Inicio de sesión
+                </h2>
+                <p className="mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+                    Ingrese su RFC para acceder
+                </p>
             </header>
 
             {errors.length > 0 && (
-                <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors[0]}</p>
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-3.5 dark:border-red-900/60 dark:bg-red-950/30">
+                    <p className="text-[13px] leading-snug text-red-700 dark:text-red-300">{errors[0]}</p>
                 </div>
             )}
 
-            <form id="login-form" onSubmit={handleSubmit} className="space-y-6">
+            <form id="login-form" onSubmit={handleSubmit} className="space-y-5">
                 <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.content} />
                 <div className="space-y-1.5">
-                    <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
+                    <label className="ml-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                         RFC
                     </label>
                     <input
@@ -100,13 +99,13 @@ export default function LoginPage() {
                         value={rfc}
                         onChange={(e) => setRfc(e.target.value)}
                         placeholder="ABCD123456XYZ"
-                        className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus:ring-1 focus:ring-brand-gold outline-none transition-all placeholder:text-zinc-300 dark:placeholder:text-zinc-800 text-zinc-900 dark:text-white text-sm shadow-sm uppercase"
+                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm uppercase text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:ring-2 focus:ring-brand-gold/25 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-600"
                         required
                         autoFocus
                     />
                 </div>
                 <div className="space-y-1.5">
-                    <label className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500 font-bold ml-1">
+                    <label className="ml-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                         Contraseña
                     </label>
                     <PasswordInput
@@ -117,14 +116,14 @@ export default function LoginPage() {
                         required
                     />
                 </div>
-                <div className="flex items-center text-[11px] px-1">
-                    <label className="flex items-center space-x-2 cursor-pointer group text-zinc-400">
+                <div className="flex items-center px-0.5 text-[12px]">
+                    <label className="group flex cursor-pointer items-center gap-2 text-zinc-500 dark:text-zinc-400">
                         <input
                             type="checkbox"
                             name="remember"
                             checked={remember}
                             onChange={(e) => setRemember(e.target.checked)}
-                            className="rounded border-zinc-200 dark:border-zinc-800 bg-transparent"
+                            className="rounded border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900"
                         />
                         <span>Recordarme en este equipo</span>
                     </label>
@@ -132,17 +131,17 @@ export default function LoginPage() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-zinc-900 dark:bg-white text-white dark:text-black text-[11px] font-bold py-4 rounded-lg hover:opacity-90 transition-all uppercase tracking-[0.2em] shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl bg-zinc-900 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-900"
                 >
                     Iniciar sesión
                 </button>
             </form>
 
-            <footer className="mt-12 pt-6 border-t border-zinc-50 dark:border-zinc-900 space-y-1 text-center">
-                <p className="text-[10px] text-zinc-500 dark:text-zinc-500 font-semibold uppercase tracking-[0.1em]">
+            <footer className="mt-10 space-y-1 border-t border-zinc-200 pt-6 text-center dark:border-zinc-800">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
                     Secretaría de Administración Oaxaca
                 </p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600 font-medium uppercase tracking-[0.15em]">
+                <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400 dark:text-zinc-500">
                     Gobierno de Oaxaca
                 </p>
             </footer>

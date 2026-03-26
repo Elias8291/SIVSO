@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ToggleLeft } from 'lucide-react';
-import { PageHeader, Card, DataTable, StatusBadge, ConfirmDialog, Pagination } from '../components/ui';
+import { ToggleLeft } from 'lucide-react';
+import { PageHeader, Card, DataTable, StatusBadge, ConfirmDialog, Pagination, SearchInput, PageAddButton } from '../components/ui';
 import { usePaginatedApi } from '../lib/usePaginatedApi';
 import { api } from '../lib/api';
 
@@ -74,29 +74,17 @@ export default function UsuariosPage() {
                 title="Usuarios"
                 description="Gestión de cuentas de acceso al sistema."
             />
-            <div className="flex flex-row flex-wrap sm:flex-nowrap items-stretch gap-3 mb-8">
-                <input
-                    type="text"
-                    placeholder="Buscar por nombre, RFC o correo..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="flex-1 min-w-0 px-3.5 py-2.5 bg-white dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-xl text-sm placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/25 transition-all"
-                />
-                <button
-                    onClick={() => navigate('/dashboard/usuarios/nuevo')}
-                    className="hidden sm:flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[14px] font-bold tracking-wide hover:opacity-90 active:scale-95 transition-all shrink-0"
-                >
-                    <Plus size={13} strokeWidth={2.5} />
-                    Nuevo Usuario
-                </button>
+            <div className="mb-8 flex flex-row flex-wrap items-end gap-3 sm:flex-nowrap">
+                <div className="min-w-0 max-w-xl flex-1">
+                    <SearchInput
+                        label="Buscar usuario"
+                        placeholder="Nombre, RFC o correo…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+                <PageAddButton onClick={() => navigate('/dashboard/usuarios/nuevo')} label="Nuevo usuario" />
             </div>
-
-            <button
-                onClick={() => navigate('/dashboard/usuarios/nuevo')}
-                className="sm:hidden fixed bottom-6 right-6 z-50 flex items-center justify-center size-10 rounded-xl bg-zinc-900/95 dark:bg-white/95 backdrop-blur-md text-white dark:text-zinc-900 shadow-md shadow-black/10 dark:shadow-white/5 border border-white/10 dark:border-zinc-900/10 hover:scale-105 active:scale-95 transition-all duration-300"
-            >
-                <Plus size={18} strokeWidth={2.5} />
-            </button>
 
             <Card title={`Usuarios${meta.total ? ` (${meta.total})` : ''}`}>
                 <DataTable

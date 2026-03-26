@@ -23,7 +23,6 @@ export default function DelegacionEmpleadosPage() {
     /** @type {Record<string, boolean>} clave UR lógica → expandido */
     const [urExpanded, setUrExpanded] = useState({});
     /** null | 'full' | clave UR (string) */
-    const [pdfLoadingKind, setPdfLoadingKind] = useState(null);
     const [pdfNotice, setPdfNotice] = useState(null);
     const [pdfAnio, setPdfAnio] = useState(() => new Date().getFullYear());
 
@@ -93,7 +92,7 @@ export default function DelegacionEmpleadosPage() {
         [pdfAnio, calAnio]
     );
 
-    const downloadAcusesPdf = async ({ dependenciaClave = null } = {}) => {
+    const openAcusesPdf = ({ dependenciaClave = null } = {}) => {
         if (!idNum || Number.isNaN(idNum)) {
             return;
         }
@@ -106,56 +105,16 @@ export default function DelegacionEmpleadosPage() {
             return;
         }
 
-        const loadingKey = dependenciaClave ? String(dependenciaClave) : 'full';
         setPdfNotice(null);
-        setPdfLoadingKind(loadingKey);
-        try {
-            const token = typeof document !== 'undefined'
-                ? document.querySelector('meta[name="csrf-token"]')?.content ?? ''
-                : '';
-            const q = new URLSearchParams();
-            q.set('anio', String(anio));
-            if (dependenciaClave) {
-                q.set('dependencia_clave', String(dependenciaClave));
-            }
-            const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${idNum}/acuses-pdf?${q.toString()}`);
-            const res = await fetch(url, {
-                credentials: 'same-origin',
-                headers: {
-                    Accept: 'application/pdf',
-                    'X-CSRF-TOKEN': token,
-                },
-            });
-            if (!res.ok) {
-                let msg = `Error ${res.status}`;
-                try {
-                    const j = await res.json();
-                    if (j.message) {
-                        msg = j.message;
-                    }
-                } catch {
-                    /* cuerpo no JSON */
-                }
-                setPdfNotice({ type: 'err', text: msg });
-                return;
-            }
-            const blob = await res.blob();
-            const safeDel = (delegacion?.clave || 'delegacion').replace(/[^a-zA-Z0-9_-]/g, '_');
-            const safeEj = String(anio);
-            let name = `Acuses_vestuario_${safeDel}_Ej${safeEj}.pdf`;
-            if (dependenciaClave) {
-                const safeUr = String(dependenciaClave).replace(/[^a-zA-Z0-9_-]/g, '_');
-                name = `Acuses_vestuario_${safeDel}_UR_${safeUr}_Ej${safeEj}.pdf`;
-            }
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = name;
-            a.click();
-            URL.revokeObjectURL(a.href);
-        } catch (e) {
-            setPdfNotice({ type: 'err', text: e.message || 'No se pudo generar el PDF.' });
-        } finally {
-            setPdfLoadingKind(null);
+        const q = new URLSearchParams();
+        q.set('anio', String(anio));
+        if (dependenciaClave) {
+            q.set('dependencia_clave', String(dependenciaClave));
+        }
+        const url = resolveApiUrl(`/api/mi-delegacion/delegaciones/${idNum}/acuses-pdf?${q.toString()}`);
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) {
+            setPdfNotice({ type: 'err', text: 'Permita ventanas emergentes para ver el PDF y guardarlo desde el visor.' });
         }
     };
 
@@ -379,15 +338,10 @@ export default function DelegacionEmpleadosPage() {
                             </div>
                             <button
                                 type="button"
-                                disabled={pdfLoadingKind !== null}
-                                onClick={() => downloadAcusesPdf({})}
-                                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2.5 text-[11px] sm:text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors whitespace-nowrap touch-manipulation"
+                                onClick={() => openAcusesPdf({})}
+                                className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2.5 text-[11px] sm:text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold transition-colors whitespace-nowrap touch-manipulation"
                             >
-                                {pdfLoadingKind === 'full' ? (
-                                    <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" aria-hidden />
-                                ) : (
-                                    <FileDown size={14} strokeWidth={2.2} className="text-zinc-500 shrink-0" aria-hidden />
-                                )}
+                                <FileDown size={14} strokeWidth={2.2} className="text-zinc-500 shrink-0" aria-hidden />
                                 PDF toda la delegación
                             </button>
                         </div>
@@ -436,15 +390,10 @@ export default function DelegacionEmpleadosPage() {
                                             {canExportarPdfAcuses && dep.clave ? (
                                                 <button
                                                     type="button"
-                                                    disabled={pdfLoadingKind !== null}
-                                                    onClick={() => downloadAcusesPdf({ dependenciaClave: dep.clave })}
-                                                    className="inline-flex items-center justify-center gap-2 shrink-0 self-start sm:self-center rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                                                    onClick={() => openAcusesPdf({ dependenciaClave: dep.clave })}
+                                                    className="inline-flex items-center justify-center gap-2 shrink-0 self-start sm:self-center rounded-lg border border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-700 dark:text-zinc-300 hover:border-brand-gold/45 hover:text-brand-gold transition-colors"
                                                 >
-                                                    {pdfLoadingKind === dep.clave ? (
-                                                        <span className="size-3.5 border-2 border-zinc-200 border-t-brand-gold rounded-full animate-spin" aria-hidden />
-                                                    ) : (
-                                                        <FileDown size={14} strokeWidth={2.2} className="text-zinc-500" aria-hidden />
-                                                    )}
+                                                    <FileDown size={14} strokeWidth={2.2} className="text-zinc-500" aria-hidden />
                                                     PDF esta UR
                                                 </button>
                                             ) : null}

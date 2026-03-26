@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
     LayoutDashboard, Package, FileText, LogOut,
-    Sun, Moon, Search, ChevronRight,
+    Sun, Moon, ChevronRight,
     TrendingUp, Clock, CheckCircle, Users
 } from 'lucide-react';
+import SearchInput from './ui/SearchInput';
 
 const DashboardSIVSO = () => {
     const [isDarkMode, setIsDarkMode] = useState(true);
@@ -99,11 +100,8 @@ const DashboardSIVSO = () => {
                             <h2 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Panel de Control</h2>
                             <p className="text-zinc-500 text-sm mt-2">Resumen operativo del Sistema de Vestuario y Calzado.</p>
                         </div>
-                        <div className="flex gap-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
-                                <input type="text" placeholder="Buscar folio..." className="pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-brand-gold/20 outline-none" />
-                            </div>
+                        <div className="flex gap-3 w-full max-w-xs sm:max-w-sm">
+                            <SearchInput placeholder="Buscar folio…" />
                         </div>
                     </header>
 

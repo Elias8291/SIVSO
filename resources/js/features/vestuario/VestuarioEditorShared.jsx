@@ -2,8 +2,8 @@
  * UI y utilidades compartidas entre Mi vestuario y vestuario desde Mi delegación.
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Ruler, RefreshCw, CheckCircle, Search, Minus, Plus, Hash, Trash2 } from 'lucide-react';
-import { Modal } from '../../components/ui';
+import { Ruler, RefreshCw, CheckCircle, Minus, Plus, Hash, Trash2 } from 'lucide-react';
+import { Modal, SearchInput } from '../../components/ui';
 import { useDebounce } from '../../lib/useDebounce';
 
 export const CATEGORY_STYLE = {
@@ -172,34 +172,34 @@ export function VestuarioResumenTotales({ asignacionesMerged, mostrandoFiltrados
 
     if (variant === 'header') {
         return (
-            <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700 dark:bg-zinc-900 sm:rounded-xl sm:px-5 sm:py-3.5">
-                <div className="flex items-center gap-3 min-w-0">
-                    <div className="hidden h-9 w-0.5 shrink-0 rounded-full bg-brand-gold sm:block" aria-hidden />
+            <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900 sm:px-3.5 sm:py-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="hidden h-7 w-0.5 shrink-0 rounded-full bg-brand-gold sm:block" aria-hidden />
                     <div className="min-w-0 flex-1 text-center sm:text-left">
-                        <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-brand-gold mb-1.5 sm:mb-1">
+                        <p className="mb-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-brand-gold sm:mb-0">
                             {rubrica}
                         </p>
                         <p className="flex flex-wrap items-baseline justify-center gap-x-0 gap-y-0.5 sm:justify-start">
-                            <span className="tabular-nums font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 text-[17px] sm:text-[19px]">
+                            <span className="tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
                                 {articulosDistintos}
                             </span>
-                            <span className="ml-1 text-[13px] sm:text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+                            <span className="ml-1 text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
                                 {articulosDistintos === 1 ? 'artículo' : 'artículos'}
                             </span>
-                            <span className="mx-2 text-base font-light text-zinc-300 dark:text-zinc-600 leading-none" aria-hidden>
+                            <span className="mx-1.5 text-sm font-light leading-none text-zinc-300 dark:text-zinc-600" aria-hidden>
                                 ·
                             </span>
-                            <span className="tabular-nums font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 text-[17px] sm:text-[19px]">
+                            <span className="tabular-nums text-[15px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-[16px]">
                                 {totalPiezas}
                             </span>
-                            <span className="ml-1 text-[13px] sm:text-[14px] font-medium text-zinc-600 dark:text-zinc-400">
+                            <span className="ml-1 text-[12px] font-medium text-zinc-600 dark:text-zinc-400">
                                 {totalPiezas === 1 ? 'pieza' : 'piezas'}
                             </span>
                         </p>
                     </div>
                 </div>
                 {hayFiltro ? (
-                    <p className="mt-2.5 border-t border-zinc-200 pt-2.5 text-[10px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+                    <p className="mt-2 border-t border-zinc-200 pt-2 text-[9px] leading-snug text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
                         Filtro activo: se listan {totalFiltrados} de {articulosDistintos}. Las cifras son del vestuario completo.
                     </p>
                 ) : null}
@@ -288,57 +288,57 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                 : 'border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 shadow-sm hover:shadow-md';
 
     return (
-        <div className={`rounded-2xl flex flex-col transition-all duration-300 ${cardShell}`}>
-            <div className="px-5 py-4 flex-1 flex flex-col">
-                <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <span className={`size-1.5 rounded-full shrink-0 ${st.dot}`} />
-                        <span className="text-[12px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 truncate">
+        <div className={`flex flex-col rounded-xl transition-all duration-300 ${cardShell}`}>
+            <div className="flex flex-1 flex-col px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                        <span className={`size-1.5 shrink-0 rounded-full ${st.dot}`} />
+                        <span className="truncate text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                             {item.clave_vestuario || item.codigo || `Partida ${item.partida}`}
                         </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
                         {item.heredado_preview && !modificadoLocal && (
-                            <span className="text-[9px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600">
+                            <span className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0 text-[8px] font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
                                 Pendiente de revisar
                             </span>
                         )}
                         {modificadoLocal && (
-                            <span className="text-[9px] font-semibold text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                            <span className="rounded border border-emerald-200 bg-emerald-100 px-1.5 py-0 text-[8px] font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
                                 Modificado
                             </span>
                         )}
                         {esNuevaLinea && (
-                            <span className="text-[9px] font-semibold text-sky-900 dark:text-sky-200 bg-sky-100 dark:bg-sky-900 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-800">
+                            <span className="rounded border border-sky-200 bg-sky-100 px-1.5 py-0 text-[8px] font-semibold text-sky-900 dark:border-sky-800 dark:bg-sky-900 dark:text-sky-200">
                                 Nuevo (pendiente)
                             </span>
                         )}
                     </div>
                 </div>
 
-                <p className="text-[14px] font-medium text-zinc-800 dark:text-zinc-200 leading-relaxed break-words hyphens-auto mb-5">
+                <p className="mb-3 break-words text-[13px] font-medium leading-snug text-zinc-800 hyphens-auto dark:text-zinc-200">
                     {item.descripcion}
                 </p>
 
-                <div className="flex flex-wrap items-end gap-5 mt-auto">
-                    <div className="flex flex-col gap-1 min-w-0">
-                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Cantidad</span>
+                <div className="mt-auto flex flex-wrap items-end gap-4">
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                        <span className="text-[8px] font-semibold uppercase tracking-wider text-zinc-400">Cantidad</span>
                         {editable && typeof onAdjustCantidad === 'function' ? (
-                            <div className="inline-flex items-stretch rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 overflow-hidden">
+                            <div className="inline-flex items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
                                 <button
                                     type="button"
                                     aria-label="Disminuir cantidad"
                                     disabled={!puedeMenos}
                                     onClick={() => onAdjustCantidad(item, -1)}
-                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                    className="flex items-center justify-center px-2 py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:pointer-events-none disabled:opacity-30 touch-manipulation transition-colors"
                                 >
-                                    <Minus size={16} strokeWidth={2} />
+                                    <Minus size={15} strokeWidth={2} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => onEditCantidad(item)}
                                     title="Escribir cantidad"
-                                    className="min-w-[2.75rem] px-2 py-2 text-[14px] font-bold tabular-nums text-zinc-900 dark:text-zinc-50 border-x border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors touch-manipulation"
+                                    className="min-w-[2.5rem] border-x border-zinc-200 bg-white px-2 py-1.5 text-[13px] font-bold tabular-nums text-zinc-900 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:hover:bg-zinc-800 touch-manipulation transition-colors"
                                 >
                                     {cant}
                                 </button>
@@ -347,9 +347,9 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                                     aria-label="Aumentar cantidad"
                                     disabled={!puedeMas}
                                     onClick={() => onAdjustCantidad(item, 1)}
-                                    className="flex items-center justify-center px-2.5 py-2 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors touch-manipulation"
+                                    className="flex items-center justify-center px-2 py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 disabled:pointer-events-none disabled:opacity-30 touch-manipulation transition-colors"
                                 >
-                                    <Plus size={16} strokeWidth={2} />
+                                    <Plus size={15} strokeWidth={2} />
                                 </button>
                             </div>
                         ) : editable ? (
@@ -366,8 +366,8 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
                             </p>
                         ) : null}
                     </div>
-                    <div className="flex flex-col gap-1">
-                        <span className="text-[9px] font-semibold uppercase tracking-widest text-zinc-400">Talla</span>
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[8px] font-semibold uppercase tracking-wider text-zinc-400">Talla</span>
                         {editable ? (
                             <button type="button" onClick={() => onEditTalla(item)}
                                 className="flex items-center gap-1 text-[13px] font-bold text-brand-gold hover:underline text-left">
@@ -381,34 +381,34 @@ export function PrendaCard({ item, onEditTalla, onCambiarProducto, onEditCantida
             </div>
 
             {editable && esNuevaLinea && typeof onRemoveNuevaLinea === 'function' ? (
-                <div className="px-2 pb-3 flex gap-1 border-t border-sky-200 dark:border-sky-800 pt-3">
+                <div className="flex gap-1 border-t border-sky-200 px-1.5 pb-2 pt-2 dark:border-sky-800">
                     <button type="button" onClick={() => onEditTalla(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
-                        <Ruler size={13} strokeWidth={2} /> Talla
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
+                        <Ruler size={12} strokeWidth={2} /> Talla
                     </button>
                     <button type="button" onClick={() => onEditCantidad(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
-                        <Hash size={13} strokeWidth={2} /> Cantidad
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
+                        <Hash size={12} strokeWidth={2} /> Cantidad
                     </button>
                     <button type="button" onClick={() => onRemoveNuevaLinea(item.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors touch-manipulation">
-                        <Trash2 size={13} strokeWidth={2} /> Quitar
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 touch-manipulation">
+                        <Trash2 size={12} strokeWidth={2} /> Quitar
                     </button>
                 </div>
             ) : null}
             {editable && !esNuevaLinea ? (
-                <div className="px-2 pb-3 flex gap-1 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                <div className="flex gap-1 border-t border-zinc-200 px-1.5 pb-2 pt-2 dark:border-zinc-800">
                     <button type="button" onClick={() => onEditTalla(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
-                        <Ruler size={13} strokeWidth={2} /> Talla
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
+                        <Ruler size={12} strokeWidth={2} /> Talla
                     </button>
                     <button type="button" onClick={() => onCambiarProducto(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
-                        <RefreshCw size={13} strokeWidth={2} /> Artículo
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
+                        <RefreshCw size={12} strokeWidth={2} /> Artículo
                     </button>
                     <button type="button" onClick={() => onEditCantidad(item)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-brand-gold hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors touch-manipulation">
-                        <Hash size={13} strokeWidth={2} /> Cantidad
+                        className="flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-[10px] font-bold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-brand-gold dark:text-zinc-400 dark:hover:bg-zinc-800/50 touch-manipulation">
+                        <Hash size={12} strokeWidth={2} /> Cantidad
                     </button>
                 </div>
             ) : null}
@@ -596,15 +596,12 @@ export function ModalAgregarLineaVestuario({
                         )}
                     </select>
                 </div>
-                <div className="relative">
-                    <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                    <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar por nombre o clave..."
-                        className="w-full pl-11 pr-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20"
-                    />
-                </div>
+                <SearchInput
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Nombre o clave…"
+                    inputClassName="text-base"
+                />
                 {saldoOk ? (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-zinc-200/80 dark:border-zinc-700/50 bg-zinc-50/80 dark:bg-zinc-800/30 px-3 py-2.5">
                         <p className="text-[11px] text-zinc-600 dark:text-zinc-300 min-w-0">
@@ -786,13 +783,12 @@ export function ModalCambiarProducto({ item, anioCatalogo, baseline = [], pendin
                             </button>
                         </div>
                     ) : null}
-                    <div className="relative">
-                        <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" strokeWidth={1.8} />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Buscar artículo de reemplazo..."
-                            className="w-full pl-11 pr-4 py-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 bg-white dark:bg-zinc-800/50 text-base placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all"
-                        />
-                    </div>
+                    <SearchInput
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Artículo de reemplazo…"
+                        inputClassName="text-base"
+                    />
                     <div className="max-h-56 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800/60 divide-y divide-zinc-50 dark:divide-zinc-800/40">
                         {loadingP ? (
                             <div className="py-8 flex items-center justify-center">

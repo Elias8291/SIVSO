@@ -272,4 +272,77 @@ class MiDelegacionController extends Controller
             'resumen' => $resumen,
         ]);
     }
+
+    /**
+     * Años en los que el colaborador tiene al menos una selección de vestuario (para el selector del PDF).
+     */
+    public function aniosAcusePdfEmpleado(Request $request, int $empleado): JsonResponse
+    {
+        if (! $this->usuarioPuedeConsultarAniosAcuseEmpleado($request, $empleado)) {
+            return response()->json(['message' => 'No tiene permiso para consultar este colaborador.'], 403);
+        }
+
+        if (! Empleado::find($empleado)) {
+            return response()->json(['message' => 'Colaborador no encontrado.'], 404);
+        }
+
+        $anios = DB::table('selecciones')
+            ->where('empleado_id', $empleado)
+            ->select('anio')
+            ->groupBy('anio')
+            ->orderByDesc('anio')
+            ->pluck('anio')
+            ->map(fn ($a) => (int) $a)
+            ->values()
+            ->all();
+
+        return response()->json(['anios' => $anios]);
+    }
+
+    /**
+     * Años en los que al menos un colaborador de la delegación tiene selecciones (para PDF en lote).
+     */
+    public function aniosAcusePdfDelegacion(Request $request, int $delegacion): JsonResponse
+    {
+        if (! $this->usuarioPuedeConsultarAniosAcuseDelegacion($request, $delegacion)) {
+            return response()->json(['message' => 'No tiene permiso para consultar esta delegación.'], 403);
+        }
+
+        if (! DB::table('delegaciones')->where('id', $delegacion)->exists()) {
+            return response()->json(['message' => 'Delegación no encontrada.'], 404);
+        }
+
+        $anios = DB::table('selecciones AS s')
+            ->join('empleados AS e', 'e.id', '=', 's.empleado_id')
+            ->where('e.delegacion_id', $delegacion)
+            ->select('s.anio')
+            ->groupBy('s.anio')
+            ->orderByDesc('s.anio')
+            ->pluck('s.anio')
+            ->map(fn ($a) => (int) $a)
+            ->values()
+            ->all();
+
+        return response()->json(['anios' => $anios]);
+    }
+
+    private function usuarioPuedeConsultarAniosAcuseEmpleado(Request $request, int $empleadoId): bool
+    {
+        if ($request->user()->can('ver_empleados')) {
+            return true;
+        }
+
+        return $request->user()->can('ver_mi_delegacion')
+            && $this->delegadoPuedeGestionarEmpleadoId($request, $empleadoId);
+    }
+
+    private function usuarioPuedeConsultarAniosAcuseDelegacion(Request $request, int $delegacionId): bool
+    {
+        if ($request->user()->can('ver_empleados') || $request->user()->can('ver_delegaciones')) {
+            return true;
+        }
+
+        return $request->user()->can('ver_mi_delegacion')
+            && $this->delegacionIdsQueGestionaElUsuario($request)->contains($delegacionId);
+    }
 }
